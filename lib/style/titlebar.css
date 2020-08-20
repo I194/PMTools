@@ -1,0 +1,167 @@
+.title-bar {
+  -webkit-app-region: drag;
+  margin: 0;
+  display: flex;
+  background-color: grey;
+  width: 100%;
+  height: 22px;
+}
+
+.menu-button-container {
+  background-color: #e9ecef;
+  border: 0;
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+  width: 33%;
+}
+
+.app-name-container {
+  background-color: #e9ecef;
+  border: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+  width: 34%;
+}
+
+.window-controls-container {
+  background-color: #e9ecef;
+  border: 0;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex-grow: 1;
+  width: 33%;
+}
+
+.icon-button {
+  background-color: #e9ecef;
+  margin: 0;
+  width: auto;
+  height: 22px;
+}
+
+.icon-button:hover {
+  background-color: grey;
+}
+
+.menu-item-button {
+  -webkit-app-region: no-drag;
+  background-color: #e9ecef;
+  margin-left: 0px;
+  margin-right: 0px;
+  width: auto;
+  height: 22px;
+  font-size: small;
+  line-height: 1;
+}
+
+.menu-item-button:hover {
+  background-color: lightgrey;
+}
+
+.dropdown-menu {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+  border: 0;
+}
+
+.menu-dropdown-item {
+  margin: 0;
+  padding: 0;
+  height: 30px;
+}
+
+.input-group-text {
+  padding: .125rem;
+}
+
+.form-control-xs {
+  height: calc(1em + .375rem + 2px) !important;
+  padding: .125rem .25rem !important;
+  font-size: .75rem !important;
+  line-height: 0;
+  border-radius: 0rem;
+  border: 0;
+  text-align: left;
+}
+
+.form-control-xs:hover {
+  background-color: lightgrey;
+  cursor: default;
+}
+
+.form-control-xs:focus {
+  outline: 0px !important;
+}
+
+.input-group-sm>.custom-select,
+.input-group-sm>.form-control,
+.input-group-sm>.input-group-append>.btn,
+.input-group-sm>.input-group-append>.input-group-text,
+.input-group-sm>.input-group-prepend>.btn,
+.input-group-sm>.input-group-prepend>.input-group-text {
+  padding: .25rem .5rem;
+  font-size: .875rem;
+  line-height: 1.5;
+  border-radius: 0rem;
+}
+
+.custom-btn {
+  border-radius: 0;
+  border: 0;
+}
+
+.custom-btn:focus {
+  outline: 0px !important;
+}
+
+.minimize-button {
+  -webkit-app-region: no-drag;
+  background-color: #e9ecef;
+  margin-left: 0px;
+  margin-right: 0px;
+  width: 30px;
+  height: 22px;
+}
+
+.minimize-button:hover {
+  background-color: lightgrey;
+}
+
+.min-max-button {
+  -webkit-app-region: no-drag;
+  background-color: #e9ecef;
+  margin-left: 0px;
+  margin-right: 0px;
+  width: 30px;
+  height: 22px;
+}
+
+.min-max-button:hover {
+  background-color: lightgrey;
+}
+
+.close-button {
+  -webkit-app-region: no-drag;
+  background-color: #e9ecef;
+  margin-left: 0px;
+  margin-right: 0px;
+  width: 30px;
+  height: 22px;
+}
+
+.close-button:hover {
+  background-color: red;
+}
+
+.close-button:hover .fa-times {
+  color: white;
+}
+
+.no-hover{
+  pointer-events: none;
+}

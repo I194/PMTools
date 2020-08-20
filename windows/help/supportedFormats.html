@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width = device-width, initial-scale = 1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<html>
+  <head>
+    <!-- Bootstrap css -->
+    <link rel="stylesheet" href="../../lib/style/bootstrap4/css/bootstrap.min.css">
+    <!-- Awesome css -->
+    <link rel="stylesheet" href="../../lib/style/fontawesome-free-5.13.0-web/css/all.css">
+    <link rel="stylesheet" href="../../lib/style/fontawesome-pro-5.13.0-web/css/all.css">
+    <!-- Custom style -->
+    <link rel="stylesheet" href="../../lib/style/custom_style.css">
+    <!-- Titilebar style -->
+    <link rel="stylesheet" href="../../lib/style/titlebar.css">
+    <!-- Title -->
+    <title>Supported formats</title>
+  </head>
+  <body style="overflow-y: hidden; line-height: 0;">
+    <!-- App titlebar -->
+    <div class="d-flex justify-content-center container-fluid">
+      <div class="row no-gutters justify-content-center container-fluid">
+        <div class="title-bar">
+          <div class="menu-button-container">
+            <button type="button" class="icon-button custom-btn no-hover" id="icon-button"><img src="../../img/pm-tools-app-icon-dark.svg" height="16" width="auto" alt=""></button></div>
+          <div class="app-name-container">
+            Supported formats
+          </div>
+          <div class="window-controls-container">
+            <button type="button" class="minimize-button custom-btn" id="minimize-button"><i class="far fa-window-minimize"></i></button>
+            <button type="button" class="min-max-button custom-btn" id="min-max-button"><i class="fal fa-window-restore"></i></button>
+            <button type="button" class="close-button custom-btn" id="close-button"><i class="fal fa-times"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Shortcuts -->
+    <div class="row no-gutters bg-light justify-content-center container-fluid" style="height: 96vh; line-height: 1.5;">
+      <div class="col-md-4 lg-4">
+        <div class="card">
+          <div class="card-body bg-light" style="height: 96vh;">
+            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+              <a class="nav-link active" id="pmd-tab" data-toggle="pill" role="tab" aria-selected="true" href="#pmd" aria-controls="pmd">.PMD</a>
+              <a class="nav-link" id="rmg-tab" data-toggle="pill" role="tab" aria-selected="false" href="#rmg" aria-controls="rmg">.RMG</a>
+              <a class="nav-link" id="pmm-tab" data-toggle="pill" role="tab" aria-selected="false" href="#pmm" aria-controls="pmm">.PMM</a>
+              <a class="nav-link" id="dir-tab" data-toggle="pill" role="tab" aria-selected="false" href="#dir" aria-controls="dir">.DIR</a>
+              <a class="nav-link" id="csv-tab" data-toggle="pill" role="tab" aria-selected="false" href="#csv" aria-controls="csv">.CSV</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-8 lg-8">
+        <div class="card">
+          <div class="card-body bg-light" style="height: 96vh; padding-left: 2vw; overflow-y: auto;">
+            <div class="tab-content" id="v-pills-tabContent">
+              <div class="tab-pane fade show active text-center" id="pmd" role="tabpanel" aria-labelledby="pmd-tab">
+                <h6 class="mt-2">Example of .pmd file</h6>
+                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-pmd">
+                  Download
+                </button>
+                <div id="pmd-example"><img src="../../img/formats/pmd_example.png" class="img-fluid"></img></div>
+                Files of this type using in PCA (Interpretations) page.
+              </div>
+              <div class="tab-pane fade text-center" id="rmg" role="tabpanel" aria-labelledby="rmg-tab">
+                <h6 class="mt-2">Example of .rmg* file</h6>
+                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-rmg">
+                  Download
+                </button>
+                <div id="rmg-example"><img src="../../img/formats/rmg_example.png" class="img-fluid"></img></div>
+                Files of this type are used on the PCA (interpretation) page.
+                <br>
+                *True RMG files are not supported by PMTools v1.0, and their support will be added in future versions.
+              </div>
+              <div class="tab-pane fade text-center" id="pmm" role="tabpanel" aria-labelledby="pmm-tab">
+                <h6 class="mt-2">Example of .pmm file</h6>
+                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-pmm">
+                  Download
+                </button>
+                <div id="pmm-example"><img src="../../img/formats/pmm_example.png" class="img-fluid"></img></div>
+                Files of this type using in Statistics page.
+              </div>
+              <div class="tab-pane fade text-center" id="dir" role="tabpanel" aria-labelledby="dir-tab">
+                <h6 class="mt-2">Example of .dir file</h6>
+                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-dir">
+                  Download
+                </button>
+                <div id="dir-example"><img src="../../img/formats/dir_example.png" class="img-fluid"></img></div>
+                Files of this type using in Statistics page.
+              </div>
+              <div class="tab-pane fade text-center" id="csv" role="tabpanel" aria-labelledby="csv-tab">
+                <h6 class="mt-2">Example of .csv file</h6>
+                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-csv">
+                  Download
+                </button>
+                <div id="csv-example"><img src="../../img/formats/csv_example.png" class="img-fluid"></img></div>
+                Files of this type using in Statistics page.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <!-- Bootstrap.js, Popper.js, and jQuery -->
+  <script src="../../lib/jquery/jquery.min.js"></script>
+  <script src="../../lib/popper/popper.min.js"></script>
+  <script src="../../lib/style/bootstrap4/js/bootstrap.min.js"></script>
+  <!-- render process -->
+  <script type="text/javascript" src="../../renderers/formatsRenderer.js"></script>
+</html>

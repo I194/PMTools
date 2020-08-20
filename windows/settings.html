@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width = device-width, initial-scale = 1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<html>
+  <head>
+    <!-- Bootstrap css -->
+    <link rel="stylesheet" href="../lib/style/bootstrap4/css/bootstrap.min.css">
+    <!-- Awesome css -->
+    <link rel="stylesheet" href="../lib/style/fontawesome-free-5.13.0-web/css/all.css">
+    <link rel="stylesheet" href="../lib/style/fontawesome-pro-5.13.0-web/css/all.css">
+    <!-- Custom style -->
+    <link rel="stylesheet" href="../lib/style/custom_style.css">
+    <!-- Titilebar style -->
+    <link rel="stylesheet" href="../lib/style/titlebar.css">
+    <!-- Title -->
+    <title>Settings</title>
+  </head>
+  <body style="overflow-y: hidden; line-height: 0;">
+    <!-- App titlebar -->
+    <div class="d-flex justify-content-center container-fluid">
+      <div class="row no-gutters justify-content-center container-fluid">
+        <div class="title-bar">
+          <div class="menu-button-container">
+            <button type="button" class="icon-button custom-btn no-hover" id="icon-button"><img src="../img/pm-tools-app-icon-dark.svg" height="16" width="auto" alt=""></button></div>
+          <div class="app-name-container">
+            Settings
+          </div>
+          <div class="window-controls-container">
+            <button type="button" class="minimize-button custom-btn" id="minimize-button"><i class="far fa-window-minimize"></i></button>
+            <button type="button" class="min-max-button custom-btn" id="min-max-button"><i class="fal fa-window-restore"></i></button>
+            <button type="button" class="close-button custom-btn" id="close-button"><i class="fal fa-times"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Settings -->
+    <div class="row no-gutters justify-content-center container-fluid" style="height: 90vh; line-height: 1.5;">
+      <div class="col-md-4 lg-4">
+        <div class="card">
+          <div class="card-body bg-light" style="height: 96.5vh;">
+            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+              <a class="nav-link active" id="general-tab" data-toggle="pill" role="tab" aria-selected="true" href="#general" aria-controls="general">General</a>
+              <a class="nav-link" id="pca-tab" data-toggle="pill" role="tab" aria-selected="false" href="#pca" aria-controls="pca">PCA</a>
+              <a class="nav-link" id="stats-tab" data-toggle="pill" role="tab" aria-selected="false" href="#stats" aria-controls="stats">Statistics</a>
+              <a class="nav-link" id="poles-tab" data-toggle="pill" role="tab" aria-selected="false" href="#poles" aria-controls="poles">Poles, etc.</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-8 lg-8">
+        <div class="card" style="height: 96.5vh;">
+          <div class="card-body bg-light d-flex flex-column">
+            <div class="tab-content" id="v-pills-tabContent" style="overflow-y: auto;">
+              <div class="tab-pane fade show active" style="padding-left: 2vw;" id="general" role="tabpanel" aria-labelledby="general-tab">
+                <div class="form-check ">
+                  <input class="form-check-input" type="checkbox" id="block-mouse-on-zoom" onclick="saveSettings();" checked>
+                  <label class="form-check-label" for="block-mouse-on-zoom"> Block mouse buttons on zoomed chart </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="auto-save" onclick="saveSettings();">
+                  <label class="form-check-label" for="auto-save"> Automatically save current project on exit and open it on next start </label>
+                </div>
+              </div>
+              <!-- PCA -->
+              <div class="tab-pane fade" id="pca" role="tabpanel" aria-labelledby="pca-tab">
+                <!-- PCA settings menu -->
+                <nav class="nav nav-pills nav-fill mb-2">
+                  <a class="nav-item nav-link active" id="nav-pca-charts-tab" data-toggle="tab" href="#nav-pca-charts" role="tab" aria-controls="nav-pca-charts" aria-selected="true">Charts</a>
+                  <a class="nav-item nav-link" id="nav-pca-tools-tab" data-toggle="tab" href="#nav-pca-tools" role="tab" aria-controls="nav-pca-tools" aria-selected="false">Tools</a>
+                </nav>
+                <hr class="short">
+                <!-- PCA settings content -->
+                <div class="tab-content">
+                  <!-- Charts -->
+                  <div class="tab-pane fade show active" id="nav-pca-charts" role="tabpanel" aria-labelledby="nav-pca-charts-tab">
+                    <div class="table-responsive w-100">
+                      <table class='table text-center table-sm  w-100' style='margin: 0; max-height: 100%;'>
+                        <thead class="table-secondary">
+                          <tr>
+                            <th colspan="4">All charts</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="pca-number-mode" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="pca-number-mode"> Number mode</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="pca-step-mode" onclick="saveSettings();">
+                                 <label class="form-check-label" for="pca-step-mode"> Step mode</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="pca-allow-overlap" onclick="saveSettings();">
+                                 <label class="form-check-label" for="pca-allow-overlap"> Allow overlap</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="pca-add-text-outline" onclick="saveSettings();">
+                                 <label class="form-check-label" for="pca-add-text-outline"> Add text outline</label>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="table-responsive w-100 mt-2">
+                      <table class='table text-center table-sm  w-100' style='margin: 0; max-height: 100%;'>
+                        <thead class="table-secondary">
+                          <tr>
+                            <th>Zijderveld</th>
+                            <th>Stereo</th>
+                            <th>Intensity</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>
+                              -
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stereo-evid-ellipse" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stereo-evid-ellipse"> Show error </label>
+                              </div>
+                            </td>
+                            <td>
+                              -
+                            </td>
+                          </tr>
+                          <tr>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="zijd-highlight" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="zijd-highlight"> Highlight selected</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stereo-highlight" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stereo-highlight"> Highlight selected</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="intensity-highlight" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="intensity-highlight"> Highlight selected</label>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="zijd-hover" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="zijd-hover"> Highlight on hover</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stereo-hover" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stereo-hover"> Highlight on hover</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="intensity-hover" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="intensity-hover"> Highlight on hover</label>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="zijd-hide" onclick="saveSettings();">
+                                 <label class="form-check-label" for="zijd-hide"> Hide unselected</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stereo-hide" onclick="saveSettings();">
+                                 <label class="form-check-label" for="stereo-hide"> Hide unselected</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="intensity-hide" onclick="saveSettings();">
+                                 <label class="form-check-label" for="intensity-hide"> Hide unselected</label>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="zijd-ticks" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="zijd-ticks"> Show ticks</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stereo-ticks" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stereo-ticks"> Show ticks</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="intensity-ticks" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="intensity-ticks"> Show ticks</label>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="zijd-tooltips" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="zijd-tooltips"> Show tooltips</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stereo-tooltips" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stereo-tooltips"> Show tooltips</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="intensity-tooltips" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="intensity-tooltips"> Show tooltips</label>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="zijd-annotations" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="zijd-annotations"> Show annotations</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stereo-annotations" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stereo-annotations"> Show annotations</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="intensity-annotations" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="intensity-annotations"> Show annotations</label>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <!-- Tools -->
+                  <div class="tab-pane fade" id="nav-pca-tools" role="tabpanel" aria-labelledby="nav-pca-tools-tab">
+                    <div class="table-responsive">
+                      <table class='table text-center table-sm  w-100' style='margin: 0; max-height: 100%;'>
+                        <thead class="table-secondary">
+                          <tr>
+                            <th colspan="4" title="In PCA, PCA0, GC and GCn.">Dots selector</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td colspan="2">
+                              <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" class="custom-control-input" onclick="saveSettings();" name="pca-stat-dots" id="pca-tools-text" checked>
+                                <label class="custom-control-label" for="pca-tools-text" title="Type dots">Plain text</label>
+                              </div>
+                            </td>
+                            <td colspan="2">
+                              <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" class="custom-control-input" onclick="saveSettings();" name="pca-stat-dots" id="pca-tools-select">
+                                <label class="custom-control-label" for="pca-tools-select" title="Select dots">Select</label>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- Stat -->
+              <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+                <!-- Stat settings menu -->
+                <nav class="nav nav-pills nav-fill mb-2">
+                  <a class="nav-item nav-link active" id="nav-stat-charts-tab" data-toggle="tab" href="#nav-stat-charts" role="tab" aria-controls="nav-stat-charts" aria-selected="true">Chart</a>
+                  <a class="nav-item nav-link" id="nav-stat-tools-tab" data-toggle="tab" href="#nav-stat-tools" role="tab" aria-controls="nav-stat-tools" aria-selected="false">Tools</a>
+                </nav>
+                <hr class="short">
+                <!-- Stat settings content -->
+                <div class="tab-content">
+                  <!-- Charts -->
+                  <div class="tab-pane fade show active" id="nav-stat-charts" role="tabpanel" aria-labelledby="nav-stat-charts-tab">
+                    <div class="table-responsive">
+                      <table class='table text-center table-sm  w-100' style='margin: 0; max-height: 100%;'>
+                        <thead class="table-secondary">
+                          <tr>
+                            <th colspan="4" title="">Chart</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stat-number-mode" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stat-number-mode"> Number mode</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stat-step-mode" onclick="saveSettings();">
+                                 <label class="form-check-label" for="stat-step-mode"> Step mode</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stat-allow-overlap" onclick="saveSettings();">
+                                 <label class="form-check-label" for="stat-allow-overlap"> Allow overlap</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stat-add-text-outline" onclick="saveSettings();">
+                                 <label class="form-check-label" for="stat-add-text-outline"> Add text outline</label>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                    <div class="table-responsive">
+                      <table class='table text-center table-sm  w-100' style='margin: 0; max-height: 100%;'>
+                        <tbody>
+                          <tr style="">
+                            <td align="center">
+                              <div class="form-check">
+                                <input class="form-check-input" type="checkbox"  onclick="saveSettings();" id="stat-evid-ellipse">
+                                <label class="form-check-label" for="stat-evid-ellipse"> Show error </label>
+                              </div>
+                            </td>
+                            <td align="center">
+                              <div class="form-check">
+                                 <input class="form-check-input" type="checkbox" id="stat-highlight" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stat-highlight"> Highlight selected</label>
+                              </div>
+                            </td>
+                            <td align="center">
+                              <div class="form-check">
+                                 <input class="form-check-input" type="checkbox" id="stat-hover" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stat-hover"> Highlight on hover</label>
+                              </div>
+                            </td>
+                            <td align="center">
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stat-hide" onclick="saveSettings();">
+                                 <label class="form-check-label" for="stat-hide"> Hide unselected</label>
+                              </div>
+                            </td>
+                          </tr>
+                          <tr>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stat-ticks" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stat-ticks"> Show ticks</label>
+                              </div>
+                            </td>
+                            <td colspan="2">
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stat-tooltips" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stat-tooltips"> Show tooltips</label>
+                              </div>
+                            </td>
+                            <td>
+                              <div class="form-check ">
+                                 <input class="form-check-input" type="checkbox" id="stat-annotations" onclick="saveSettings();" checked>
+                                 <label class="form-check-label" for="stat-annotations"> Show annotations</label>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                  <!-- Tools -->
+                  <div class="tab-pane fade" id="nav-stat-tools" role="tabpanel" aria-labelledby="nav-stat-tools-tab">
+                    <div class="table-responsive">
+                      <table class='table text-center table-sm w-100' style='margin: 0; max-height: 100%;'>
+                        <thead class="table-secondary">
+                          <tr>
+                            <th colspan="4" title="In F and GC.">Dots selector</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td colspan="2">
+                              <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" class="custom-control-input" onclick="saveSettings();" name="stat-tools-dots" id="stat-tools-text" checked>
+                                <label class="custom-control-label" for="stat-tools-text" title="Type dots">Plain text</label>
+                              </div>
+                            </td>
+                            <td colspan="2">
+                              <div class="custom-control custom-radio custom-control-inline">
+                                <input type="radio" class="custom-control-input" onclick="saveSettings();" name="stat-tools-dots" id="stat-tools-select">
+                                <label class="custom-control-label" for="stat-tools-select" title="Select dots">Select</label>
+                              </div>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="tab-pane fade" id="poles" role="tabpanel" aria-labelledby="poles-tab"></div>
+            </div>
+          </div>
+          <!-- Accept btn (for reload pages) -->
+          <div class="align-self-end w-100 bg-light">
+            <button type="button" class="btn btn-primary btn-sm float-sm-right btn-block w-25 mb-2 mr-2 mt-2" onclick="reloadWins();">Accept</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+
+  <!-- Bootstrap.js, Popper.js, and jQuery -->
+  <script src="../lib/jquery/jquery.min.js"></script>
+  <script src="../lib/popper/popper.min.js"></script>
+  <script src="../lib/style/bootstrap4/js/bootstrap.min.js"></script>
+  <!-- render process -->
+  <script type="text/javascript" src="../renderers/settingsRenderer.js"></script>
+
+</html>

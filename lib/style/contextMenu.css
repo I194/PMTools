@@ -1,0 +1,28 @@
+#chart-context-menu {
+  position:fixed;
+  z-index:10000;
+  /* width:150px; */
+  background:#eee;
+  border-radius:5px;
+  transform:scale(0);
+  transform-origin:top left;
+}
+#chart-context-menu.active {
+  transform:scale(1);
+  transition:transform 400ms ease-in-out;
+}
+#chart-context-menu .item {
+  padding:6px 10px;
+  font-size:14px;
+  color:#555;
+}
+#chart-context-menu .item:hover {
+  background:#c4ced9;
+}
+#chart-context-menu .item i {
+  display:inline-block;
+  margin-right:5px;
+}
+#chart-context-menu hr {
+  margin:2px 0px;
+}

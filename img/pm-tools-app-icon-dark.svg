@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<!-- Creator: CorelDRAW 2018 (64-Bit) -->
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" width="90mm" height="90mm" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd"
+viewBox="0 0 9000 9000"
+ xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <style type="text/css">
+   <![CDATA[
+    .str0 {stroke:black;stroke-width:150;stroke-miterlimit:22.9256}
+    .str1 {stroke:#1F1B20;stroke-width:150;stroke-miterlimit:22.9256}
+    .fil1 {fill:none;fill-rule:nonzero}
+    .fil2 {fill:black;fill-rule:nonzero}
+    .fil0 {fill:white;fill-rule:nonzero}
+   ]]>
+  </style>
+ </defs>
+ <g id="Слой_x0020_1">
+  <metadata id="CorelCorpID_0Corel-Layer"/>
+  <g id="Logo">
+   <g id="Lines">
+    <path id="circle" class="fil0 str0" d="M8597.82 4468.41c0,-1468.24 -783.28,-2825.03 -2054.9,-3559.14 -1271.62,-734.24 -2838.17,-734.24 -4109.8,0 -1271.62,734.11 -2054.89,2090.9 -2054.89,3559.14 0,1468.24 783.27,2825.03 2054.89,3559.15 1271.63,734.23 2838.18,734.23 4109.8,0 1271.62,-734.12 2054.9,-2090.91 2054.9,-3559.15zm0 0z"/>
+    <line id="Horiontal" class="fil1 str0" x1="378.23" y1="4468.41" x2="8597.82" y2= "4468.41" />
+    <line id="Vertical" class="fil1 str0" x1="4488.04" y1="358.58" x2="4488.03" y2= "8578.23" />
+   </g>
+   <g id="Dots-constellation_x0020_compass">
+    <path id="dot2" class="fil2 str1" d="M6046.49 5673.39c0,172.73 -104.12,329.22 -264.05,394.97 -159.92,66.36 -343.77,30.12 -466.46,-92.43 -121.96,-122.69 -158.75,-306.55 -92.43,-466.47 66.35,-159.88 222.23,-264.04 395.01,-264.04 113.66,0 222.36,45.08 302.54,125.39 80.87,80.18 125.39,188.87 125.39,302.58zm0 0z"/>
+    <path id="dot1" class="fil1 str1" d="M4537.05 943.99c0,173.31 -104.16,329.34 -264.04,395.14 -159.93,66.31 -343.78,30.08 -466.46,-92.61 -121.96,-122.51 -158.75,-306.42 -92.44,-466.3 66.31,-159.92 222.23,-264.2 394.97,-264.2 113.71,0 222.4,45.24 302.59,125.39 80.86,80.3 125.38,188.87 125.38,302.58zm0 0z"/>
+    <path id="dot3" class="fil2 str1" d="M6976.19 7360.1c0,172.73 -104.13,329.22 -264.05,394.97 -159.92,66.36 -343.78,30.12 -466.47,-92.43 -121.95,-122.69 -158.75,-306.55 -92.43,-466.47 66.35,-159.88 222.23,-264.04 395.01,-264.04 113.67,0 222.36,45.08 302.54,125.39 80.87,80.18 125.4,188.87 125.4,302.58zm0 0z"/>
+   </g>
+  </g>
+ </g>
+</svg>
