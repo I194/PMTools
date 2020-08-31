@@ -20,7 +20,7 @@ var Site = function(lng, lat) {
 
 }
 
-Site.prototype.poleFrom = function(direction) {
+Site.prototype.poleFrom = function(direction, mode, dName, iName, givenCollection) {
 
   /*
    * Function Site.poleFrom
@@ -32,13 +32,34 @@ Site.prototype.poleFrom = function(direction) {
     throw(new Exception("The passed direction is not of class Direction."));
   }
 
-  // Convert to radians
+  if (typeof DIRECTION_MODE === 'undefined') var DIRECTION_MODE = 'normal';
+
+  var fpars;
+
   var siteLatitude = this.lat / RADIANS;
   var siteLongitude = this.lng / RADIANS;
   var declination = direction.dec / RADIANS;
   var inclination = direction.inc / RADIANS;
+  var a95;
 
-  var p = 0.5 * Math.PI - Math.atan(0.5 * Math.tan(inclination));
+  if (mode == 'stat') {
+    var data = [];
+    var collection = (givenCollection) ? givenCollection : getSelectedFile('collection');
+    collection.interpretations.forEach((dot, i) => {
+      if (dot.visible) data.push({'x': dot[dName][DIRECTION_MODE], 'y': dot[iName][DIRECTION_MODE]});
+    });
+    console.log(data);
+    fpars = fisherMean(data);
+  }
+
+  if (fpars) {
+    declination = fpars.dec / RADIANS;
+    inclination = fpars.inc / RADIANS;
+    a95 = fpars.a95 / RADIANS;
+  }
+  // Convert to radians
+
+  var p = 0.5 * Math.PI - Math.atan(Math.tan(inclination) / 2);
   var poleLatitude = Math.asin(Math.sin(siteLatitude) * Math.cos(p) + Math.cos(siteLatitude) * Math.sin(p) * Math.cos(declination));
   var beta = Math.asin((Math.sin(p) * Math.sin(declination) / Math.cos(poleLatitude)).toFixed(2));
   if (Math.cos(p) - Math.sin(poleLatitude) * Math.sin(siteLatitude) < 0) {
@@ -52,9 +73,22 @@ Site.prototype.poleFrom = function(direction) {
     poleLongitude += 2 * Math.PI;
   }
 
+  var paleoLat = paleolatitude(inclination);
+  var dp, dm;
+  if (fpars) {
+    dp = 2 * a95 / (1  + 3 * Math.pow(Math.cos(inclination), 2));
+    dm = a95 * Math.sin(p) / Math.cos(inclination);
+  }
+  console.log(fpars);
   return new Pole(
     poleLongitude * RADIANS,
-    poleLatitude * RADIANS
+    poleLatitude * RADIANS,
+    paleoLat * RADIANS,
+    dp * RADIANS,
+    dm * RADIANS,
+    a95 * RADIANS,
+    siteLatitude * RADIANS,
+    siteLongitude * RADIANS,
   );
 
 }

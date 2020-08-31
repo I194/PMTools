@@ -1,15 +1,21 @@
 "use strict";
 
-var Pole = function(longitude, latitude, length) {
+var Pole = function(longitude, latitude, paleoLat, dp, dm, a95, siteLat, siteLon, length) {
 
   /*
    * Class Pole
    * Container class for pole locations
    */
 
-  this.lng = longitude;
   this.lat = latitude;
-
+  this.lng = longitude;
+  this.pLat = paleoLat;
+  this.dp = dp;
+  this.dm = dm;
+  this.a95 = a95;
+  this.siteLat = siteLat;
+  this.siteLon = siteLon;
+  
   this.length = length || 1;
 
 }

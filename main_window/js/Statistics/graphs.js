@@ -2,7 +2,7 @@ function statPlotStereoDiagram(hover) {
 
   var collection = getSelectedFile('collection');
 
-  if (!collection) return document.getElementById('stat-container-main').innerHTML = '';
+  if (!collection) return document.getElementById('stat-container-center').innerHTML = '';
 
   // Get the Boolean flags for the graph
   var enableLabels = settings.stat.statAnnotations;
@@ -24,7 +24,7 @@ function statPlotStereoDiagram(hover) {
 
   var statistics = getStatisticalParameters(collection.interpretations);
 
-  var baseSite = new Site(0, 0);
+  var baseSite = getSite() // new Site(0, 0);
 
   interpretations.forEach(function(interpretation, i) {
 
@@ -92,9 +92,16 @@ function statPlotStereoDiagram(hover) {
     });
 
     if (showError) {
-      dataErrors.push(
-        getSmallCircle(dec, Math.abs(inc), interpretation.mad, true)
-      )
+      if (settings.global.dashedLines) {
+        dataErrors.push(
+          getSmallCircle(dec, Math.abs(inc), interpretation.mad, true)
+        )
+      }
+      else {
+        dataErrors.push(
+          getSmallCircle(dec, Math.abs(inc), interpretation.mad, false)
+        )
+      }
     };
 
     if (inc < 0) dataNeg.push(interpret_data);
@@ -122,7 +129,7 @@ function statPlotStereoDiagram(hover) {
     lineWidth: 0.6,
   }
 
-  var chartContainer = document.getElementById('stat-container-main'),
+  var chartContainer = document.getElementById('stat-container-center'),
     chartIndex = chartContainer.getAttribute('data-highcharts-chart'),
     chart = Highcharts.charts[chartIndex];
 
@@ -145,116 +152,10 @@ function statPlotStereoDiagram(hover) {
     return;
   }
 
-  var selectedSeries = {
-    type: "scatter",
-    linkedTo: "Directions",
-    zIndex: 10,
-    data: [selectedDot], // [{x: selectedDot.x, y:selectedDot.y}],
-    marker: {
-      lineWidth: 1,
-      symbol: "square",
-      radius: 3,
-      lineColor: 'black',
-      fillColor: selectedDot['innerColor'],
-    }
-  }
-
-  // var bcPath = plot_big_circle_path(dataAbs);
-
-  var element_width = chartContainer.offsetWidth;
-  element_width -= element_width % 10;
-
-  var ticksN = new Array();
-  var ticksE = new Array();
-  var ticksS = new Array();
-  var ticksW = new Array();
-  for (let tick = 0; tick <= 90; tick += 10) {
-    ticksN.push({x: 0, y: tick});
-    ticksE.push({x: 90, y: tick});
-    ticksS.push({x: 180, y: tick});
-    ticksW.push({x: 270, y: tick});
-  }
-  var ticksX = ticksW.concat(ticksE);
-  var tickSeriesX = [{
-    type: "scatter",
-    enableMouseTracking: false,
-    data: ticksX,
-    zIndex: 5,
-    color: "black",
-    showInLegend: false,
-    marker: {
-      radius: 2,
-      lineWidth: 1,
-      symbol: "VlineS",
-      lineColor: "black",
-    }
-  }]
-  var tickSeriesTop = [{
-    type: "scatter",
-    enableMouseTracking: false,
-    data: ticksN,
-    zIndex: 5,
-    color: "black",
-    showInLegend: false,
-    marker: {
-      radius: 2,
-      lineWidth: 1,
-      symbol: "HlineSTop",
-      lineColor: "black",
-    }
-  }]
-  var tickSeriesBot = [{
-    type: "scatter",
-    enableMouseTracking: false,
-    data: ticksS,
-    zIndex: 5,
-    color: "black",
-    showInLegend: false,
-    marker: {
-      radius: 2,
-      lineWidth: 1,
-      symbol: "HlineSBot",
-      lineColor: "black",
-    }
-  }]
-
-  var tickSeries = [];
-  if (settings.stat.statTicks) tickSeries = tickSeriesX.concat(tickSeriesTop, tickSeriesBot);
-
-  var errorSeriesPos = [], errorSeriesNeg = [];
-  dataErrors.forEach((errorCircle, i) => {
-    errorSeriesPos.push({
-      enableMouseTracking: false,
-      type: "line",
-      name: "error_circles",
-      linkedTo: "Up",
-      lineWidth: 0.5,
-      data: errorCircle.pos,
-      connectEnds: false,
-      marker: {
-        enabled: false
-      }
-    });
-    errorSeriesNeg.push({
-      enableMouseTracking: false,
-      type: "line",
-      name: "error_circles",
-      linkedTo: "Down",
-      lineWidth: 0.5,
-      data: errorCircle.neg,
-      dashStyle: "LongDash",
-      connectEnds: false,
-      marker: {
-        enabled: false
-      }
-    });
-  });
-
   var A95Ellipse = getConfidenceEllipse(statistics.pole.confidence);
   var a95ellipse = getPlaneData(statistics.dir.mean, statistics.dir.confidence);
-
+  // Initialize basic polar series
   var basicSeries = [
-    // selectedSeries,
     {
       type: "scatter",
       name: 'Up',
@@ -311,19 +212,7 @@ function statPlotStereoDiagram(hover) {
       },
       color: "black",
     },
-    // почему то они не совпадают...
-    // {
-    //   "name": "Confidence Ellipse",
-    //   "type": "line",
-    //   "color": '#119dff',
-    //   "data": a95ellipse,
-    //   "enableMouseTracking": false,
-    //   "marker": {
-    //     "enabled": false
-    //   }
-    // }
-  ].concat(errorSeriesPos, errorSeriesNeg, tickSeries);
-
+  ];
   var poleSeries = [
     {
       type: "scatter",
@@ -362,7 +251,139 @@ function statPlotStereoDiagram(hover) {
         "enabled": false
       }
     }
-  ].concat(errorSeriesPos, errorSeriesNeg, tickSeries);
+  ];
+
+  var selectedSeries = {
+    type: "scatter",
+    linkedTo: "Directions",
+    zIndex: 10,
+    data: [selectedDot], // [{x: selectedDot.x, y:selectedDot.y}],
+    marker: {
+      lineWidth: 1,
+      symbol: "square",
+      radius: 3,
+      lineColor: 'black',
+      fillColor: selectedDot['innerColor'],
+    }
+  }
+
+  // var bcPath = plot_big_circle_path(dataAbs);
+
+  var element_width = chartContainer.offsetWidth;
+  element_width -= element_width % 10;
+
+  var ticksN = new Array();
+  var ticksE = new Array();
+  var ticksS = new Array();
+  var ticksW = new Array();
+  for (let tick = 0; tick <= 90; tick += 10) {
+    ticksN.push({x: 0, y: tick});
+    ticksE.push({x: 90, y: tick});
+    ticksS.push({x: 180, y: tick});
+    ticksW.push({x: 270, y: tick});
+  }
+  var ticksX = ticksW.concat(ticksE);
+  var tickSeriesX = {
+    type: "scatter",
+    enableMouseTracking: false,
+    data: ticksX,
+    zIndex: 5,
+    color: "black",
+    showInLegend: false,
+    marker: {
+      radius: 2,
+      lineWidth: 1,
+      symbol: "VlineS",
+      lineColor: "black",
+    }
+  }
+  var tickSeriesTop = {
+    type: "scatter",
+    enableMouseTracking: false,
+    data: ticksN,
+    zIndex: 5,
+    color: "black",
+    showInLegend: false,
+    marker: {
+      radius: 2,
+      lineWidth: 1,
+      symbol: "HlineSTop",
+      lineColor: "black",
+    }
+  }
+  var tickSeriesBot = {
+    type: "scatter",
+    enableMouseTracking: false,
+    data: ticksS,
+    zIndex: 5,
+    color: "black",
+    showInLegend: false,
+    marker: {
+      radius: 2,
+      lineWidth: 1,
+      symbol: "HlineSBot",
+      lineColor: "black",
+    }
+  }
+
+  if (settings.stat.statTicks) {
+    basicSeries.push(tickSeriesX, tickSeriesTop, tickSeriesBot);
+    poleSeries.push(tickSeriesX, tickSeriesTop, tickSeriesBot);
+  }
+
+  if (settings.global.dashedLines) {
+    dataErrors.forEach((errorCircle, i) => {
+      var errorSeriesPos = {
+        enableMouseTracking: false,
+        type: "line",
+        name: "error_circles",
+        linkedTo: "Up",
+        lineWidth: 0.5,
+        data: errorCircle.pos,
+        connectEnds: false,
+        marker: {
+          enabled: false
+        }
+      };
+      var errorSeriesNeg = {
+        enableMouseTracking: false,
+        type: "line",
+        name: "error_circles",
+        linkedTo: "Down",
+        lineWidth: 0.5,
+        data: errorCircle.neg,
+        dashStyle: "LongDash",
+        connectEnds: false,
+        marker: {
+          enabled: false
+        }
+      };
+
+      basicSeries.push(errorSeriesPos);
+      basicSeries.push(errorSeriesNeg);
+      poleSeries.push(errorSeriesPos);
+      poleSeries.push(errorSeriesNeg);
+    });
+  }
+  else {
+    dataErrors.forEach((errorCircle, i) => {
+      var errorSeries = {
+        enableMouseTracking: false,
+        type: "line",
+        name: "error_circles",
+        linkedTo: "Up",
+        lineWidth: 0.5,
+        data: errorCircle,
+        connectEnds: false,
+        marker: {
+          enabled: false
+        }
+      };
+
+      basicSeries.push(errorSeries);
+      poleSeries.push(errorSeries);
+    });
+  }
 
   var series = (CENTERED_MODE == 'centered') ? poleSeries : basicSeries;
 
@@ -580,7 +601,7 @@ function statPlotStereoDiagram(hover) {
     series: series,
   }
 
-  var chart = Highcharts.chart('stat-container-main', options)
+  var chart = Highcharts.chart('stat-container-center', options)
 
 }
 

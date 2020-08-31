@@ -61,6 +61,10 @@
                   <input class="form-check-input" type="checkbox" id="auto-save" onclick="saveSettings();">
                   <label class="form-check-label" for="auto-save"> Automatically save current project on exit and open it on next start </label>
                 </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" id="dashed-lines" onclick="saveSettings();">
+                  <label class="form-check-label" for="dashed-lines"> Lines on polar charts with inc < 0 will be dashed </label>
+                </div>
               </div>
               <!-- PCA -->
               <div class="tab-pane fade" id="pca" role="tabpanel" aria-labelledby="pca-tab">
@@ -112,8 +116,8 @@
                       </table>
                     </div>
                     <div class="table-responsive w-100 mt-2">
-                      <table class='table text-center table-sm  w-100' style='margin: 0; max-height: 100%;'>
-                        <thead class="table-secondary">
+                      <table class='table text-left table-sm  w-100' style='margin: 0; max-height: 100%;'>
+                        <thead class="table-secondary text-center">
                           <tr>
                             <th>Zijderveld</th>
                             <th>Stereo</th>
@@ -126,7 +130,7 @@
                               -
                             </td>
                             <td>
-                              <div class="form-check ">
+                              <div class="form-check">
                                  <input class="form-check-input" type="checkbox" id="stereo-evid-ellipse" onclick="saveSettings();" checked>
                                  <label class="form-check-label" for="stereo-evid-ellipse"> Show error </label>
                               </div>
@@ -303,8 +307,8 @@
                   <!-- Charts -->
                   <div class="tab-pane fade show active" id="nav-stat-charts" role="tabpanel" aria-labelledby="nav-stat-charts-tab">
                     <div class="table-responsive">
-                      <table class='table text-center table-sm  w-100' style='margin: 0; max-height: 100%;'>
-                        <thead class="table-secondary">
+                      <table class='table text-left table-sm  w-100' style='margin: 0; max-height: 100%;'>
+                        <thead class="table-secondary text-center">
                           <tr>
                             <th colspan="4" title="">Chart</th>
                           </tr>
@@ -340,28 +344,28 @@
                       </table>
                     </div>
                     <div class="table-responsive">
-                      <table class='table text-center table-sm  w-100' style='margin: 0; max-height: 100%;'>
+                      <table class='table text-left table-sm  w-100' style='margin: 0; max-height: 100%;'>
                         <tbody>
                           <tr style="">
-                            <td align="center">
+                            <td>
                               <div class="form-check">
                                 <input class="form-check-input" type="checkbox"  onclick="saveSettings();" id="stat-evid-ellipse">
                                 <label class="form-check-label" for="stat-evid-ellipse"> Show error </label>
                               </div>
                             </td>
-                            <td align="center">
+                            <td>
                               <div class="form-check">
                                  <input class="form-check-input" type="checkbox" id="stat-highlight" onclick="saveSettings();" checked>
                                  <label class="form-check-label" for="stat-highlight"> Highlight selected</label>
                               </div>
                             </td>
-                            <td align="center">
+                            <td>
                               <div class="form-check">
                                  <input class="form-check-input" type="checkbox" id="stat-hover" onclick="saveSettings();" checked>
                                  <label class="form-check-label" for="stat-hover"> Highlight on hover</label>
                               </div>
                             </td>
-                            <td align="center">
+                            <td>
                               <div class="form-check ">
                                  <input class="form-check-input" type="checkbox" id="stat-hide" onclick="saveSettings();">
                                  <label class="form-check-label" for="stat-hide"> Hide unselected</label>
@@ -375,7 +379,7 @@
                                  <label class="form-check-label" for="stat-ticks"> Show ticks</label>
                               </div>
                             </td>
-                            <td colspan="2">
+                            <td>
                               <div class="form-check ">
                                  <input class="form-check-input" type="checkbox" id="stat-tooltips" onclick="saveSettings();" checked>
                                  <label class="form-check-label" for="stat-tooltips"> Show tooltips</label>

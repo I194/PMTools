@@ -65,10 +65,15 @@ function formatCollectionTable() {
 
   var dirMode = localStorage.getItem('dirMode');
 
-  var saveBtn = new Array(
-    "<button onclick='downloadMeansCSV()' type='button' title='Save means data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
-    "   <i class='fal fa-file-csv'></i>",
-    "</button>",
+  var saveBtns = new Array(
+    "<div class='btn-group btn-block btn-group-sm btn-group-justified d-flex mx-auto'>",
+    "  <button onclick='downloadСollectionsCSV()' type='button' title='Save collections data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    <i class='fal fa-file-csv'></i>",
+    "  </button>",
+    "  <button onclick='downloadCollectionsXLSX()' type='button' title='Save collections data as .xlsx' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    <i class='fal fa-file-excel'></i>",
+    "  </button>",
+    "</div>"
   ).join("\n");
 
   var tableHeader = new Array(
@@ -138,7 +143,7 @@ function formatCollectionTable() {
   var tableFooter = "</tbody>";
 
   document.getElementById("table-body-container").innerHTML = tableHeader + tableRows.join("\n") + tableFooter;
-  document.getElementById("save-dataTable").innerHTML = saveBtn;
+  document.getElementById("save-dataTable").innerHTML = saveBtns;
 
 }
 
@@ -195,7 +200,7 @@ function saveLocalStorage(collections, selectedCollection) {
 }
 
 // Downloads all interpreted components to a CSV (export data)
-function downloadMeansCSV() {
+function downloadСollectionsCSV() {
 
   /*
    * Function downloadInterpretationsCSV
@@ -205,7 +210,7 @@ function downloadMeansCSV() {
   var collections = JSON.parse(localStorage.getItem("collections"));
   var dirMode = localStorage.getItem('dirMode');
 
-  const FILENAME = "collection";
+  const FILENAME = "Collection";
 
   const CSV_HEADER = new Array(
     "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
@@ -246,6 +251,55 @@ function downloadMeansCSV() {
   outputCollections = rows.join(LINE_DELIMITER);
 
   saveFile("Save collection data", FILENAME, outputCollections);
+
+}
+
+// Downloads all interpreted components to a CSV (export data)
+function downloadCollectionsXLSX() {
+
+  var collections = JSON.parse(localStorage.getItem("collections"));
+  var dirMode = localStorage.getItem('dirMode');
+
+  const FILENAME = "Collection";
+
+  const XLSX_HEADER = new Array(
+    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+  );
+
+  var rows = [XLSX_HEADER];
+
+  collections.forEach(function(collection) {
+    collection.interpretations.forEach(function(interpretation) {
+
+      // check if specimen is not defined
+      var dSpec = interpretation.Dspec[dirMode] ? interpretation.Dspec[dirMode].toFixed(2) : " ";
+      var iSpec = interpretation.Ispec[dirMode] ? information.Ispec[dirMode].toFixed(2) : " ";
+      var dGeo = interpretation.Dgeo[dirMode];
+      var iGeo = interpretation.Igeo[dirMode];
+      var dStrat = interpretation.Dstrat[dirMode];
+      var iStrat = interpretation.Istrat[dirMode];
+
+      rows.push([
+        interpretation.id,
+        interpretation.code,
+        interpretation.stepRange,
+        interpretation.n,
+        dSpec,
+        iSpec,
+        dGeo.toFixed(2),
+        iGeo.toFixed(2),
+        dStrat.toFixed(2),
+        iStrat.toFixed(2),
+        interpretation.mad,
+        interpretation.comment,
+      ]);
+
+    });
+  });
+
+  outputCollections = xlsx.build([{name: FILENAME, data: rows}]); // Returns a buffer
+
+  saveFile("Save Collections data", FILENAME, outputCollections, 'xlsx');
 
 }
 

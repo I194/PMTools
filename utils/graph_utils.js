@@ -198,21 +198,22 @@ function getSmallCircle(dec_mean, inc_mean, radius, split) {
   // Делим массив с отриц. числами на два и затем "сортируем"
   // sorting
   posneg.neg.sort((a, b) => {
-    return a.x - b.x;
+    return (a.x - b.x);
   })
   // splitting
   var negSlicePostn;
   for (let i = 1; i < posneg.neg.length - 1; i++) {
     var dot = posneg.neg[i];
-    if (Math.abs(dot.x - posneg.neg[i + 1].x) > (Math.abs(dot.x - posneg.neg[i - 1].x) * 2)) {
+    if (Math.abs(dot.x - posneg.neg[i + 1].x) > (Math.abs(dot.x - posneg.neg[i - 1].x + 0.25) * 4)) {
       negSlicePostn = i;
       break;
     }
   }
-  var neg1 = posneg.neg.slice(negSlicePostn + 1, posneg.neg.length);
-  var neg2 = posneg.neg.slice(0, negSlicePostn);
-  posneg.neg = neg1.concat(neg2);
-
+  if (negSlicePostn) {
+    var neg1 = posneg.neg.slice(negSlicePostn + 1, posneg.neg.length);
+    var neg2 = posneg.neg.slice(0, negSlicePostn);
+    posneg.neg = neg1.concat(neg2);
+  }
   // output
   if (split) return posneg;
   return tmp_small_circ;
@@ -528,6 +529,8 @@ function switchCoordinateReference(fromRadio, system, type) {
 
   redrawCharts();
 
+  localStorage.setItem("coordinates", JSON.stringify({data: COORDINATES, counter: COORDINATES_COUNTER}));
+
 }
 
 function switchProjection(fromRadio, projection) {
@@ -566,6 +569,8 @@ function switchProjection(fromRadio, projection) {
   var zijdOnMain = document.getElementById('zijd-on-main').checked;
   plotZijderveldDiagram(false, zijdOnMain);
 
+  localStorage.setItem("projection", JSON.stringify({data: PROJECTION, counter: PROJECTIONS_COUNTER}));
+
 }
 
 function switchDirectionsMode(fromRadio, mode, type) {
@@ -587,12 +592,16 @@ function switchDirectionsMode(fromRadio, mode, type) {
   MODES_COUNTER %= AVAILABLE_MODES.length;
   DIRECTION_MODE = AVAILABLE_MODES[MODES_COUNTER];
 
+  if (DIRECTION_MODE == 'reversed') document.getElementById('reverse-selector').disabled = false;
+  else document.getElementById('reverse-selector').disabled = true;
   document.getElementById(type + '-' + DIRECTION_MODE).classList.add('active');//.style.background = '#4682B4';
   localStorage.setItem("dirMode", DIRECTION_MODE);
   ipcRenderer.send('redraw-meansDataWin');
   ipcRenderer.send('redraw-collDataWin');
 
   redrawCharts();
+
+  localStorage.setItem("direction", JSON.stringify({data: DIRECTION_MODE, counter: MODES_COUNTER}));
 
 }
 
@@ -618,6 +627,8 @@ function switchToCenter(fromRadio, mode, type) {
   document.getElementById(type + '-' + CENTERED_MODE).classList.add('active');//.style.background = '#4682B4';
 
   redrawCharts();
+
+  localStorage.setItem("centered", JSON.stringify({data: CENTERED_MODE, counter: CENTERED_COUNTER}));
 
 }
 
@@ -847,6 +858,7 @@ function formatInterpretationSeriesArea(interpretations) {
       var code = interpretation.code;
       var name = "Interpretation (" + code + ")";//tauToMark(interpretation.type) + ")";
       if (interpretation.fitted) name = name + " - fitted";
+      console.log(PCAEvidEllipse);
       series.push(
         {
           name: name,
@@ -887,7 +899,7 @@ function formatInterpretationSeriesArea(interpretations) {
           linkedTo: ":previous",
           data: PCAEvidEllipse.neg,
           zIndex: 50,
-          dashStyle: "LongDash",
+          dashStyle: (settings.global.dashedLines) ? "LongDash" : "Solid",
           connectEnds: false,
           marker: {
             enabled: false,
@@ -931,6 +943,7 @@ function formatInterpretationSeriesArea(interpretations) {
     }
     // Get the plane data (confidence ellipse with angle 90)
     // Only for TAU3
+    console.log();
     if(interpretation.type === "TAU3") {
 
       series.push({
@@ -949,7 +962,7 @@ function formatInterpretationSeriesArea(interpretations) {
         type: "line",
         color: "#4169E1",
         enableMouseTracking: false,
-        dashStyle: "LongDash",
+        dashStyle: (settings.global.dashedLines) ? "LongDash" : "Solid",
         marker: {
           enabled: false
         }
@@ -993,7 +1006,7 @@ function formatInterpretationSeriesArea(interpretations) {
         linkedTo: ":previous",
         data: PCAEvidEllipse.neg,
         zIndex: 50,
-        dashStyle: "LongDash",
+        dashStyle: (settings.global.dashedLines) ? "LongDash" : "Solid",
         connectEnds: false,
         marker: {
           enabled: false,
@@ -1099,11 +1112,27 @@ function formatInterpretationSeriesIntensity(interpretations) {
 function formatMeansSeries(means, type) {
 
   var series = [];
-  means.forEach(function(mSeries, i) {
-    series = mSeries[COORDINATES[type]];
-    if (DIRECTION_MODE == 'reversed') series = series.reversed;
-    else series = series.normal;
+  // means.forEach(function(mSeries, i) {
+  //   series = mSeries[COORDINATES[type]];
+  //   if (DIRECTION_MODE == 'reversed') series = series.reversed;
+  //   else series = series.normal;
+  // });
+
+  means.forEach((mean, i) => {
+    var meanDIR = mean[COORDINATES.stat][DIRECTION_MODE];
+    var evidEllipse = getSmallCircle(meanDIR.dec, meanDIR.inc, meanDIR.a95, settings.global.dashedLines);
+    if (mean.code == 'Fisher') {
+      var mSeries = makeFisherSeries(meanDIR, evidEllipse, settings.global.dashedLines);
+    }
+    else if ((mean.code == 'GC') || (mean.code == 'GCn')) {
+      console.log(meanDIR);
+      var mSeries = makeGCSeries(meanDIR, evidEllipse, settings.global.dashedLines)
+    }
+    mSeries.forEach((s, i) => {
+      series.push(s);
+    });
   });
+  console.log(series);
 
   // Cut previous interpretations
   var sliceCoef = series.length;
@@ -1112,11 +1141,12 @@ function formatMeansSeries(means, type) {
     if ((lastCode === "GC") || (lastCode === "GCn")) sliceCoef = 4;
     else sliceCoef = 2;
   }
-
+  if (settings.global.dashedLines) sliceCoef += 1;
   if (series.length > sliceCoef) {
+    console.log(series.slice(series.length - sliceCoef));
     return series.slice(series.length - sliceCoef);
   }
-
+  console.log(series);
   return series;
 
 }

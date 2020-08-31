@@ -4,7 +4,7 @@ function plotZijderveldDiagram(hover, onMain) {
 
   var specimen = getSelectedFile('specimen');
 
-  if (!specimen) return document.getElementById('container-main').innerHTML = '';
+  if (!specimen) return document.getElementById('container-center').innerHTML = '';
 
   //Specimen metadata (core and bedding orientations)
   var coreBedding = specimen.coreAzimuth;
@@ -39,16 +39,16 @@ function plotZijderveldDiagram(hover, onMain) {
     hSelectedDot = dataBucket['hor'][selectedStepIndex];
   }
 
-  var chartContainer = 'container-main';
+  var chartContainer = ChartContainersPCA[1];
   var markerSize = {
     radius: 2.5,
     lineWidth: 0.6,
   }
-  if (!onMain) {
-    chartContainer = 'container-support';
-    markerSize.radius = 2;
-    markerSize.lineWidth = 0.5;
-  }
+  // if (!onMain) {
+  //   chartContainer = 'container-left';
+  //   markerSize.radius = 2;
+  //   markerSize.lineWidth = 0.5;
+  // }
 
   var container = document.querySelector('#'+chartContainer),
     chartIndex = container.getAttribute('data-highcharts-chart'),
@@ -222,7 +222,7 @@ function plotZijderveldDiagram(hover, onMain) {
 
   var zoomType = 'xy';
 
-  if (mainContPanZoom.getScale() != 1) zoomType = 'none';
+  // if (mainContPanZoom.getScale() != 1) zoomType = 'none';
 
   var options = {
 
@@ -524,7 +524,7 @@ function plotStereoDiagram(hover, onMain) {
 
   var specimen = getSelectedFile('specimen');
 
-  if (!specimen) return document.getElementById('container-support').innerHTML = '';
+  if (!specimen) return document.getElementById('container-left').innerHTML = '';
 
   //Get the bedding and core parameters from the sample object
   var coreAzi = specimen.coreAzimuth;
@@ -580,9 +580,16 @@ function plotStereoDiagram(hover, onMain) {
     });
 
     if (showError) {
-      dataErrors.push(
-        getSmallCircle(direction.dec, Math.abs(direction.inc), step.error, true)
-      )
+      if (settings.global.dashedLines) {
+        dataErrors.push(
+          getSmallCircle(direction.dec, Math.abs(direction.inc), step.error, true)
+        )
+      }
+      else {
+        dataErrors.push(
+          getSmallCircle(direction.dec, Math.abs(direction.inc), step.error, false)
+        )
+      }
     };
 
     if (direction.inc < 0) dataNeg.push(step_data);
@@ -601,17 +608,17 @@ function plotStereoDiagram(hover, onMain) {
   if (selectedStepIndex === null) selectedDot = {"x": null, "y": null};
   else selectedDot = dataSeries[selectedStepIndex];
 
-  var chartContainer = 'container-main';
+  var chartContainer = ChartContainersPCA[0];
   var markerSize = {
     radius: 2.5,
     lineWidth: 0.6,
   }
 
-  if (!onMain) {
-    chartContainer = 'container-support';
-    markerSize.radius = 2;
-    markerSize.lineWidth = 0.5;
-  }
+  // if (!onMain) {
+  //   chartContainer = 'container-left';
+  //   markerSize.radius = 2;
+  //   markerSize.lineWidth = 0.5;
+  // }
 
   var container = document.querySelector('#'+chartContainer),
     chartIndex = container.getAttribute('data-highcharts-chart'),
@@ -636,111 +643,7 @@ function plotStereoDiagram(hover, onMain) {
     return;
   }
 
-  var selectedSeries = {
-    type: "scatter",
-    linkedTo: "Directions",
-    zIndex: 10,
-    data: [selectedDot], // [{x: selectedDot.x, y:selectedDot.y}],
-    marker: {
-      lineWidth: 1,
-      symbol: "square",
-      radius: 3,
-      lineColor: 'black',
-      fillColor: selectedDot['innerColor'],
-    }
-  }
-  // Get сonnection lines for dots
-  var bcPath = getGCPath(dataAll, true);
-
-  var element_width = document.getElementById(chartContainer).offsetWidth;
-  element_width -= element_width % 10;
-
-  var ticksN = new Array();
-  var ticksE = new Array();
-  var ticksS = new Array();
-  var ticksW = new Array();
-  for (let tick = 0; tick <= 90; tick += 10) {
-    ticksN.push({x: 0, y: tick});
-    ticksE.push({x: 90, y: tick});
-    ticksS.push({x: 180, y: tick});
-    ticksW.push({x: 270, y: tick});
-  }
-  var ticksX = ticksW.concat(ticksE);
-  var tickSeriesX = [{
-    type: "scatter",
-    enableMouseTracking: false,
-    data: ticksX,
-    zIndex: 5,
-    color: "black",
-    showInLegend: false,
-    marker: {
-      radius: 2,
-      lineWidth: 1,
-      symbol: "VlineS",
-      lineColor: "black",
-    }
-  }]
-  var tickSeriesTop = [{
-    type: "scatter",
-    enableMouseTracking: false,
-    data: ticksN,
-    zIndex: 5,
-    color: "black",
-    showInLegend: false,
-    marker: {
-      radius: 2,
-      lineWidth: 1,
-      symbol: "HlineSTop",
-      lineColor: "black",
-    }
-  }]
-  var tickSeriesBot = [{
-    type: "scatter",
-    enableMouseTracking: false,
-    data: ticksS,
-    zIndex: 5,
-    color: "black",
-    showInLegend: false,
-    marker: {
-      radius: 2,
-      lineWidth: 1,
-      symbol: "HlineSBot",
-      lineColor: "black",
-    }
-  }]
-
-  var tickSeries = [];
-  if (settings.pca.stereoTicks) tickSeries = tickSeriesX.concat(tickSeriesTop, tickSeriesBot);
-
-  var errorSeriesPos = [], errorSeriesNeg = [];
-  dataErrors.forEach((errorCircle, i) => {
-    errorSeriesPos.push({
-      enableMouseTracking: false,
-      type: "line",
-      name: "error_circles",
-      linkedTo: ":previous",
-      lineWidth: 0.5,
-      data: errorCircle.pos,
-      connectEnds: false,
-      marker: {
-        enabled: false
-      }
-    });
-    errorSeriesNeg.push({
-      enableMouseTracking: false,
-      type: "line",
-      name: "error_circles",
-      linkedTo: ":previous",
-      lineWidth: 0.5,
-      data: errorCircle.neg,
-      dashStyle: "LongDash",
-      connectEnds: false,
-      marker: {
-        enabled: false
-      }
-    });
-  });
-
+  // Initialize stereo basic series
   var basicSeries = [
     // selectedSeries,
     {
@@ -810,40 +713,183 @@ function plotStereoDiagram(hover, onMain) {
         enabled: false
       }
     },
-  ].concat(errorSeriesPos, errorSeriesNeg, tickSeries);
+  ];
 
-  for (let i = 0; i < bcPath.pos.length; i++) {
+  var selectedSeries = {
+    type: "scatter",
+    linkedTo: "Directions",
+    zIndex: 10,
+    data: [selectedDot], // [{x: selectedDot.x, y:selectedDot.y}],
+    marker: {
+      lineWidth: 1,
+      symbol: "square",
+      radius: 3,
+      lineColor: 'black',
+      fillColor: selectedDot['innerColor'],
+    }
+  }
+  // Get сonnection lines for dots
+  var bcPath = (settings.global.dashedLines) ? getGCPath(dataAll, true) : getGCPath(dataAll, false);
 
-    var pos = {
+  var element_width = document.getElementById(chartContainer).offsetWidth;
+  element_width -= element_width % 10;
+
+  var ticksN = new Array();
+  var ticksE = new Array();
+  var ticksS = new Array();
+  var ticksW = new Array();
+  for (let tick = 0; tick <= 90; tick += 10) {
+    ticksN.push({x: 0, y: tick});
+    ticksE.push({x: 90, y: tick});
+    ticksS.push({x: 180, y: tick});
+    ticksW.push({x: 270, y: tick});
+  }
+
+  var ticksX = ticksW.concat(ticksE);
+  var tickSeriesX = {
+    type: "scatter",
+    enableMouseTracking: false,
+    data: ticksX,
+    zIndex: 5,
+    color: "black",
+    showInLegend: false,
+    marker: {
+      radius: 2,
+      lineWidth: 1,
+      symbol: "VlineS",
+      lineColor: "black",
+    }
+  };
+  var tickSeriesTop = {
+    type: "scatter",
+    enableMouseTracking: false,
+    data: ticksN,
+    zIndex: 5,
+    color: "black",
+    showInLegend: false,
+    marker: {
+      radius: 2,
+      lineWidth: 1,
+      symbol: "HlineSTop",
+      lineColor: "black",
+    }
+  };
+  var tickSeriesBot = {
+    type: "scatter",
+    enableMouseTracking: false,
+    data: ticksS,
+    zIndex: 5,
+    color: "black",
+    showInLegend: false,
+    marker: {
+      radius: 2,
+      lineWidth: 1,
+      symbol: "HlineSBot",
+      lineColor: "black",
+    }
+  };
+
+  var tickSeries = [];
+  if (settings.pca.stereoTicks) basicSeries.push(tickSeriesX, tickSeriesTop, tickSeriesBot);
+
+  if (settings.global.dashedLines) {
+    dataErrors.forEach((errorCircle, i) => {
+      var errorSeriesPos = {
+        enableMouseTracking: false,
+        type: "line",
+        name: "error_circles",
+        linkedTo: ":previous",
+        lineWidth: 0.5,
+        data: errorCircle.pos,
+        connectEnds: false,
+        marker: {
+          enabled: false
+        }
+      };
+      var errorSeriesNeg = {
+        enableMouseTracking: false,
+        type: "line",
+        name: "error_circles",
+        linkedTo: ":previous",
+        lineWidth: 0.5,
+        data: errorCircle.neg,
+        dashStyle: "LongDash",
+        connectEnds: false,
+        marker: {
+          enabled: false
+        }
+      };
+
+      basicSeries.push(errorSeriesPos);
+      basicSeries.push(errorSeriesNeg);
+    });
+
+    for (let i = 0; i < bcPath.pos.length; i++) {
+      var pos = {
+        enableMouseTracking: false,
+        type: "line",
+        name: "Up",
+        linkedTo: "Up",
+        lineWidth: 0.5,
+        data: bcPath.pos[i],
+        connectEnds: false,
+        marker: {
+          enabled: false
+        }
+      };
+      var neg = {
+        enableMouseTracking: false,
+        type: "line",
+        name: "Down",
+        linkedTo: "Down",
+        lineWidth: 0.5,
+        data: bcPath.neg[i],
+        dashStyle: "LongDash",
+        connectEnds: false,
+        marker: {
+          enabled: false
+        }
+      }
+
+      basicSeries.push(pos);
+      basicSeries.push(neg);
+    }
+  }
+  else {
+    // basicSeries.push(errorSeries, tickSeries);
+    dataErrors.forEach((errorCircle, i) => {
+      var errorSeries = {
+        enableMouseTracking: false,
+        type: "line",
+        name: "error_circles",
+        linkedTo: ":previous",
+        lineWidth: 0.5,
+        data: errorCircle,
+        connectEnds: false,
+        marker: {
+          enabled: false
+        }
+      };
+
+      basicSeries.push(errorSeries);
+    });
+
+    var path = {
       enableMouseTracking: false,
       type: "line",
       name: "Up",
       linkedTo: "Up",
       lineWidth: 0.5,
-      data: bcPath.pos[i],
+      data: bcPath,
       connectEnds: false,
       marker: {
         enabled: false
       }
     };
 
-    var neg = {
-      enableMouseTracking: false,
-      type: "line",
-      name: "Down",
-      linkedTo: "Down",
-      lineWidth: 0.5,
-      data: bcPath.neg[i],
-      dashStyle: "LongDash",
-      connectEnds: false,
-      marker: {
-        enabled: false
-      }
-    }
-
-    basicSeries.push(pos);
-    basicSeries.push(neg);
+    basicSeries.push(path);
   }
+
 
   var options = {
 
@@ -984,7 +1030,7 @@ function plotStereoDiagram(hover, onMain) {
 
     credits: {
       enabled: false,
-      text: "PMTools.com (Zijderveld Diagram)",
+      text: "PMTools v1.0 (Zijderveld Diagram)",
       href: ""
     },
 
@@ -1089,7 +1135,7 @@ function plotIntensityDiagram() {
 
   var specimen = getSelectedFile('specimen');
 
-  if (!specimen) return document.getElementById('container-intensity').innerHTML = '';
+  if (!specimen) return document.getElementById('container-right').innerHTML = '';
 
   var intensities = new Array();
   var categories = new Array();
@@ -1115,7 +1161,7 @@ function plotIntensityDiagram() {
 
     intensities.push({
       "x": (step.step === 'NRM') ? 0: parseInt(step.step.match(/\d+/)),
-      "y": new Coordinates(step.x, step.y, step.z).length,
+      "y": (new Coordinates(step.x, step.y, step.z).length)/specimen.volume,
       "stepIndex": step.index,
       "step": step.step,
     });
@@ -1129,7 +1175,7 @@ function plotIntensityDiagram() {
 
   var normalizedIntensities = normalize(intensities);
 
-  var element_width = document.getElementById('container-intensity').offsetWidth;
+  var element_width = document.getElementById('container-right').offsetWidth;
   element_width -= element_width % 10;
 
   var maxIntensity = normalizedIntensities[0].maxIntensity;
@@ -1396,7 +1442,7 @@ function plotIntensityDiagram() {
     }].concat(formatInterpretationSeriesIntensity(specimen.interpretations))
   }
 
-  var chart = Highcharts.chart("container-intensity", options);
+  var chart = Highcharts.chart(ChartContainersPCA[2], options);
 
 }
 

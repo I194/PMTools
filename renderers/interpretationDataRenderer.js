@@ -82,10 +82,15 @@ function updateInterpretationTable() {
 
   if (zeroInterpretations) return document.getElementById("interpretation-table-container").innerHTML = ERROR_NO_COMPONENTS;
 
-  var saveBtn = new Array(
-    "<button onclick='downloadInterpretationsCSV()' type='button' title='Save interpretations data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
-    "   <i class='fal fa-file-csv'></i>",
-    "</button>",
+  var saveBtns = new Array(
+    "<div class='btn-group btn-block btn-group-sm btn-group-justified d-flex mx-auto'>",
+    "  <button onclick='downloadInterpretationsCSV()' type='button' title='Save interpretations data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    <i class='fal fa-file-csv'></i>",
+    "  </button>",
+    "  <button onclick='downloadInterpretationsXLSX()' type='button' title='Save interpretations data as .xlsx' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    <i class='fal fa-file-excel'></i>",
+    "  </button>",
+    "</div>"
   ).join("\n");
 
   var tableHeader = new Array(
@@ -177,7 +182,7 @@ function updateInterpretationTable() {
 
   var tableFooter = "</table>";
   document.getElementById("interpretation-table-container").innerHTML = tableHeader + allSpecRows.join("\n") + tableFooter;
-  document.getElementById("save-dataTable").innerHTML = saveBtn;
+  document.getElementById("save-dataTable").innerHTML = saveBtns;
 }
 
 // Deletes all interpretations in a specimen
@@ -291,11 +296,13 @@ function saveLocalStorage(specimens, selectedSpecimen) {
 function downloadInterpretationsCSV() {
 
   /*
-   * Function downloadInterpretationsCSV
-   * Downloads all interpreted components to a CSV
-   */
+  * Function downloadInterpretationsCSV
+  * Downloads all interpreted components to a CSV
+  */
 
-  const FILENAME = "interpretations";
+  var specimens = JSON.parse(localStorage.getItem("specimens"));
+
+  const FILENAME = "Interpretations";
 
   const CSV_HEADER = new Array(
     "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
@@ -348,6 +355,62 @@ function downloadInterpretationsCSV() {
 
   // Old way to save
   //downloadAsCSV(FILENAME, rows.join(LINE_DELIMITER));
+
+}
+
+function downloadInterpretationsXLSX() {
+
+  var specimens = JSON.parse(localStorage.getItem("specimens"));
+
+  const FILENAME = "Interpretations";
+
+  const XLSX_HEADER = new Array(
+    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+  );
+
+  var rows = [XLSX_HEADER];
+
+  // Create CSV rows
+  specimens.forEach(function(specimen) {
+    specimen.interpretations.forEach(function(interpretation) {
+
+      // Get the interpretation in the right reference frame
+      var componentSpec = interpretation['specimen'];
+      var componentGeo = interpretation['geographic'];
+      var componentTect = interpretation['tectonic'];
+
+      var directionSpec = literalToCoordinates(componentSpec.coordinates).toVector(Direction);
+      var directionGeo = literalToCoordinates(componentGeo.coordinates).toVector(Direction);
+      var directionTect = literalToCoordinates(componentTect.coordinates).toVector(Direction);
+
+      var code = "dirPCA";
+      if(interpretation.anchored) code = "dir0PCA";
+
+      var N = interpretation.steps.length;
+
+      console.log(interpretation.comment);
+
+      rows.push([
+        specimen.name,
+        code,
+        interpretation.steps[0].step + '-' + interpretation.steps[N-1].step,
+        N,
+        directionSpec.dec.toFixed(2),
+        directionSpec.inc.toFixed(2),
+        directionGeo.dec.toFixed(2),
+        directionGeo.inc.toFixed(2),
+        directionTect.dec.toFixed(2),
+        directionTect.inc.toFixed(2),
+        interpretation.MAD.toFixed(2),
+        interpretation.comment,
+      ]);
+
+    });
+  });
+
+  var outputInterpretations = xlsx.build([{name: FILENAME, data: rows}]); // Returns a buffer
+
+  saveFile("Save interpretations data", FILENAME, outputInterpretations, 'xlsx');
 
 }
 

@@ -1,6 +1,10 @@
-const {BrowserWindow} = require('electron').remote;
-const { remote, ipcRenderer } = require('electron');
+const { BrowserWindow, Menu, MenuItem, app } = require('electron').remote;
+const { remote, ipcRenderer, } = require('electron');
 const path = require('path');
+const customTitlebar = require('custom-electron-titlebar');
+const dns = require("dns");
+const fs = require("fs");
+const dialog = require('electron').remote.dialog
 
 const allWindows = BrowserWindow.getAllWindows();
 

@@ -19,6 +19,7 @@ function createWindow() {
   const collDataPath = path.join('file://', __dirname, 'windows/collectionData.html');
   const interpretDataPath = path.join('file://', __dirname, 'windows/interpretationData.html');
   const meansDataPath = path.join('file://', __dirname, 'windows/meanData.html');
+  const vgpDataPath = path.join('file://', __dirname, 'windows/vgpData.html');
   const openFilesPath = path.join(__dirname, 'main_window/openFilesModal.html');
   const formatsPath = path.join(__dirname, 'windows/help/supportedFormats.html');
   const pcaPath = path.join('file://', __dirname, 'windows/pca.html');
@@ -299,6 +300,41 @@ function createWindow() {
     meansDataWin.webContents.send('redraw-table');
   })
 
+  // Initialize means data window
+
+  let vgpDataWin = new BrowserWindow({
+    // width: screenWidth / 3,
+    // height: screenHeight / 2,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    parent: win,
+    show: false,
+    // Remove the window frame from windows applications
+    frame: false,
+    // Hide the titlebar from MacOS applications while keeping the stop lights
+    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    webPreferences: {
+        nodeIntegration: true
+    }
+  })
+
+  vgpDataWin.loadURL(vgpDataPath);
+
+  vgpDataWin.on('close', (event) => {
+    event.preventDefault();    // This will cancel the close
+    vgpDataWin.hide();
+  });
+
+  ipcMain.on('toggle-vgpData', () => {
+    if (vgpDataWin.isVisible()) vgpDataWin.hide();
+    else vgpDataWin.show();
+  })
+
+  ipcMain.on('reload-vgpDataWin', () => { vgpDataWin.reload() });
+
+  ipcMain.on('redraw-vgpDataWin', (event) => {
+    vgpDataWin.webContents.send('redraw-table');
+  })
+
   // Initialize openFiles data window
 
   let openFilesWin = new BrowserWindow({
@@ -424,6 +460,7 @@ function createWindow() {
     collDataWin.reload();
     interpretDataWin.reload();
     meansDataWin.reload();
+    vgpDataWin.reload();
     openFilesWin.reload();
     formatsWin.reload();
 	})
@@ -440,14 +477,15 @@ function createWindow() {
 
   // Initialize developer tools
 
-  // win.webContents.openDevTools();
-  // openFilesWin.webContents.openDevTools();
-  // formatsWin.webContents.openDevTools();
+  win.webContents.openDevTools();
+  openFilesWin.webContents.openDevTools();
+  formatsWin.webContents.openDevTools();
+  vgpDataWin.webContents.openDevTools();
   // settingsWin.webContents.openDevTools();
   // specDataWin.webContents.openDevTools();
-  // collDataWin.webContents.openDevTools();
-  // interpretDataWin.webContents.openDevTools();
-  // meansDataWin.webContents.openDevTools();
+  collDataWin.webContents.openDevTools();
+  interpretDataWin.webContents.openDevTools();
+  meansDataWin.webContents.openDevTools();
   // pcaWin.webContents.openDevTools();
   // shortcutsWin.webContents.openDevTools();
   // Close main window = close main process and then very program

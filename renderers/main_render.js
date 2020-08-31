@@ -39,6 +39,7 @@ const toggleSpecDataWinBtn = document.getElementById('specimen-data-toggle');
 const toggleCollDataWinBtn = document.getElementById('collection-data-toggle');
 const toggleInterpretDataWinBtn = document.getElementById('interpretation-data-toggle');
 const toggleMeanDataWinBtn = document.getElementById('mean-data-toggle');
+const toggleVGPDataWinBtn = document.getElementById('vgp-data-toggle');
 
 toggleSettingsWinBtn.addEventListener('click', (event) => {
   if ($('#settings-toggle').is(":focus")) $('#settings-toggle').blur();
@@ -90,6 +91,12 @@ toggleMeanDataWinBtn.addEventListener('click', (event) => {
   else $('#mean-data-toggle').focus();
   localStorage.setItem("dirMode", DIRECTION_MODE);
   ipcRenderer.send('toggle-meansData');
+});
+
+toggleVGPDataWinBtn.addEventListener('click', (event) => {
+  if ($('#vgp-data-toggle').is(":focus")) $('#vgp-data-toggle').blur();
+  else $('#vgp-data-toggle').focus();
+  ipcRenderer.send('toggle-vgpData');
 })
 
 ipcRenderer.on('saved-file', (event, path) => {

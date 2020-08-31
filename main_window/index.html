@@ -122,7 +122,7 @@
     <!-- Page menu -->
     <nav class="d-flex justify-content-center container-fluid page-menu" id="pagemenu">
       <div class="nav nav-tabs nab-justified" id="page-selector" role="tablist">
-        <a class="nav-item nav-link active" id="nav-pca-tab" data-toggle="tab" href="#nav-pca" role="tab" aria-controls="nav-pca" aria-selected="true">
+        <a class="nav-item nav-link" id="nav-pca-tab" data-toggle="tab" href="#nav-pca" role="tab" aria-controls="nav-pca" aria-selected="true">
           <h6>PCA</h6>
         </a>
         <a class="nav-item nav-link" id="nav-stat-tab" data-toggle="tab" href="#nav-stat" role="tab" aria-controls="nav-stat" aria-selected="false">
@@ -152,16 +152,19 @@
                       <!-- Container scroller -->
                       <div class="btn-group btn-group-toggle btn-block btn-group-sm btn-group-justified d-flex mx-auto" data-toggle="buttons" id="container-scroller">
                         <label class="btn btn-secondary active" title="Zijd chart on main container">
-                          <input type="radio" autocomplete="off" onclick="swapChartsContainers(true, true, false);" id="zijd-on-main" checked> Zijd
+                          <input type="radio" autocomplete="off" onclick="swapChartsContainers(true, true, false, false);" id="zijd-on-main" checked> Zijd
                         </label>
                         <label class="btn btn-secondary" title="Stereo chart on main container">
-                          <input type="radio" autocomplete="off" onclick="swapChartsContainers(true, false, true);" id="stereo-on-main"> Stereo
+                          <input type="radio" autocomplete="off" onclick="swapChartsContainers(true, false, true, false);" id="stereo-on-main"> Stereo
+                        </label>
+                        <label class="btn btn-secondary" title="Intensity chart on main container">
+                          <input type="radio" autocomplete="off" onclick="swapChartsContainers(true, false, false, true);" id="intensity-on-main" > Intensity
                         </label>
                       </div>
                       <!-- select system of coordinates -->
                       <div class="btn-group btn-group-toggle btn-block btn-group-sm btn-group-justified d-flex mx-auto" data-toggle="buttons" id="pca-coordinate-system">
                         <label class="btn btn-secondary active" id="pca-specimen">
-                          <input type="radio" autocomplete="off" onclick="switchCoordinateReference(true, 'specimen', 'pca')" checked> Spec
+                          <input type="radio" autocomplete="off" onclick="switchCoordinateReference(true, 'specimen', 'pca')"> Spec
                         </label>
                         <label class="btn btn-secondary" id="pca-geographic">
                           <input type="radio" autocomplete="off" onclick="switchCoordinateReference(true, 'geographic', 'pca')"> Geo
@@ -173,7 +176,7 @@
                       <!-- select projection for zijd -->
                       <div class="btn-group btn-group-toggle btn-block btn-group-sm btn-group-justified d-flex mx-auto" data-toggle="buttons" id="projections">
                         <label for="input-upwest" class="btn btn-secondary active" id="upwest">
-                          <input type="radio" autocomplete="off" onclick="switchProjection(true, 'upwest')" id="input-upwest" checked> -y, -z
+                          <input type="radio" autocomplete="off" onclick="switchProjection(true, 'upwest')" id="input-upwest"> -y, -z
                         </label>
                         <label for="input-upnorth" class="btn btn-secondary" id="upnorth">
                           <input type="radio" autocomplete="off" onclick="switchProjection(true, 'upnorth')" id="input-upnorth"> x, -z
@@ -283,7 +286,7 @@
                     </div>
                   </div>
                   <div class="" id="container-bot-left">
-                    <div class="border-top" id="container-support" style="height: 100%;"></div>
+                    <div class="border-top" id="container-left" style="height: 100%;"></div>
                   </div>
                 </div>
               </div>
@@ -293,7 +296,7 @@
           <div class="col-md-6 lg-6">
             <div class="card" style="" tabindex="-1">
               <div class="card-body">
-                <div class="justify-content-center text-center mx-auto d-block" style="height: 94vh;" id="container-main"></div>
+                <div class="justify-content-center text-center mx-auto d-block" style="height: 94vh;" id="container-center"></div>
               </div>
             </div>
           </div>
@@ -331,7 +334,7 @@
                     </div>
                   </div>
                   <div class="col-md-12 lg-12" id="container-bot-right">
-                    <div class="border-top" id="container-intensity"></div>
+                    <div class="border-top" id="container-right" style="height: 100%;"></div>
                   </div>
                 </div>
               </div>
@@ -356,7 +359,7 @@
                         <input type="radio" autocomplete="off" onclick="switchCoordinateReference(true, 'specimen', 'stat')"> Spec
                       </label>
                       <label class="btn btn-secondary" id="stat-geographic">
-                        <input type="radio" autocomplete="off" onclick="switchCoordinateReference(true, 'geographic', 'stat')" checked> Geo
+                        <input type="radio" autocomplete="off" onclick="switchCoordinateReference(true, 'geographic', 'stat')"> Geo
                       </label>
                       <label class="btn btn-secondary" id="stat-tectonic">
                         <input type="radio" autocomplete="off" onclick="switchCoordinateReference(true, 'tectonic', 'stat')"> Strat
@@ -365,20 +368,51 @@
                     <!-- select normal or reversed -->
                     <div class="btn-group btn-group-toggle btn-block btn-group-sm btn-group-justified d-flex mx-auto" data-toggle="buttons">
                       <label class="btn btn-secondary active" id="stat-normal">
-                        <input type="radio" autocomplete="off" onclick="switchDirectionsMode(true, 'normal', 'stat')" checked> Normal
+                        <input type="radio" autocomplete="off" onclick="switchDirectionsMode(true, 'normal', 'stat')"> Normal
                       </label>
-                      <label class="btn btn-secondary" id="stat-reversed" title="Временно отключил, в следующем обновлении включу.">
+                      <label class="btn btn-secondary" id="stat-reversed">
                         <input type="radio" autocomplete="off" onclick="switchDirectionsMode(true, 'reversed', 'stat')" > Reversed
                       </label>
                     </div>
+                    <div class="input-group mt-2 d-flex">
+                      <!-- <div class="input-group-prepend">
+                        <div class="input-group-text">
+                          Min dev. angle
+                        </div>
+                      </div>
+                      <input type="text" class="form-control form-control-sm" id="min-dev-angle" min="0" max="180" value="90"> -->
+                      <!-- <div class="input-group-append"> -->
+                        <div class="input-group-text" style="border-radius: 0;" title="Will be added in future versions">
+                          <label class="mb-0 form-check-lable" for="reverse-selector" onselectstart="return false">Select additional dots on chart to reverse</label>
+                          <input id="reverse-selector" class="blue-checkbox ml-1" title="Select additional dots on chart" type="checkbox" tabindex="-1" disabled>
+                        </div>
+                      <!-- </div> -->
+                    </div>
+                    <hr class="short">
                     <!-- select normal or centered -->
                     <div class="btn-group btn-group-toggle btn-block btn-group-sm btn-group-justified d-flex mx-auto" data-toggle="buttons">
                       <label class="btn btn-secondary active" id="stat-standard">
-                        <input type="radio" autocomplete="off" onclick="switchToCenter(true, 'standard', 'stat')" checked> Directions
+                        <input type="radio" autocomplete="off" onclick="switchToCenter(true, 'standard', 'stat')"> Directions
                       </label>
                       <label class="btn btn-secondary" id="stat-centered">
                         <input type="radio" autocomplete="off" onclick="switchToCenter(true, 'centered', 'stat')"> VGP
                       </label>
+                    </div>
+                    <div class="input-group input-group-sm  d-flex">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text">Site Lat</span>
+                      </div>
+                      <input type="text" class="form-control form-control-sm" id="site-lat">
+                      <div class="input-group-prepend">
+                        <span class="input-group-text">Site Lon</span>
+                      </div>
+                      <input type="text" class="form-control form-control-sm" id="site-lon">
+                    </div>
+                    <!-- VGP table full -->
+                    <button type="button" class="btn btn-secondary btn-block btn-sm" id="vgp-data-toggle" style="margin-bottom: 0.5rem;">VGP data</button>
+                    <!-- VGP data table -->
+                    <div class="table-responsive" style="overflow-y: auto; line-height: 1.5;" id="vgp-data-table">
+                      <table id="vgp-table-container" class="table table-sm small-table-elem table-bordered w-100 small mb-0" style=""></table>
                     </div>
                     <hr class="short">
                     <!-- select statistics method -->
@@ -456,7 +490,7 @@
           <div class="col-md-6 lg-6">
             <div class="card" style="" tabindex="-1">
               <div class="card-body">
-                <div class="justify-content-center text-center mx-auto d-block" style="height: 94vh;" id="stat-container-main"></div>
+                <div class="justify-content-center text-center mx-auto d-block" style="height: 94vh;" id="stat-container-center"></div>
               </div>
             </div>
           </div>

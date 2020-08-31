@@ -1,6 +1,6 @@
 // Files
 
-function getSelectedFile(type) {
+function getSelectedFile(type, addID) {
 
   if ((type == 'specimen') && specimens.length == 0) return undefined;
   if ((type == 'collection') && collections.length == 0) return undefined;
@@ -17,10 +17,16 @@ function getSelectedFile(type) {
 
   if (type == 'specimen') {
     document.getElementById(type + '-file-path').innerHTML = specimens[selectedIndex].path;
+    // localStorage.setItem("selectedSpecimen", JSON.stringify(specimens[selectedIndex]));
+    if (addID) return {data: specimens[selectedIndex], id: selectedIndex}
     return specimens[selectedIndex];
   }
-  else document.getElementById(type + '-file-path').innerHTML = collections[selectedIndex].path;
-  return collections[selectedIndex];
+  else {
+    document.getElementById(type + '-file-path').innerHTML = collections[selectedIndex].path;
+    // localStorage.setItem("selectedCollection", JSON.stringify(collections[selectedIndex]));
+    if (addID) return {data: collections[selectedIndex], id: selectedIndex};
+    return collections[selectedIndex];
+  }
 
 }
 
@@ -60,7 +66,8 @@ function handleFileScroll(direction, scrollerID) {
   // Change spec DataTable when arrowLeft/Right clicked
   ipcRenderer.send('redraw-specDataWin')
   ipcRenderer.send('redraw-collDataWin')
-  redrawCharts()
+  redrawCharts();
+  saveLocalStorage();
 
 }
 
@@ -88,6 +95,7 @@ function resetFileHandler(type) {
   // Change spec DataTable when arrowLeft/Right clicked
 
   redrawCharts();
+  saveLocalStorage();
 
 }
 
@@ -111,7 +119,7 @@ function updateFileSelect(type, index) {
   });
 
   scrollerElem.selectedIndex = index || 0;
-  saveLocalStorage();
+  // saveLocalStorage();
 
 }
 

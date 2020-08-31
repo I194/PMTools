@@ -73,7 +73,6 @@ function loadCollectionFileCallback(files, modal) {
   files.forEach((file, i) => {
     var filenameSplit = file.name.split('.');
     //format.push((/[.]/.exec(file.name)) ? /[^.]+$/.exec(file.name) : undefined);
-    console.log(filenameSplit);
     if (filenameSplit.length == 1) format.push(""); // подразумевается, что название не содержит точек
     else format.push(filenameSplit[filenameSplit.length - 1]);
   });
@@ -97,15 +96,17 @@ function loadCollectionFileCallback(files, modal) {
       step.index = i;
     });
   });
-  console.log(specimens);
   collections.forEach((collection, i) => {
     if (collection.interpretations[0].index != 0) {
       var flipData = flipCollections(collection);
-      console.log(flipData);
       collection.interpretations.forEach((interpretation, i) => {
+        // add index
         interpretation.index = i;
+
+        // add reversed data
         var dSpecR = flipData['specimen'] ? flipData['specimen'][i].x : interpretation.Dspec;
         var iSpecR = flipData['specimen'] ? flipData['specimen'][i].x : interpretation.Ispec;
+
         interpretation.Dspec = {normal: interpretation.Dspec, reversed: dSpecR};
         interpretation.Ispec = {normal: interpretation.Ispec, reversed: iSpecR};
         interpretation.Dgeo = {normal: interpretation.Dgeo, reversed: flipData['geographic'][i].x};
@@ -113,6 +114,13 @@ function loadCollectionFileCallback(files, modal) {
         interpretation.Dstrat = {normal: interpretation.Dstrat, reversed: flipData['tectonic'][i].x};
         interpretation.Istrat = {normal: interpretation.Istrat, reversed: flipData['tectonic'][i].y};
       });
+      // add vgp data
+      var pole = getVGPData(collection);
+      collection.vgp = pole;
+      if ((document.getElementById('site-lat')) && (document.getElementById('site-lon'))) {
+        document.getElementById("site-lat").value = collection.vgp.siteLat;
+        document.getElementById("site-lon").value = collection.vgp.siteLon;
+      }
     }
   });
 
@@ -209,27 +217,65 @@ function addDegmagnetizationFiles(format, files) {
 }
 
 // FILE EXPORTING
-function saveFile(windowTitle, fileName, data) {
+function saveFile(windowTitle, fileName, data, extension) {
+
+  // Options of saveFileDialog
+  if ((!extension) || (extension === 'csv')) {
+    extension = 'csv';
+    filterName = 'CSV UTF-8 (разделитель - запятая)'
+  }
+
+  if (extension === 'xlsx') {
+    filterName = 'Книга Excel';
+  }
+  var options = {
+    title: windowTitle,
+    filters: [
+      { name: filterName, extensions: [extension] }
+    ],
+    defaultPath: lastSavePath + '/' + fileName + '.' + extension,
+  }
+
+  var savePath = dialog.showSaveDialogSync(options);
+
+  if (savePath) {
+    // Check for extension
+    if (savePath.slice(-4) != ('.' + extension)) savePath += '.' + extension;
+    // Saving
+    fs.writeFileSync(savePath, data, (error) => {
+      if (error) throw error;
+    });
+
+    lastSavePath = savePath.split(savePath.replace(/^.*[\\\/]/, ''))[0];
+  }
+  // Save lastSavePath to localStorage
+
+  localStorage.setItem("lastSavePath", lastSavePath);
+
+}
+
+function copyFile(windowTitle, filePath, extension) {
 
   // Options of saveFileDialog
   var options = {
     title: windowTitle,
     filters: [
-      { name: 'CSV UTF-8 (разделитель - запятая)', extensions: ['csv'] }
+      { name: extension, extensions: [extension] }
     ],
-    defaultPath: lastSavePath + '/' + fileName + '.csv',
+    defaultPath: lastSavePath + '/example.png'// + extension,
   }
 
   var savePath = dialog.showSaveDialogSync(options);
 
-  // Check on dialog closed and if not -> save project
   if (savePath) {
-    // Check for extension
-    if (savePath.slice(-4) != '.csv') savePath += '.csv';
-    // Saving
-    fs.writeFileSync(savePath, data, (error) => {
-      if (error) throw error;
-    });
+    // // Check for extension
+    // if (savePath.slice(-4) != '.csv') savePath += '.csv';
+    // // Saving
+    // fs.writeFileSync(savePath, data, (error) => {
+    //   if (error) throw error;
+    // });
+
+    fs.copyFileSync('../../img/formats/pmd_example.png', savePath);
 
     lastSavePath = savePath.split(savePath.replace(/^.*[\\\/]/, ''))[0];
   }

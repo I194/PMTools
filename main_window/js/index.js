@@ -33,17 +33,25 @@ function registerEventHandlers() {
 
   // Simple listeners
   document.addEventListener("keydown", keyboardHandler);
-  document.getElementById("container-main").addEventListener('click', mainContClickHandler);
+  document.getElementById("container-center").addEventListener('click', mainContClickHandler);
+  document.getElementById("stat-container-center").addEventListener('click', mainContClickHandler);
   document.getElementById("interpretation-table-container").addEventListener("input", interpretationTableClickHandler);
   document.getElementById("specimen-select").addEventListener("change", (e) => resetFileHandler('specimen'))
   document.getElementById("collection-select").addEventListener("change", (e) => resetFileHandler('collection'));
+  document.getElementById("site-lat").addEventListener("input", (e) => formatVGPTable());
+  document.getElementById("site-lon").addEventListener("input", (e) => formatVGPTable());
+
+  document.getElementById("nav-pca-tab").addEventListener("click", (e) => localStorage.setItem("currPage", 'nav-pca-tab'));
+  document.getElementById("nav-stat-tab").addEventListener("click", (e) => localStorage.setItem("currPage", 'nav-stat-tab'));
+
+  // document.getElementById("stat-reversed").addEventListener('click', )
   window.addEventListener("resize", resizeTables);
 
   var chartContainersPCA = [
-    document.getElementById('container-main'),
-    document.getElementById('container-support'),
-    document.getElementById('container-intensity'),
-    document.getElementById('stat-container-main'),
+    document.getElementById('container-center'),
+    document.getElementById('container-left'),
+    document.getElementById('container-right'),
+    document.getElementById('stat-container-center'),
   ]
 
   chartContainersPCA.forEach((container, i) => {
@@ -57,8 +65,6 @@ function registerEventHandlers() {
       var menuHeight = contextMenu.offsetHeight;
       var windowWidth = window.innerWidth;
       var windowHeight = window.innerHeight;
-
-      console.log(menuWidth, windowWidth, menuHeight, windowHeight);
 
       if ((windowWidth - event.pageX) < menuWidth) contextMenu.style.left = windowWidth - menuWidth + "px";
       else contextMenu.style.left = event.pageX + "px";
@@ -258,18 +264,15 @@ function keyboardHandler(event) {
 
   event.preventDefault();
   var specimen = getSelectedFile('specimen');
-  var currPanPos = mainContPanZoom.getPan();
 
   var pageID = getSelectedPage();
 
-  var elemTypes = {
-    pca: ['specimen', 'steps'],
-    stat: ['collection', 'interpretations']
-  }
   var pageType = pageID.split('-')[1];
   var scrollerID = elemTypes[pageType][0] + '-select';
 
   var elems = elemTypes[pageType][1];
+
+  var currPanPos = zoomContTypes[pageType].getPan();
 
   var file = getSelectedFile(elemTypes[pageType][0]);
   // else if (pageType == 'poles') scrollerID = 'smth-select';
@@ -284,33 +287,34 @@ function keyboardHandler(event) {
       else if (event.ctrlKey) return handlePageScroll(1);
       else return handleFileScroll(1, scrollerID);
     case CODES.PLUS_KEY:
-      mainContPanZoom.zoomIn( { animate: false } );
+      mainContPanZoomStat.zoomIn();
+      zoomContTypes[pageType].zoomIn( { animate: false } );
       redrawCharts();
-      mainContainer.click();
+      elemTypes[pageType][2].click();
       return;
     case CODES.MINUS_KEY:
-      mainContPanZoom.zoomOut( { animate: false } );
+      zoomContTypes[pageType].zoomOut( { animate: false } );
       redrawCharts();
-      mainContainer.click();
+      elemTypes[pageType][2].click();
       return;
     case CODES.ESCAPE_KEY:
-      mainContPanZoom.reset();
+      zoomContTypes[pageType].reset();
       redrawCharts();
-      mainContainer.click();
+      elemTypes[pageType][2].click();
       return;
     // -x - right side, -y - down side
     case CODES.ARROW_RIGHT:
     case CODES.NUM_ARROW_RIGHT:
-      return mainContPanZoom.pan(currPanPos.x - 10, currPanPos.y)
+      return zoomContTypes[pageType].pan(currPanPos.x - 10, currPanPos.y)
     case CODES.ARROW_LEFT:
     case CODES.NUM_ARROW_LEFT:
-      return mainContPanZoom.pan(currPanPos.x + 10, currPanPos.y)
+      return zoomContTypes[pageType].pan(currPanPos.x + 10, currPanPos.y)
     case CODES.ARROW_UP:
     case CODES.NUM_ARROW_UP:
-      return mainContPanZoom.pan(currPanPos.x, currPanPos.y + 10)
+      return zoomContTypes[pageType].pan(currPanPos.x, currPanPos.y + 10)
     case CODES.ARROW_DOWN:
     case CODES.NUM_ARROW_DOWN:
-      return mainContPanZoom.pan(currPanPos.x, currPanPos.y - 10)
+      return zoomContTypes[pageType].pan(currPanPos.x, currPanPos.y - 10)
     // case CODES.ARROW_DOWN:
     // case CODES.S_KEY:
     //   return dotSelector.handleStepScroll(1);
@@ -389,9 +393,12 @@ function keyboardHandler(event) {
       document.getElementById(pageType + '-erase-text-input').focus();
       return;
     case CODES.Z_KEY:
-      mainContPanZoom.reset();
-      swapChartsContainers(false);
-      mainContainer.click();
+      if (pageType == 'pca') {
+        zoomContTypes[pageType].reset();
+        if (event.shiftKey) swapChartsContainers(false, 0, 0, 0, -1);
+        else swapChartsContainers(false, 0, 0, 0, 1);
+        elemTypes[pageType][2].click();
+      }
       return;
     case CODES.Y_KEY:
       return switchProjection(false, 0);
@@ -407,38 +414,92 @@ function keyboardHandler(event) {
 
 function mainContClickHandler(event) {
 
-  var currScale = mainContPanZoom.getScale();
+  var pageID = getSelectedPage();
+  var pageType = pageID.split('-')[1];
 
-  if ((currScale != 1) && settings.global.blockMouseOnZoom) return mainContainer.classList.add('disable-mouse');
-  else return mainContainer.classList.remove('disable-mouse');
+  var currScale = zoomContTypes[pageType].getScale();
+
+  if ((currScale != 1) && settings.global.blockMouseOnZoom) return elemTypes[pageType][2].classList.add('disable-mouse');
+  else return elemTypes[pageType][2].classList.remove('disable-mouse');
 
 }
 
-function swapChartsContainers(from_btn, checkZijd, checkStereo) {
-  var zijdOnMain = document.getElementById('zijd-on-main')
-  var stereoOnMain = document.getElementById('stereo-on-main')
+function swapChartsContainers(from_btn, checkZijd, checkStereo, checkIntensity, rotDir) {
+
   if (from_btn) {
     if (checkZijd) {
+      ChartContainersPCA = ['container-left', 'container-center', 'container-right'];
       stereoOnMain.checked = false;
+      intensityOnMain.checked = false;
       zijdOnMain.checked = true;
     }
     else if (checkStereo) {
+      ChartContainersPCA = ['container-center', 'container-right', 'container-left'];
       stereoOnMain.checked = true;
+      intensityOnMain.checked = false;
+      zijdOnMain.checked = false;
+    }
+    else if (checkIntensity) {
+      ChartContainersPCA = ['container-right', 'container-left', 'container-center'];
+      stereoOnMain.checked = false;
+      intensityOnMain.checked = true;
       zijdOnMain.checked = false;
     }
   }
   else {
-    stereoOnMain.checked = !stereoOnMain.checked;
-    zijdOnMain.checked = !zijdOnMain.checked;
-    if (stereoOnMain.checked) {
-      stereoOnMain.click();
-    }
-    else {
-      zijdOnMain.click();
+    for (let i = 0; i < AVAILABLE_CHARTS.length; i++) {
+      if (AVAILABLE_CHARTS[i].checked) {
+        AVAILABLE_CHARTS[i].checked = false;
+        var next = ((i + rotDir) == -1) ? 2 : (i + rotDir) % AVAILABLE_CHARTS.length;
+        if (rotDir == 1) ChartContainersPCA = ChartContainersPCA.splice(-1).concat(ChartContainersPCA);
+        else {
+          var tmp = ChartContainersPCA.splice(0, 1);
+          ChartContainersPCA = ChartContainersPCA.concat(tmp);
+        }
+        AVAILABLE_CHARTS[next].checked = true;
+        AVAILABLE_CHARTS[next].click();
+        break;
+      }
     }
   }
 
   redrawCharts(false);
+
+}
+
+function formatVGPTable() {
+
+  var pole = getVGPData();
+
+  if (!pole) return document.getElementById('vgp-table-container').innerHTML = '';
+
+  var poleHeader = new Array(
+    "  <thead class='thead-light fixed-header'>",
+    "    <tr>",
+    "      <th>pole lat</th>",
+    "      <th>pole lon</th>",
+    "      <th>paleoLat</th>",
+    "      <th>dp</th>",
+    "      <th>dm</th>",
+    "    </tr>",
+    "  </thead>",
+    "  <tbody>",
+  ).join("\n");
+
+  var poleRow = [
+    "    <tr class='' title=''>",
+    "      <td>" + pole.lat.toFixed(2) + "</td>",
+    "      <td>" + pole.lng.toFixed(2) + "</td>",
+    "      <td>" + pole.pLat.toFixed(2) + "</td>",
+    "      <td>" + pole.dp.toFixed(2) + "</td>",
+    "      <td>" + pole.dm.toFixed(2) + "</td>",
+    "    </tr>",
+  ].join("\n");
+
+  var tableFooter = "</tbody>";
+
+  document.getElementById("vgp-table-container").innerHTML = poleHeader + poleRow + tableFooter;
+
 }
 
 function formatCollectionTable() {
@@ -462,6 +523,11 @@ function formatCollectionTable() {
     iName = 'Istrat';
   }
 
+  document.getElementById("site-lat").value = collection.vgp.siteLat;
+  document.getElementById("site-lon").value = collection.vgp.siteLon;
+
+  formatVGPTable();
+
   var tableHeader = new Array(
     "  <thead class='thead-light fixed-header'>",
     "    <tr>",
@@ -483,6 +549,7 @@ function formatCollectionTable() {
     var num = interpretation.index + 1;
     var dotVisibleTitle = '<span title="Erase step">';
     var dotVisibleIcon = '<i class="fad fa-eraser"></i>'
+
     if (!interpretation.visible) {
       rowClass = 'erase-row text-muted';
       num = '-';
@@ -494,12 +561,6 @@ function formatCollectionTable() {
     var dec = interpretation[dName][DIRECTION_MODE];
     var inc = interpretation[iName][DIRECTION_MODE];
 
-    // var flipData = flipCollections();
-    // if (DIRECTION_MODE == 'reversed') {
-    //   dec = flipData[COORDINATES.stat][i].x;
-    //   inc = flipData[COORDINATES.stat][i].y;
-    // }
-
     return [
       "    <tr class='" + rowClass + "' title='    " + rowTitle + "'>",
       "      <td>" + dotVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotVisibleIcon + "</button></span></td>",
@@ -510,6 +571,7 @@ function formatCollectionTable() {
       "      <td>" + interpretation.mad.toFixed(2) + "</td>",
       "    </tr>",
     ].join("\n");
+
   });
 
   var tableFooter = "</tbody>";
@@ -557,9 +619,7 @@ function formatSpecimenTable() {
   var tableRows = specimen.steps.map(function(step, i) {
 
     var direction = inReferenceCoordinates(COORDINATES.pca, specimen, new Coordinates(step.x, step.y, step.z)).toVector(Direction);
-
     var intensity = (direction.length / specimen.volume).toFixed(0);
-
     var rowClass = '';
     var rowTitle = '';
     var num = step.index + 1;
@@ -589,7 +649,6 @@ function formatSpecimenTable() {
   var tableFooter = "</tbody>";
 
   document.getElementById("specimen-table-container").innerHTML = tableHeader + tableRows.join("\n") + tableFooter;
-
 
 }
 
@@ -727,16 +786,15 @@ function updateInterpretationTable(page) {
       var dirType = 'normal';
       if (DIRECTION_MODE == 'reversed') dirType = 'reversed';
 
-      var directionSpec = mean.dirSpec[dirType];
-      var directionGeo = mean.dirGeo[dirType];
-      var directionStrat = mean.dirStrat[dirType];
+      var directionSpec = mean.specimen[dirType];
+      var directionGeo = mean.geographic[dirType];
+      var directionStrat = mean.tectonic[dirType];
 
       // Handle comments on mean
       if (mean.comment === null) comment = ChRM_COMMENT;
       else comment = mean.comment;
 
       // Full code of mean
-
       var code = mean.code;
 
       // a95 angle (if forced this is unreliable)
@@ -863,7 +921,6 @@ function saveLocalStorage() {
 
 function clearLocalStorage() {
 
-  console.log(settings.global.autoSave);
   if (settings.global.autoSave) return;
   localStorage.removeItem('specimens');
   localStorage.removeItem('selectedSpecimen');
@@ -915,7 +972,8 @@ function reloadFiles(file, type) {
     }
   }
 
-  mainContPanZoom.reset();
+  mainContPanZoomPCA.reset();
+  mainContPanZoomStat.reset();
   saveLocalStorage();
   if (type == "specimen") updateInterpretationTable("pca");
   if (type == 'collection') updateInterpretationTable("stat");
@@ -923,10 +981,10 @@ function reloadFiles(file, type) {
 }
 
 function redrawCharts(hover, context) {
-    /*
-   * Function redrawCharts
-   * Redraws all the charts for the active specimen
-   */
+  /*
+  * Function redrawCharts
+  * Redraws all the charts for the active specimen
+  */
 
   // Save the current scroll position for later, otherwise the scroll position will
   // jump to the top when a Highcharts chart is drawn
@@ -936,10 +994,10 @@ function redrawCharts(hover, context) {
   if (context) {
 
     var chartContainers = [
-      document.getElementById('container-main'),
-      document.getElementById('container-support'),
-      document.getElementById('container-intensity'),
-      document.getElementById('stat-container-main'),
+      document.getElementById('container-center'),
+      document.getElementById('container-left'),
+      document.getElementById('container-right'),
+      document.getElementById('stat-container-center'),
     ];
 
     var chart;
@@ -957,12 +1015,12 @@ function redrawCharts(hover, context) {
     else if (chart == 'stat-plot') statPlotStereoDiagram();
   }
   else {
-      plotZijderveldDiagram(hover, zijdOnMain);
-      plotStereoDiagram(hover, stereoOnMain);
-      plotIntensityDiagram();
-      updateInterpretationTable('pca');
-      statPlotStereoDiagram();
-      updateInterpretationTable('stat');
+    plotZijderveldDiagram(hover, zijdOnMain);
+    plotStereoDiagram(hover, stereoOnMain);
+    plotIntensityDiagram();
+    updateInterpretationTable('pca');
+    statPlotStereoDiagram();
+    updateInterpretationTable('stat');
   }
 
   formatSpecimenTable();
@@ -972,6 +1030,7 @@ function redrawCharts(hover, context) {
   ipcRenderer.send('redraw-specDataWin');
   ipcRenderer.send('redraw-meansDataWin');
   ipcRenderer.send('redraw-interpretDataWin');
+  ipcRenderer.send('redraw-vgpDataWin');
 
 }
 
@@ -1021,6 +1080,9 @@ function makeChartContextMenu(chart) {
   var blockMouseOnZoomCheck = falseSymbol;
   if (settings.global.blockMouseOnZoom) blockMouseOnZoomCheck = trueSymbol;
 
+  var dashedLinesCheck = falseSymbol;
+  if (settings.global.dashedLines) dashedLinesCheck = trueSymbol;
+
   var currChartOpts = new Array(
     "  <div class='item mt-1' onclick='toggleContextChartOption(" + '"' +  (chartType + 'Tooltips') + '"' + ',' + false + ',' + typeStrPage + ")'>",
     tooltipsCheck,
@@ -1049,6 +1111,10 @@ function makeChartContextMenu(chart) {
       "  <div class='item' onclick='toggleContextChartOption(" + '"' +  (chartType + 'Error') + '"' + ',' + false + ',' + typeStrPage + ")'>",
       errorCheck,
       "    Error circles",
+      "  </div>",
+      "  <div class='item' onclick='toggleContextChartOption(" + '"' + 'dashedLines' + '"' + ',' + false + ',' + typeStrGlobal + ")'>",
+      dashedLinesCheck,
+      "    Dashed lines",
       "  </div>",
     ).join("\n");
 
@@ -1142,12 +1208,37 @@ function __init__() {
   //
   // localStorage.clear();
 
-  // Load the specimens from local storage
+  // load current page from localStorage
+  var selectedPageID = (localStorage.getItem("currPage")) ? localStorage.getItem("currPage") : 'nav-pca-tab';
+  document.getElementById(selectedPageID).click();
 
-  specimens = JSON.parse(localStorage.getItem("specimens"));
-  collections = JSON.parse(localStorage.getItem("collections"));
+  // load some globals from localStorage
   lastOpenPath = localStorage.getItem("lastOpenPath");
   lastSavePath = localStorage.getItem("lastSavePath");
+
+  var direction = JSON.parse(localStorage.getItem("direction"));
+  var centered = JSON.parse(localStorage.getItem("centered"));
+  var coordinates = JSON.parse(localStorage.getItem("coordinates"));
+  var projection = JSON.parse(localStorage.getItem("projection"));
+
+  DIRECTION_MODE = (direction) ? direction.data : "normal";
+  document.getElementById('stat-' + DIRECTION_MODE).click();
+  MODES_COUNTER = (direction) ? direction.counter : 0;
+  CENTERED_MODE = (centered) ? centered.data : "standard";
+  document.getElementById('stat-' + CENTERED_MODE).click();
+  CENTERED_COUNTER = (centered) ? centered.counter : 0;
+  COORDINATES = (coordinates) ? coordinates.data : {pca: 'specimen', stat: 'geographic'}
+  document.getElementById('pca-' + COORDINATES['pca']).click();
+  document.getElementById('stat-' + COORDINATES['stat']).click();
+  COORDINATES_COUNTER = (coordinates) ? coordinates.data : { pca: 0, stat: 0}
+  PROJECTION = (projection) ? projection.data : "upwest";
+  document.getElementById('input-' + PROJECTION).click();
+  PROJECTIONS_COUNTER = (projection) ? projection.counter : 0;
+
+  // Load specimens from local storage
+  specimens = JSON.parse(localStorage.getItem("specimens"));
+  collections = JSON.parse(localStorage.getItem("collections"));
+
 
   if ((specimens === null) && (collections === null)) {
     return ipcRenderer.send('open-openFilesModal');
@@ -1196,6 +1287,30 @@ function __unlock__() {
   registerEventHandlers();
   if (specimens.length > 0) updateFileSelect('specimen');
   if (collections.length > 0) updateFileSelect('collection');
+
+  // load current specimen and collection
+  var selectedSpecimen = JSON.parse(localStorage.getItem('selectedSpecimen'));
+  var specimenSelector = document.getElementById('specimen-select');
+  if ((specimens.length > 0) && selectedSpecimen) {
+    for (let i = 0; i < specimens.length; i++) {
+      if (specimens[i].name == selectedSpecimen.name) {
+        specimenSelector.value  = i;
+        break;
+      }
+    }
+  }
+
+  var selectedCollection = JSON.parse(localStorage.getItem('selectedCollection'));
+  var collectionSelector = document.getElementById('collection-select');
+  if ((collections.length > 0) && selectedCollection) {
+    for (let i = 0; i < collections.length; i++) {
+      if (collections[i].name == selectedCollection.name) {
+        collectionSelector.value = i;
+        break;
+      }
+    }
+  }
+
   dotSelector.reset();
 
   // addMap();
@@ -1205,6 +1320,7 @@ function __unlock__() {
 // Some globals
 var leafletMarker;
 var map;
+var ChartContainersPCA = ['container-left', 'container-center', 'container-right']
 var COORDINATES_COUNTER = {
   pca: 0,
   stat: 0,
@@ -1219,6 +1335,13 @@ var CENTERED_MODE = "standard";
 var CENTERED_COUNTER = 0;
 var PROJECTIONS_COUNTER = 0;
 var PROJECTION = "upwest";
+
+var zijdOnMain = document.getElementById('zijd-on-main');
+var stereoOnMain = document.getElementById('stereo-on-main');
+var intensityOnMain = document.getElementById('intensity-on-main');
+
+var AVAILABLE_CHARTS = [zijdOnMain, stereoOnMain, intensityOnMain];
+
 var GROUP = "ChRM";
 var UPWEST = true;
 var specimens = new Array();
@@ -1229,8 +1352,10 @@ var project_json;
 
 var dotSelector = new DotSelector();
 
-const mainContainer = document.getElementById('container-main');
-const mainContPanZoom = Panzoom(mainContainer, {
+const mainContainerPCA = document.getElementById('container-center');
+const mainContainerStat = document.getElementById('stat-container-center');
+
+var panzoomSettings = {
   contain: 'outside',
   minScale: 1,
   maxScale: 10,
@@ -1247,7 +1372,23 @@ const mainContPanZoom = Panzoom(mainContainer, {
   cursor: 'default',
   disablePan: false,
   handleStartEvent: () => {}
-});
+}
+
+const mainContPanZoomPCA = Panzoom(mainContainerPCA, panzoomSettings);
+const mainContPanZoomStat = Panzoom(mainContainerStat, panzoomSettings);
+
+// mainContPanZoomStat.zoom(2, { animate: true });
+// console.log(mainContPanZoomStat.getScale());
+
+const elemTypes = {
+  pca: ['specimen', 'steps', mainContainerPCA],
+  stat: ['collection', 'interpretations', mainContainerStat]
+}
+
+const zoomContTypes = {
+  pca: mainContPanZoomPCA,
+  stat: mainContPanZoomStat,
+}
 
 // Renderer opertaions
 
@@ -1257,6 +1398,23 @@ ipcRenderer.on('give-selected-specimen', (event) => {
 
 ipcRenderer.on('init', () => {
   __init__();
+
+  var keyboardEvent = document.createEvent("KeyboardEvent");
+  var initMethod = typeof keyboardEvent.initKeyboardEvent !== 'undefined' ? "initKeyboardEvent" : "initKeyEvent";
+
+  keyboardEvent[initMethod](
+    "keydown", // event type: keydown, keyup, keypress
+    true,      // bubbles
+    true,      // cancelable
+    window,    // view: should be window
+    false,     // ctrlKey
+    false,     // altKey
+    false,     // shiftKey
+    false,     // metaKey
+    116,        // keyCode: unsigned long - the virtual key code, else 0
+    // 0          // charCode: unsigned long - the Unicode character associated with the depressed key, else 0
+  );
+  document.dispatchEvent(keyboardEvent);
 })
 
 ipcRenderer.on('clear-storage', () => {

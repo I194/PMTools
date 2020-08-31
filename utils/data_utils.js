@@ -219,6 +219,95 @@ function getRotationMatrixR(lambda, phi) {
 
 }
 
+function getVGPData(givenCollection) {
+
+  var collection = (givenCollection) ? givenCollection : getSelectedFile('collection', true);
+
+  if (!collection) return;
+
+  var dName, iName;
+  if (typeof COORDINATES !== 'undefined') {
+    if (COORDINATES.stat == 'specimen') {
+      dName = 'Dspec';
+      iName = 'Ispec';
+    }
+    else if (COORDINATES.stat == 'geographic') {
+      dName = 'Dgeo';
+      iName = 'Igeo';
+    }
+    else {
+      dName = 'Dstrat';
+      iName = 'Istrat';
+    }
+  }
+  else {
+    dName = 'Dgeo';
+    iName = 'Igeo';
+  }
+
+
+  if (collection.id != undefined) {
+    var pole = getSite(collection.data).poleFrom(new Direction(0, 0), 'stat', dName, iName, collection.data);
+    collections[collection.id].vgp = pole;
+  }
+  else {
+    var pole = getSite(collection).poleFrom(new Direction(0, 0), 'stat', dName, iName, collection);
+    collection.vgp = pole;
+  }
+  // saveLocalStorage();
+
+  localStorage.setItem("collections", JSON.stringify(collections));
+  if (collections.length > 0) localStorage.setItem("selectedCollection", JSON.stringify(collection));
+
+  return pole;
+
+}
+
+function getSite(givenCollection) {
+
+  // var collection = (givenCollection) ? givenCollection : getSelectedFile('collection');
+  if ((!document.getElementById('site-lat')) || (!document.getElementById('site-lon'))) return new Site(0, 0);
+  var siteLat = Number(document.getElementById('site-lat').value | 0);
+  var siteLon = Number(document.getElementById('site-lon').value | 0);
+
+  return new Site(siteLon, siteLat);
+
+}
+
+function dirToPole(dec, inc) {
+
+  var declination = Math.radians(dec);
+  var inclination = Math.radians(inc);
+
+  var p = 0.5 * Math.PI - Math.atan(Math.tan(inclination) / 2);
+  var poleLatitude = Math.asin(Math.sin(siteLatitude) * Math.cos(p) + Math.cos(siteLatitude) * Math.sin(p) * Math.cos(declination));
+  var beta = Math.asin((Math.sin(p) * Math.sin(declination) / Math.cos(poleLatitude)).toFixed(2));
+  if (Math.cos(p) - Math.sin(poleLatitude) * Math.sin(siteLatitude) < 0) {
+    var poleLongitude = siteLongitude + Math.PI - beta;
+  }
+  else {
+    var poleLongitude = siteLongitude + beta;
+  }
+  // Bind the plate longitude between [0, 360]
+  if (poleLongitude < 0) {
+    poleLongitude += 2 * Math.PI;
+  }
+
+  return {lon: Math.degrees(poleLongitude), lat: Math.degrees(poleLatitude)};
+
+}
+
+function getDpDm(meanDec, meanInc, a95) {
+
+  var collection = getSelectedFile('collection');
+
+  var p = 0.5 * Math.PI - Math.atan(Math.tan(meanInc) / 2);
+
+  var dp = 2 * a95 / (1  + 3 * Math.pow(Math.cos(meanInc), 2));
+  var dm = a95 * Math.sin(p) / Math.cos(meanInc);
+
+}
+
 function getStatisticalParameters(components) {
 
   /*
@@ -232,17 +321,9 @@ function getStatisticalParameters(components) {
   // Get the directions and pole for each vector
   //var directions = components.filter(x => !x.rejected).map(x => literalToCoordinates(x.coordinates).toVector(Direction));
   var directions;
-  if (COORDINATES.stat == 'specimen') directions = components.map(x => new Direction(x.Dspec[DIRECTION_MODE], x.Ispec[DIRECTION_MODE]));
-  else if (COORDINATES.stat == 'geographic') directions = components.map(x => new Direction(x.Dgeo[DIRECTION_MODE], x.Igeo[DIRECTION_MODE]));
-  else if (COORDINATES.stat == 'tectonic') directions = components.map(x => new Direction(x.Dstrat[DIRECTION_MODE], x.Istrat[DIRECTION_MODE]));
-
-  // if (DIRECTION_MODE == 'reversed') {
-  //   var dirs = directions.map(function(x) {
-  //     return {d: x.dec, i: x.inc};
-  //   });
-  //   dirs = flipData(dirs, true)
-  //   directions = dirs.map(x => new Direction(x.x, x.y));
-  // }
+  if (COORDINATES.stat == 'specimen') directions = components.filter(x => x.visible).map(x => new Direction(x.Dspec[DIRECTION_MODE], x.Ispec[DIRECTION_MODE]));
+  else if (COORDINATES.stat == 'geographic') directions = components.filter(x => x.visible).map(x => new Direction(x.Dgeo[DIRECTION_MODE], x.Igeo[DIRECTION_MODE]));
+  else if (COORDINATES.stat == 'tectonic') directions = components.filter(x => x.visible).map(x => new Direction(x.Dstrat[DIRECTION_MODE], x.Istrat[DIRECTION_MODE]));
 
   var poles = directions.map(x => site.poleFrom(x));
   var directionDistribution = new DirectionDistribution(directions);
@@ -330,7 +411,7 @@ function normalize(intensities) {
     if (step.visible) {
       intensitiesForNormalize.push({
         "x": parseInt(step.step.match(/\d+/)),
-        "y": new Coordinates(step.x, step.y, step.z).length
+        "y": (new Coordinates(step.x, step.y, step.z).length)/specimen.volume,
       });
     }
   });
@@ -492,8 +573,9 @@ function flipData(data, combine) {
 
   data.forEach((dir, j) => {
     var angle = getAngleBetween(dir.d, dir.i, princDir.dec, princDir.inc);
-    if (angle > 80) {
+    if (angle > 90) {
       var d = (dir.d - 180) % 360;
+      if (d < 0) d += 360;
       var i = -dir.i;
       D2.push({x: d, y: i})
       D3.push({x: d, y: i})
@@ -549,31 +631,40 @@ function makeStatGC(normalized) {
   if (selectedDots.length < 2) return;
 
   data = {
-    spec: [],
-    geo: [],
-    strat: [],
+    spec: {normal: [], reversed: []},
+    geo: {normal: [], reversed: []},
+    strat: {normal: [], reversed: []},
   }
 
   selectedDots.forEach((dot, i) => {
-    data.spec.push({'x': dot.Dspec, 'y': dot.Ispec})
-    data.geo.push({'x': dot.Dgeo, 'y': dot.Igeo})
-    data.strat.push({'x': dot.Dstrat, 'y': dot.Istrat})
+    data.spec.normal.push({'x': dot.Dspec.normal, 'y': dot.Ispec.normal});
+    data.spec.reversed.push({'x': dot.Dspec.reversed, 'y': dot.Ispec.reversed});
+    data.geo.normal.push({'x': dot.Dgeo.normal, 'y': dot.Igeo.normal});
+    data.geo.reversed.push({'x': dot.Dgeo.reversed, 'y': dot.Igeo.reversed});
+    data.strat.normal.push({'x': dot.Dstrat.normal, 'y': dot.Istrat.normal});
+    data.strat.reversed.push({'x': dot.Dstrat.reversed, 'y': dot.Istrat.reversed});
   });
 
+  var vectorsSpec = makeVectorsForEig(data.spec.normal);
+  var vectorsGeo = makeVectorsForEig(data.geo.normal);
+  var vectorsStrat = makeVectorsForEig(data.strat.normal);
+  var vectorsSpecReversed = makeVectorsForEig(data.spec.reversed);
+  var vectorsGeoReversed = makeVectorsForEig(data.geo.reversed);
+  var vectorsStratReversed = makeVectorsForEig(data.strat.reversed);
 
-  var vectorsSpec = makeVectorsForEig(data.spec);
-  var vectorsGeo = makeVectorsForEig(data.geo);
-  var vectorsStrat = makeVectorsForEig(data.strat);
-  var vectorsSpecReversed = makeVectorsForEig(statReverse(data.spec));
-  var vectorsGeoReversed = makeVectorsForEig(statReverse(data.geo));
-  var vectorsStratReversed = makeVectorsForEig(statReverse(data.strat));
+  var specMean = gcMean(vectorsSpec);
+  var geoMean = gcMean(vectorsGeo);
+  var stratMean = gcMean(vectorsStrat);
+  var specReversedMean = gcMean(vectorsSpecReversed);
+  var geoReversedMean = gcMean(vectorsGeoReversed);
+  var stratReversedMean = gcMean(vectorsStratReversed);
 
-  var specSeries = makeGCSeries(vectorsSpec, code);
-  var geoSeries = makeGCSeries(vectorsGeo, code);
-  var stratSeries = makeGCSeries(vectorsStrat, code);
-  var specReversedSeries = makeGCSeries(vectorsSpecReversed, code);
-  var geoReversedSeries = makeGCSeries(vectorsGeoReversed, code);
-  var stratReversedSeries = makeGCSeries(vectorsStratReversed, code);
+  // var specSeries = makeGCSeries(vectorsSpec, code);
+  // var geoSeries = makeGCSeries(vectorsGeo, code);
+  // var stratSeries = makeGCSeries(vectorsStrat, code);
+  // var specReversedSeries = makeGCSeries(vectorsSpecReversed, code);
+  // var geoReversedSeries = makeGCSeries(vectorsGeoReversed, code);
+  // var stratReversedSeries = makeGCSeries(vectorsStratReversed, code);
 
   var comment = null;
 
@@ -581,15 +672,18 @@ function makeStatGC(normalized) {
     "dots": selectedDots,
     "created": new Date().toISOString(),
     "code": code,
-    "a95": {normal: geoSeries[1], reversed: geoReversedSeries[1]},
+    "a95": {normal: geoMean.a95, reversed: geoReversedMean.a95},
     "k": {normal: '', reversed: ''},
-    "dirSpec": {normal: specSeries[2], reversed: specReversedSeries[2]},
-    "dirGeo": {normal: geoSeries[2], reversed: geoReversedSeries[2]},
-    "dirStrat": {normal: stratSeries[2], reversed: stratReversedSeries[2]},
+    // "dirSpec": {normal: specSeries[2], reversed: specReversedSeries[2]},
+    // "dirGeo": {normal: geoSeries[2], reversed: geoReversedSeries[2]},
+    // "dirStrat": {normal: stratSeries[2], reversed: stratReversedSeries[2]},
     "comment": comment,
-    "specimen": {normal: specSeries[0], reversed: specReversedSeries[0]},
-    "geographic": {normal: geoSeries[0], reversed: geoReversedSeries[0]},
-    "tectonic": {normal: stratSeries[0], reversed: stratReversedSeries[0]},
+    // "specimen": {normal: specSeries[0], reversed: specReversedSeries[0]},
+    // "geographic": {normal: geoSeries[0], reversed: geoReversedSeries[0]},
+    // "tectonic": {normal: stratSeries[0], reversed: stratReversedSeries[0]},
+    "specimen":  {normal: specMean, reversed: specReversedMean},
+    "geographic": {normal: geoMean, reversed: geoReversedMean},
+    "tectonic": {normal: stratMean, reversed: stratReversedMean},
     "version": __VERSION__,
   });
 
@@ -613,9 +707,9 @@ function makeVectorsForEig(data) {
 
 }
 
-function makeGCSeries(vectors, name) {
+function gcMean(vectors) {
 
-  if (!vectors) return [undefined, undefined, undefined];
+  if (!vectors) return [undefined, undefined];
 
   var eig = sortEigenvectors(numeric.eig(TMatrix(vectors)));
   var vectorTAU3 = new Coordinates(...eig.v3);
@@ -633,32 +727,16 @@ function makeGCSeries(vectors, name) {
   direction.dec += 180;
   direction.dec %= 360;
 
-  var evidEllipse = getSmallCircle(direction.dec, direction.inc, MAD, true);
+  return {dec: direction.dec, inc: direction.inc, a95: MAD};
 
-  var series = [];
+}
 
-  series.push(
-    {
-      data: getPlaneData(direction).positive,
-      linkedTo: ":previous",
-      type: "line",
-      color: "#119DFF",
-      enableMouseTracking: false,
-      marker: {
-        enabled: false
-      }
-    },
-    {
-      data: getPlaneData(direction).negative,
-      linkedTo: ":previous",
-      type: "line",
-      color: "#119DFF",
-      enableMouseTracking: false,
-      dashStyle: "LongDash",
-      marker: {
-        enabled: false
-      }
-    },
+function makeGCSeries(mean, ellipse, dashedLines) {
+
+  console.log(mean);
+  var direction = new Direction(mean.dec, mean.inc);
+  console.log(mean, direction);
+  var series = [
     {
       name: "GC",
       type: "scatter",
@@ -678,35 +756,79 @@ function makeGCSeries(vectors, name) {
       }]
     },
     {
-      enableMouseTracking: false,
-      type: 'line',
-      lineWidth: 1,
-      color: "#119DFF",
+      data: getPlaneData(direction).positive,
       linkedTo: ":previous",
-      data: evidEllipse.pos,
-      connectEnds: false,
-      zIndex: 50,
+      type: "line",
+      color: "#119DFF",
+      enableMouseTracking: false,
       marker: {
-        enabled: false,
+        enabled: false
       }
     },
     {
-      enableMouseTracking: false,
-      type: 'line',
-      lineWidth: 1,
-      color: "#119DFF",
+      data: getPlaneData(direction).negative,
       linkedTo: ":previous",
-      data: evidEllipse.neg,
-      zIndex: 50,
-      dashStyle: "LongDash",
-      connectEnds: false,
+      type: "line",
+      color: "#119DFF",
+      enableMouseTracking: false,
+      dashStyle: (dashedLines) ? "LongDash" : "Solid",
       marker: {
-        enabled: false,
-      },
-    }
-  );
+        enabled: false
+      }
+    },
+  ];
 
-  return [series, MAD, direction];
+  if (dashedLines) {
+    series.push(
+      {
+        enableMouseTracking: false,
+        type: 'line',
+        lineWidth: 1,
+        color: "#119DFF",
+        linkedTo: ":previous",
+        data: ellipse.pos,
+        connectEnds: false,
+        zIndex: 50,
+        marker: {
+          enabled: false,
+        }
+      },
+      {
+        enableMouseTracking: false,
+        type: 'line',
+        lineWidth: 1,
+        color: "#119DFF",
+        linkedTo: ":previous",
+        data: ellipse.neg,
+        zIndex: 50,
+        dashStyle: (dashedLines) ? "LongDash" : "Solid",
+        connectEnds: false,
+        marker: {
+          enabled: false,
+        },
+      }
+    );
+  }
+  else {
+    series.push(
+
+      {
+        enableMouseTracking: false,
+        type: 'line',
+        lineWidth: 1,
+        color: "#119DFF",
+        linkedTo: ":previous",
+        data: ellipse,
+        connectEnds: false,
+        zIndex: 50,
+        marker: {
+          enabled: false,
+        }
+      },
+    )
+  }
+
+  return series;
 }
 
 function makeFisherMean(type) {
@@ -748,23 +870,26 @@ function makeFisherMean(type) {
   }
   else if (type == 'collection')  {
     data = {
-      spec: [],
-      geo: [],
-      strat: [],
+      spec: {normal: [], reversed: []},
+      geo: {normal: [], reversed: []},
+      strat: {normal: [], reversed: []},
     }
 
     selectedDots.forEach((dot, i) => {
-      data.spec.push({'x': dot.Dspec, 'y': dot.Ispec})
-      data.geo.push({'x': dot.Dgeo, 'y': dot.Igeo})
-      data.strat.push({'x': dot.Dstrat, 'y': dot.Istrat})
+      data.spec.normal.push({'x': dot.Dspec.normal, 'y': dot.Ispec.normal});
+      data.spec.reversed.push({'x': dot.Dspec.reversed, 'y': dot.Ispec.reversed});
+      data.geo.normal.push({'x': dot.Dgeo.normal, 'y': dot.Igeo.normal});
+      data.geo.reversed.push({'x': dot.Dgeo.reversed, 'y': dot.Igeo.reversed});
+      data.strat.normal.push({'x': dot.Dstrat.normal, 'y': dot.Istrat.normal});
+      data.strat.reversed.push({'x': dot.Dstrat.reversed, 'y': dot.Istrat.reversed});
     });
 
-    specMean = fisherMean(data.spec);
-    geoMean = fisherMean(data.geo);
-    stratMean = fisherMean(data.strat);
-    specReversedMean = fisherMean(statReverse(data.spec));
-    geoReversedMean = fisherMean(statReverse(data.geo));
-    stratReversedMean = fisherMean(statReverse(data.strat));
+    specMean = fisherMean(data.spec.normal);
+    geoMean = fisherMean(data.geo.normal);
+    stratMean = fisherMean(data.strat.normal);
+    specReversedMean = fisherMean(data.spec.reversed);
+    geoReversedMean = fisherMean(data.geo.reversed);
+    stratReversedMean = fisherMean(data.strat.reversed);
   }
 
   // get evidence ellipses
@@ -792,13 +917,16 @@ function makeFisherMean(type) {
     "code": 'Fisher',
     "a95": {normal: geoMean.a95, reversed: geoReversedMean.a95},
     "k": {normal: geoMean.k, reversed: geoReversedMean.k},
-    "dirSpec": {normal: specMean, reversed: specReversedMean},
-    "dirGeo": {normal: geoMean, reversed: geoReversedMean},
-    "dirStrat": {normal: stratMean, reversed: stratReversedMean},
+    // "dirSpec": {normal: specMean, reversed: specReversedMean},
+    // "dirGeo": {normal: geoMean, reversed: geoReversedMean},
+    // "dirStrat": {normal: stratMean, reversed: stratReversedMean},
     "comment": comment,
-    "specimen": {normal: specSeries, reversed: specReversedSeries},
-    "geographic": {normal: geoSeries, reversed: geoReversedSeries},
-    "tectonic": {normal: stratSeries, reversed: stratReversedSeries},
+    // "specimen": {normal: specSeries, reversed: specReversedSeries},
+    // "geographic": {normal: geoSeries, reversed: geoReversedSeries},
+    // "tectonic": {normal: stratSeries, reversed: stratReversedSeries},
+    "specimen":  {normal: specMean, reversed: specReversedMean},
+    "geographic": {normal: geoMean, reversed: geoReversedMean},
+    "tectonic": {normal: stratMean, reversed: stratReversedMean},
     "version": __VERSION__,
   });
   redrawCharts();
@@ -854,16 +982,17 @@ function fisherMean(data) {
   if (a < 0) a95 = 180;
   fpars = {dec: dir.dec, inc: dir.inc, n: N, r: R, k: k, a95: a95, csd: csd};
   return fpars
+
 }
 
-function makeFisherSeries(mean, ellipse) {
+function makeFisherSeries(mean, ellipse, dashedLines) {
 
   var series = [
     {
       type: "scatter",
       name: 'Fisher mean',
       data: [{'x': mean.dec, 'y': Math.abs(mean.inc)}],
-      zIndex: 50,
+      zIndex: 500,
       marker: {
         radius: 2,
         lineColor: "#119DFF",
@@ -873,34 +1002,56 @@ function makeFisherSeries(mean, ellipse) {
       },
       color: "#119DFF",
     },
-    {
-      enableMouseTracking: false,
-      type: 'line',
-      lineWidth: 1,
-      color: "#119DFF",
-      linkedTo: ":previous",
-      data: ellipse.pos,
-      connectEnds: false,
-      zIndex: 50,
-      marker: {
-        enabled: false,
+  ];
+
+  if (dashedLines) {
+    series.push(
+      {
+        enableMouseTracking: false,
+        type: 'line',
+        lineWidth: 1,
+        color: "#119DFF",
+        linkedTo: ":previous",
+        data: ellipse.pos,
+        connectEnds: false,
+        zIndex: 50,
+        marker: {
+          enabled: false,
+        }
+      },
+      {
+        enableMouseTracking: false,
+        type: 'line',
+        lineWidth: 1,
+        color: "#119DFF",
+        linkedTo: ":previous",
+        data: ellipse.neg,
+        zIndex: 50,
+        dashStyle: "LongDash",
+        connectEnds: false,
+        marker: {
+          enabled: false,
+        }
       }
-    },
-    {
-      enableMouseTracking: false,
-      type: 'line',
-      lineWidth: 1,
-      color: "#119DFF",
-      linkedTo: ":previous",
-      data: ellipse.neg,
-      zIndex: 50,
-      dashStyle: "LongDash",
-      connectEnds: false,
-      marker: {
-        enabled: false,
+    )
+  }
+  else {
+    series.push(
+      {
+        enableMouseTracking: false,
+        type: 'line',
+        lineWidth: 1,
+        color: "#119DFF",
+        linkedTo: ":previous",
+        data: ellipse,
+        connectEnds: false,
+        zIndex: 50,
+        marker: {
+          enabled: false,
+        }
       }
-    }
-  ]
+    )
+  }
 
   return series;
 }
@@ -1241,7 +1392,7 @@ function coordsFromSteps(steps) {
         "y": -coordinates.y,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length,
+        "intensity": direction.length / specimen.volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[0],
@@ -1252,7 +1403,7 @@ function coordsFromSteps(steps) {
         "y": -coordinates.z,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length,
+        "intensity": direction.length / specimen.volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[1],
@@ -1265,7 +1416,7 @@ function coordsFromSteps(steps) {
         "y": coordinates.x,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length,
+        "intensity": direction.length / specimen.volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[0],
@@ -1276,7 +1427,7 @@ function coordsFromSteps(steps) {
         "y": -coordinates.z,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length,
+        "intensity": direction.length / specimen.volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[1],
@@ -1289,7 +1440,7 @@ function coordsFromSteps(steps) {
         "y": coordinates.x,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length,
+        "intensity": direction.length / specimen.volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[0],
@@ -1300,7 +1451,7 @@ function coordsFromSteps(steps) {
         "y": coordinates.x,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length,
+        "intensity": direction.length / specimen.volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[1],

@@ -11,6 +11,7 @@
     <link rel="stylesheet" href="../../lib/style/fontawesome-pro-5.13.0-web/css/all.css">
     <!-- Custom style -->
     <link rel="stylesheet" href="../../lib/style/custom_style.css">
+    <link rel="stylesheet" href="../../lib/style/sidebar.css">
     <!-- Titilebar style -->
     <link rel="stylesheet" href="../../lib/style/titlebar.css">
     <!-- Title -->
@@ -36,26 +37,90 @@
     </div>
     <!-- Shortcuts -->
     <div class="row no-gutters bg-light justify-content-center container-fluid" style="height: 96vh; line-height: 1.5;">
-      <div class="col-md-4 lg-4">
+      <div class="col-md-2 lg-2">
         <div class="card">
           <div class="card-body bg-light" style="height: 96vh;">
-            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+            <!-- <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
               <a class="nav-link active" id="pmd-tab" data-toggle="pill" role="tab" aria-selected="true" href="#pmd" aria-controls="pmd">.PMD</a>
               <a class="nav-link" id="rmg-tab" data-toggle="pill" role="tab" aria-selected="false" href="#rmg" aria-controls="rmg">.RMG</a>
               <a class="nav-link" id="pmm-tab" data-toggle="pill" role="tab" aria-selected="false" href="#pmm" aria-controls="pmm">.PMM</a>
               <a class="nav-link" id="dir-tab" data-toggle="pill" role="tab" aria-selected="false" href="#dir" aria-controls="dir">.DIR</a>
               <a class="nav-link" id="csv-tab" data-toggle="pill" role="tab" aria-selected="false" href="#csv" aria-controls="csv">.CSV</a>
-            </div>
+            </div> -->
+              <ul class="navbar-nav mr-auto sidenav" id="navAccordion">
+                <li class="nav-item active">
+                  <a
+                    class="nav-link nav-link-collapse"
+                    href="#"
+                    id="hasSubItems"
+                    data-toggle="collapse"
+                    data-target="#collapseSubItemsPCA"
+                    aria-controls="collapseSubItemsPCA"
+                    aria-expanded="false"
+                  >Interpretations</a>
+                  <ul class="nav-second-level collapse" id="collapseSubItemsPCA" data-parent="#navAccordion">
+                    <li class="nav-item">
+                      <a class="nav-link" href="#pmd" id="pmd-tab" data-toggle="pill" role="tab" aria-selected="true" aria-controls="pmd">
+                        <span class="nav-link-text">
+                          .PMD
+                        </span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="#rmg" id="rmg-tab" data-toggle="pill" role="tab" aria-selected="false" aria-controls="rmg">
+                        <span class="nav-link-text">
+                          .RMG
+                        </span>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+                <li class="nav-item">
+                  <a
+                    class="nav-link nav-link-collapse"
+                    href="#"
+                    id="hasSubItems"
+                    data-toggle="collapse"
+                    data-target="#collapseSubItemsStat"
+                    aria-controls="collapseSubItemsStat"
+                    aria-expanded="false"
+                  >Statistics</a>
+                  <ul class="nav-second-level collapse" id="collapseSubItemsStat" data-parent="#navAccordion">
+                    <li class="nav-item">
+                      <a class="nav-link" href="#pmm" id="pmm-tab" data-toggle="pill" role="tab" aria-selected="false" aria-controls="pmm">
+                        <span class="nav-link-text">
+                          .PMM
+                        </span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                      <a class="nav-link" href="#dir" id="dir-tab" data-toggle="pill" role="tab" aria-selected="false" aria-controls="dir">
+                        <span class="nav-link-text">
+                          .DIR
+                        </span>
+                      </a>
+                    </li>
+                    <li class="nav-item">
+                    <a class="nav-link" href="#csv" id="csv-tab" data-toggle="pill" role="tab" aria-selected="false" aria-controls="csv">
+                        <span class="nav-link-text">
+                          .CSV
+                        </span>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
           </div>
         </div>
       </div>
-      <div class="col-md-8 lg-8">
+      <div class="col-md-10 lg-10">
         <div class="card">
           <div class="card-body bg-light" style="height: 96vh; padding-left: 2vw; overflow-y: auto;">
             <div class="tab-content" id="v-pills-tabContent">
               <div class="tab-pane fade show active text-center" id="pmd" role="tabpanel" aria-labelledby="pmd-tab">
                 <h6 class="mt-2">Example of .pmd file</h6>
                 <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-pmd">
+                  <!-- onclick="copyFile('Download .PMD example', '../../img/formats/pmd_example.png', 'pmd')" -->
                   Download
                 </button>
                 <div id="pmd-example"><img src="../../img/formats/pmd_example.png" class="img-fluid"></img></div>
@@ -105,6 +170,8 @@
   <script src="../../lib/jquery/jquery.min.js"></script>
   <script src="../../lib/popper/popper.min.js"></script>
   <script src="../../lib/style/bootstrap4/js/bootstrap.min.js"></script>
+  <!-- some inner scripts -->
+  <script type="text/javascript" src="../../main_window/js/fileDialogs.js"></script>
   <!-- render process -->
   <script type="text/javascript" src="../../renderers/formatsRenderer.js"></script>
 </html>

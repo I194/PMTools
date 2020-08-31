@@ -942,16 +942,25 @@ function importPaleoMac(file) {
   var lines = file.data.split(LINE_REGEXP).slice(1).filter(Boolean).filter(x => x.length > 1);
 
   // The line container all the header information
-  var header = lines[0];
-  var sampleName = header.slice(0, 9).trim();
+  var header = lines[0].replace(/\s+/g, ' ').split(' ');
+  var newHeader = [];
+  header.forEach((elem, i) => {
+    var newElem = elem;
+    if (elem.slice(-1) != '=') newHeader.push(newElem);//newElem = elem.concat(header[i + 1]);
 
-  var coreAzimuth = Number(header.slice(12, 17));
-  var sampleVolume = Number(header.slice(52, 59));
+  });
+  header = newHeader;
 
+  var sampleName = header[0];//.slice(0, 9).trim();
+
+  var coreAzimuth = (header[1].includes('=')) ? Number(header[1].split('=')[1]) : Number(header[1]);//Number(header.slice(12, 17));
   // core hade is measured, we use the plunge (90 - hade)
-  var coreDip = 90 - Number(header.slice(22, 27));
-  var beddingStrike = Number(header.slice(32, 37));
-  var beddingDip = Number(header.slice(42, 47));
+  var coreDip = (header[2].includes('=')) ? 90 - Number(header[2].split('=')[1]) : 90 - Number(header[2]);//90 - Number(header.slice(22, 27));
+
+  var beddingStrike = (header[3].includes('=')) ? Number(header[3].split('=')[1]) : Number(header[3]);//Number(header.slice(32, 37));
+  var beddingDip = (header[4].includes('=')) ? Number(header[4].split('=')[1]) : Number(header[4]);//Number(header.slice(42, 47));
+
+  var sampleVolume = (header[5].includes('E')) ? Number(header[5].split('E')[0]) : Number(header[5]); //Number(header.slice(52, 59));
 
   var demagnetizationType;
 
@@ -1004,7 +1013,7 @@ function importPaleoMac(file) {
     "sample": sampleName,
     "name": sampleName,
     "path": file.path,
-    "volume": 1E6 * sampleVolume,
+    "volume": sampleVolume,
     "beddingStrike": Number(beddingStrike),
     "beddingDip": Number(beddingDip),
     "coreAzimuth": Number(coreAzimuth),

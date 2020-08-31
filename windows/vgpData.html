@@ -2,6 +2,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width = device-width, initial-scale = 1.0">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
+<!DOCTYPE html>
 <html>
   <head>
     <!-- Highcharts -->
@@ -23,9 +24,10 @@
     <!-- Titilebar style -->
     <link rel="stylesheet" href="../lib/style/titlebar.css">
     <!-- Title -->
-    <title>Collection data</title>
+    <title>VGP data</title>
   </head>
   <body style="overflow-y: hidden; line-height: 0;">
+    <!-- App titlebar, save data button -->
     <div id="static-elements">
       <!-- App titlebar -->
       <div class="d-flex justify-content-center container-fluid">
@@ -33,8 +35,9 @@
           <div class="title-bar">
             <div class="menu-button-container">
               <button type="button" class="icon-button custom-btn no-hover" id="icon-button"><img src="../img/pm-tools-app-icon-dark.svg" height="16" width="auto" alt=""></button></div>
+
             <div class="app-name-container">
-              Collection data
+              VGP data
             </div>
             <div class="window-controls-container">
               <button type="button" class="minimize-button custom-btn" id="minimize-button"><i class="far fa-window-minimize"></i></button>
@@ -47,15 +50,14 @@
       <!-- Save data button -->
       <div class="row no-gutters justify-content-center container-fluid mt-1 mb-2" style="border: 1px solid #ced4da; border-bottom: 0px;" id="save-dataTable"></div>
     </div>
-    <!-- Specimen data table -->
-    <div class="table-responsive" style="overflow-y: auto;" id="collection-table-container">
-      <table id="table-body-container" class="table table-sm table-bordered w-100 small" style="max-height: 100%; text-align: center!important; line-height: 1.5;"></table>
-    </div>
+    <!-- VGP Information Table -->
+    <div id="vgp-table-container" class="table-responsive" style="overflow-y: auto; height: 84vh; line-height: 1.5;"></div>
   </body>
   <!-- Bootstrap.js, Popper.js, and jQuery -->
   <script src="../lib/jquery/jquery.min.js"></script>
   <script src="../lib/popper/popper.min.js"></script>
   <script src="../lib/style/bootstrap4/js/bootstrap.min.js"></script>
+  <!-- <script src="lib/jquery-3.3.1.slim.min.js"></script> -->
   <!-- SHA256 & numeric lib for PCA -->
   <script src="../lib/math/sha.js"></script>
   <script src="../lib/math/numeric.js"></script>
@@ -75,6 +77,6 @@
     var xlsx = require('node-xlsx');
   </script>
   <!-- render process -->
-  <script type="text/javascript" src="../renderers/collectionDataRenderer.js"></script>
+  <script type="text/javascript" src="../renderers/vgpDataRenderer.js"></script>
 
 </html>

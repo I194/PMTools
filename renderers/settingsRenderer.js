@@ -44,6 +44,7 @@ function saveSettings() {
   // Global
   var blockMouseOnZoom = document.getElementById('block-mouse-on-zoom').checked;
   var autoSave = document.getElementById('auto-save').checked;
+  var dashedLines = document.getElementById('dashed-lines').checked;
   // PCA Annotations
   var zijdAnnotations = document.getElementById('zijd-annotations').checked;
   var stereoAnnotations = document.getElementById('stereo-annotations').checked;
@@ -99,6 +100,7 @@ function saveSettings() {
     global: {
       blockMouseOnZoom: blockMouseOnZoom,
       autoSave: autoSave,
+      dashedLines: dashedLines,
     },
     pca: {
       // PCA Annotations
@@ -163,6 +165,7 @@ function init() {
   // Global
   var blockMouseOnZoom = document.getElementById('block-mouse-on-zoom');
   var autoSave = document.getElementById('auto-save');
+  var dashedLines = document.getElementById('dashed-lines');
   // PCA Annotations
   var zijdAnnotations = document.getElementById('zijd-annotations');
   var stereoAnnotations = document.getElementById('stereo-annotations');
@@ -216,7 +219,7 @@ function init() {
     var settings = JSON.parse(localStorage.getItem("settings"));
 
     var globalSettings = [
-      blockMouseOnZoom, autoSave,
+      blockMouseOnZoom, autoSave, dashedLines
     ];
 
     var pcaSettings = [

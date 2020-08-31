@@ -63,11 +63,11 @@ function updateMeanTable() {
   var collection = JSON.parse(localStorage.getItem("selectedCollection"));
   var dirMode = localStorage.getItem('dirMode');
 
-  if (specimens.length == 0) {
-    document.getElementById("mean-table-container").innerHTML = '';
-    document.getElementById("save-dataTable").innerHTML = '';
-    return;
-  }
+  // if (specimens.length == 0) {
+  //   document.getElementById("mean-table-container").innerHTML = '';
+  //   document.getElementById("save-dataTable").innerHTML = '';
+  //   return;
+  // }
 
   // No means to show
   var zeroMeans = true;
@@ -80,17 +80,22 @@ function updateMeanTable() {
 
   if (zeroMeans) return document.getElementById("mean-table-container").innerHTML = ERROR_NO_MEANS;
 
-  var saveBtn = new Array(
-    "<button onclick='downloadMeansCSV()' type='button' title='Save means data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
-    "   <i class='fal fa-file-csv'></i>",
-    "</button>",
+  var saveBtns = new Array(
+    "<div class='btn-group btn-block btn-group-sm btn-group-justified d-flex mx-auto'>",
+    "  <button onclick='downloadMeansCSV()' type='button' title='Save means data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    <i class='fal fa-file-csv'></i>",
+    "  </button>",
+    "  <button onclick='downloadMeansXLSX()' type='button' title='Save means data as .xlsx' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    <i class='fal fa-file-excel'></i>",
+    "  </button>",
+    "</div>"
   ).join("\n");
 
   var tableHeader = new Array(
     "<table id='meanDataTable' class='table table-sm table-bordered w-100 small text-center' style='text-align: center!important; margin: 0;'>",
     "  <thead class='thead-light'>",
     "    <tr>",
-    "    <th><span title='Delete all means'><button onclick='deleteAllMeans()' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-trash-alt'></i></button></span></th>",
+    "      <th><span title='Delete all means'><button onclick='deleteAllMeans()' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-trash-alt'></i></button></span></th>",
     "      <th>ID</th>",
     "      <th>Dspec</th>",
     "      <th>Ispec</th>",
@@ -116,9 +121,9 @@ function updateMeanTable() {
     var currSpecRows = collection.means.map(function(mean, j) {
 
       // Get the interpretation in the right reference frame
-      var directionSpec = mean.dirSpec[dirMode];
-      var directionGeo = mean.dirGeo[dirMode];
-      var directionStrat = mean.dirStrat[dirMode];
+      var directionSpec = mean.specimen[dirMode];
+      var directionGeo = mean.geographic[dirMode];
+      var directionStrat = mean.tectonic[dirMode];
 
       // Handle comments on mean
       if (mean.comment === null) comment = ChRM_COMMENT;
@@ -170,7 +175,7 @@ function updateMeanTable() {
 
   var tableFooter = "</table>";
   document.getElementById("mean-table-container").innerHTML = tableHeader + allCollRows.join("\n") + tableFooter;
-  document.getElementById("save-dataTable").innerHTML = saveBtn;
+  document.getElementById("save-dataTable").innerHTML = saveBtns;
 }
 
 // Deletes all interpretations in a specimen
@@ -180,11 +185,9 @@ function deleteAllMeans(collectionIndex, meanIndex) {
    * Function deleteAllInterpretations
    * Deletes all interpretations in a specimen
    */
-  console.log(collectionIndex, meanIndex, collections);
 
   collections = JSON.parse(localStorage.getItem("collections"));
   selectedCollection = JSON.parse(localStorage.getItem("selectedCollection"));
-  console.log(collectionIndex, meanIndex, collections);
 
   // Reset
   if (collectionIndex === undefined) {
@@ -282,7 +285,7 @@ function downloadMeansCSV() {
   var collections = JSON.parse(localStorage.getItem("collections"));
   var dirMode = localStorage.getItem('dirMode');
 
-  const FILENAME = "statistics";
+  const FILENAME = "Statistics";
 
   const CSV_HEADER = new Array(
     "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
@@ -298,8 +301,8 @@ function downloadMeansCSV() {
       var code = mean.code;
 
       // check if specimen is not defined
-      var specDec = (mean.dirSpec[dirMode].dec) ? mean.dirSpec[dirMode].dec.toFixed(2) : '';
-      var specInc = (mean.dirSpec[dirMode].dec) ? mean.dirSpec[dirMode].inc.toFixed(2) : '';
+      var specDec = (mean.specimen[dirMode].dec) ? mean.specimen[dirMode].dec.toFixed(2) : '';
+      var specInc = (mean.specimen[dirMode].dec) ? mean.specimen[dirMode].inc.toFixed(2) : '';
 
       // Number of dots
       var N = mean.dots.length;
@@ -311,10 +314,10 @@ function downloadMeansCSV() {
         N,
         specDec,
         specInc,
-        mean.dirGeo[dirMode].dec.toFixed(2),
-        mean.dirGeo[dirMode].inc.toFixed(2),
-        mean.dirStrat[dirMode].dec.toFixed(2),
-        mean.dirStrat[dirMode].inc.toFixed(2),
+        mean.geographic[dirMode].dec.toFixed(2),
+        mean.geographic[dirMode].inc.toFixed(2),
+        mean.tectonic[dirMode].dec.toFixed(2),
+        mean.tectonic[dirMode].inc.toFixed(2),
         mean.a95[dirMode].toFixed(2),
         mean.comment,
       ).join(ITEM_DELIMITER));
@@ -322,10 +325,59 @@ function downloadMeansCSV() {
     });
   });
 
-
   outputMeans = rows.join(LINE_DELIMITER);
 
   saveFile("Save statistics data", FILENAME, outputMeans);
+
+}
+
+function downloadMeansXLSX() {
+
+  var collections = JSON.parse(localStorage.getItem("collections"));
+  var dirMode = localStorage.getItem('dirMode');
+
+  const FILENAME = "Statistics";
+
+  const XLSX_HEADER = new Array(
+    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+  );
+
+  var rows = [XLSX_HEADER];
+
+  collections.forEach(function(collection, i) {
+    collection.means.forEach(function(mean) {
+
+      // Full code of mean
+      var code = mean.code;
+
+      // check if specimen is not defined
+      var specDec = (mean.specimen[dirMode].dec) ? mean.specimen[dirMode].dec.toFixed(2) : '';
+      var specInc = (mean.specimen[dirMode].dec) ? mean.specimen[dirMode].inc.toFixed(2) : '';
+
+      // Number of dots
+      var N = mean.dots.length;
+
+      rows.push([
+        collection.name,
+        code,
+        "site avg",
+        N,
+        specDec,
+        specInc,
+        mean.geographic[dirMode].dec.toFixed(2),
+        mean.geographic[dirMode].inc.toFixed(2),
+        mean.tectonic[dirMode].dec.toFixed(2),
+        mean.tectonic[dirMode].inc.toFixed(2),
+        mean.a95[dirMode].toFixed(2),
+        mean.comment,
+      ]);
+
+    });
+  });
+
+  var outputMeans = xlsx.build([{name: FILENAME, data: rows}]); // Returns a buffer
+
+  saveFile("Save statistics data", FILENAME, outputMeans, 'xlsx');
 
 }
 
