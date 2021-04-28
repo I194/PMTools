@@ -6,7 +6,7 @@ const fs = require("fs");
 const WIDTH_RATIO = 0.8;
 const ASPECT_RATIO = 10 / 16;
 
-require('update-electron-app')();
+// require('update-electron-app')();
 
 
 // this should be placed at top of main.js to handle setup events quickly
