@@ -61,6 +61,20 @@ function formatStepTable() {
     document.getElementById("table-body-container").innerHTML = '';
     return;
   }
+  // downloadInterpretationsMagic()
+  var saveBtns = new Array(
+    "<div class='btn-group btn-block btn-group-sm btn-group-justified d-flex mx-auto'>",
+    "  <button onclick='ipcRenderer.send(" + '"' + 'open-magic-export' + '"' + ")' type='button' title='Save measurements data as MagIC' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    Export as MagIC <i class='fal fa-file-txt'></i>",
+    "  </button>",
+    "  <button onclick='downloadMeansCSV()' type='button' title='Save measurements data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    Export as .csv <i class='fal fa-file-csv'></i>",
+    "  </button>",
+    "  <button onclick='downloadMeansXLSX()' type='button' title='Save measurements data as .xlsx' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    Export as .xlsx <i class='fal fa-file-excel'></i>",
+    "  </button>",
+    "</div>"
+  ).join("\n");
 
   var tableHeadHeader = new Array(
     "  <thead class='thead-light'>",
@@ -83,7 +97,7 @@ function formatStepTable() {
     "      <td>" + specimen.coreDip + "</td>",
     "      <td>" + specimen.beddingStrike + "</td>",
     "      <td>" + specimen.beddingDip + "</td>",
-    "      <td>" + specimen.volume + "</td>",
+    "      <td>" + ((specimen.volume) ? specimen.volume : '?') + "</td>",
     "    </tr>",
   );
 
@@ -93,17 +107,17 @@ function formatStepTable() {
     "  <thead class='thead-light fixed-header'>",
     "    <tr>",
     "      <th>E</th>",
-    "      <th>#</th>",
-    "      <th>Step</th>",
-    "      <th>Xspec, 10<sup>-12</sup>Am<sup>2</sup></th>",
-    "      <th>Yspec, 10<sup>-12</sup>Am<sup>2</sup></th>",
-    "      <th>Zspec, 10<sup>-12</sup>Am<sup>2</sup></th>",
-    "      <th>Intensity, 10<sup>-6</sup>A/m</th>",
-    "      <th>Dgeo</th>",
-    "      <th>Igeo</th>",
-    "      <th>Dstrat</th>",
-    "      <th>Istrat</th>",
-    "      <th>a95</th>",
+    "      <th class='pb-0'>#" + putCopyColBtn(".num") + "</th>",
+    "      <th class='pb-0'>Step" + putCopyColBtn(".step") + "</th>",
+    "      <th class='pb-0'>Xspec, 10<sup>-12</sup>Am<sup>2</sup>" + putCopyColBtn(".xspec") + "</th>",
+    "      <th class='pb-0'>Yspec, 10<sup>-12</sup>Am<sup>2</sup>" + putCopyColBtn(".yspec") + "</th>",
+    "      <th class='pb-0'>Zspec, 10<sup>-12</sup>Am<sup>2</sup>" + putCopyColBtn(".zspec") + "</th>",
+    "      <th class='pb-0'>Intensity, 10<sup>-6</sup>A/m" + putCopyColBtn(".intens") + "</th>",
+    "      <th class='pb-0'>Dgeo" + putCopyColBtn(".dgeo") + "</th>",
+    "      <th class='pb-0'>Igeo" + putCopyColBtn(".igeo") + "</th>",
+    "      <th class='pb-0'>Dstrat" + putCopyColBtn(".dstrat") + "</th>",
+    "      <th class='pb-0'>Istrat" + putCopyColBtn(".istrat") + "</th>",
+    "      <th class='pb-0'>a95" + putCopyColBtn(".a95") + "</th>",
     "    </tr>",
     "  </thead>",
     "  <tbody>",
@@ -122,10 +136,11 @@ function formatStepTable() {
 
     // Notify error in Utrecht format
     // if (isUtrechtIntensityBug(specimen)) {
-    //   var intensity = "<span style='color: red' title='Intensity should be divided by sample volume (see changelog 2.0.2).'>" + (directionGeo.length / specimen.volume).toFixed(2) + "</span>";
+    //   var intensity = "<span style='color: red' title='Intensity should be divided by sample volume (see changelog 2.0.2).'>" + (directionGeo.length / specimen.volume).toFixed(1) + "</span>";
     // }
     // else {
-    var intensity = (directionGeo.length / specimen.volume).toFixed(0);
+    var volume = (specimen.volume) ? specimen.volume : 1;
+    var intensity = (directionGeo.length / volume).toFixed(0);
     // }
 
     var rowClass = '';
@@ -146,29 +161,17 @@ function formatStepTable() {
     return [
       "    <tr class='" + rowClass + "' title='" + rowTitle + "'>",
       "      <td>" + stepVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + stepVisibleIcon + "</button></span></td>",
-      "      <td>" + num + "</td>",
-      "      <td>" + step.step + "</td>",
-      "      <td>" + step.x.toFixed(0) + "</td>",
-      "      <td>" + step.y.toFixed(0) + "</td>",
-      "      <td>" + step.z.toFixed(0) + "</td>",
-      "      <td>" + intensity + "</td>",
-      "      <td>" + directionGeo.dec.toFixed(2) + "</td>",
-      "      <td>" + directionGeo.inc.toFixed(2) + "</td>",
-      "      <td>" + directionTect.dec.toFixed(2) + "</td>",
-      "      <td>" + directionTect.inc.toFixed(2) + "</td>",
-      "      <td>" + step.error.toFixed(2) + "</td>",
-      // "      <td>" + step.step + "</td>",
-      // "      <td>" + COORDINATES + "</td>",
-      // "      <td>" + direction.dec.toFixed(2) + "</td>",
-      // "      <td>" + direction.inc.toFixed(2) + "</td>",
-      // "      <td>" + intensity + "</td>",
-      // "      <td>" + (step.error ? step.error.toFixed(2) : null ) + "</td>",
-      // "      <td style='cursor: pointer;'>" + specimen.coreAzimuth + "</td>",
-      // "      <td style='cursor: pointer;'>" + specimen.coreDip + "</td>",
-      // "      <td style='cursor: pointer;'>" + specimen.beddingStrike + "</td>",
-      // "      <td style='cursor: pointer;'>" + specimen.beddingDip + "</td>",
-      // "      <td style='cursor: pointer;'>" + specimen.volume + "</td>",
-      // "      <td style='cursor: pointer;'>" + specimenLocation + "</td>",
+      "      <td class='num'>" + num + "</td>",
+      "      <td class='step'>" + step.step + "</td>",
+      "      <td class='xspec'>" + step.x.toFixed(0) + "</td>",
+      "      <td class='yspec'>" + step.y.toFixed(0) + "</td>",
+      "      <td class='zspec'>" + step.z.toFixed(0) + "</td>",
+      "      <td class='intens'>" + intensity + "</td>",
+      "      <td class='dgeo'>" + directionGeo.dec.toFixed(1) + "</td>",
+      "      <td class='igeo'>" + directionGeo.inc.toFixed(1) + "</td>",
+      "      <td class='dstrat'>" + directionTect.dec.toFixed(1) + "</td>",
+      "      <td class='istrat'>" + directionTect.inc.toFixed(1) + "</td>",
+      "      <td class='a95'>" + step.error.toFixed(1) + "</td>",
       "    </tr>",
     ].join("\n");
   });
@@ -177,6 +180,7 @@ function formatStepTable() {
 
   document.getElementById("table-head-container").innerHTML = tableHeadHeader + tableHeadRows.join("\n") + tableHeadFooter;
   document.getElementById("table-body-container").innerHTML = tableBodyHeader + tableBodyRows.join("\n") + tableBodyFooter;
+  document.getElementById("save-dataTable").innerHTML = saveBtns;
 
 }
 

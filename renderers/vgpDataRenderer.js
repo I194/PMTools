@@ -29,6 +29,14 @@ ipcRenderer.on('redraw-table', (event) => {
   updateVGPTable();
 })
 
+ipcRenderer.on('export-poles-xlsx', (event) => {
+  downloadVGPsXLSX();
+})
+
+ipcRenderer.on('export-poles-csv', (event) => {
+  downloadVGPsCSV();
+})
+
 // Inner scripts
 
 // CSV delimiters
@@ -58,8 +66,14 @@ function updateVGPTable() {
   const ERROR_NO_MEANS = "<h6 class='text-muted text-center' title='Make means to see them'>No means available</h6>";
   const ChRM_COMMENT = "";
 
-  var collections = JSON.parse(localStorage.getItem("collections"));
-  var collection = JSON.parse(localStorage.getItem("selectedCollection"));
+  var sitesSets = JSON.parse(localStorage.getItem("sitesSets"));
+  var sitesSet = JSON.parse(localStorage.getItem("selectedSitesSet"));
+
+  var coordinates = JSON.parse(localStorage.getItem("coordinates"));
+  var COORDINATES = (coordinates) ? coordinates.data : {pca: 'specimen', stat: 'geographic', poles: 'geographic'};
+
+  var system = 'geo';
+  if (COORDINATES.poles == 'tectonic') system = 'strat';
 
   var saveBtns = new Array(
     "<div class='btn-group btn-block btn-group-sm btn-group-justified d-flex mx-auto'>",
@@ -76,12 +90,12 @@ function updateVGPTable() {
     "<table id='meanDataTable' class='table table-sm table-bordered w-100 small text-center' style='text-align: center!important; margin: 0;'>",
     "  <thead class='thead-light fixed-header'>",
     "    <tr>",
-    "      <th>ID</th>",
-    "      <th>pole lat</th>",
-    "      <th>pole lon</th>",
-    "      <th>paleoLat</th>",
-    "      <th>dp</th>",
-    "      <th>dm</th>",
+    "      <th class='pb-0'>ID" + putCopyColBtn(".id") + "</th>",
+    "      <th class='pb-0'>pole lat" + putCopyColBtn(".plat") + "</th>",
+    "      <th class='pb-0'>pole lon" + putCopyColBtn(".plon") + "</th>",
+    "      <th class='pb-0'>paleoLat" + putCopyColBtn(".paleolat") + "</th>",
+    "      <th class='pb-0'>dp" + putCopyColBtn(".dp") + "</th>",
+    "      <th class='pb-0'>dm" + putCopyColBtn(".dm") + "</th>",
     "    </tr>",
     "  </thead>",
     "  <tbody>",
@@ -91,18 +105,19 @@ function updateVGPTable() {
 
   var allPoleRows = new Array();
 
-  collections.forEach(function(collection, i) {
+  sitesSet.sites.forEach(function(site, i) {
 
-    var pole = collection.vgp;
+    var vgp = site.vgp;
+    var num = vgp.index + 1;
 
     allPoleRows.push([
       "    <tr class='' title=''>",
-      "      <td>" + collection.name + "</td>",
-      "      <td>" + pole.lat.toFixed(2) + "</td>",
-      "      <td>" + pole.lng.toFixed(2) + "</td>",
-      "      <td>" + pole.pLat.toFixed(2) + "</td>",
-      "      <td>" + pole.dp.toFixed(2) + "</td>",
-      "      <td>" + pole.dm.toFixed(2) + "</td>",
+      "      <td class='id'>" + num + "</td>",
+      "      <td class='plat'>" + vgp[system].lat.toFixed(2) + "</td>",
+      "      <td class='plon'>" + vgp[system].lng.toFixed(2) + "</td>",
+      "      <td class='paleolat'>" + vgp[system].pLat.toFixed(2) + "</td>",
+      "      <td class='dp'>" + vgp[system].dp.toFixed(2) + "</td>",
+      "      <td class='dm'>" + vgp[system].dm.toFixed(2) + "</td>",
       "    </tr>",
     ].join("\n"));
 
@@ -119,16 +134,22 @@ function saveLocalStorage(collections, selectedCollection) {
    * Function saveLocalStorage
    * Saves sample object to local storage
    */
-  console.log(collections);
-  localStorage.setItem("collections", JSON.stringify(collections));
-  localStorage.setItem("selectedCollection", JSON.stringify(selectedCollection));
+
+  localStorage.setItem("sitesSets", JSON.stringify(sitesSets));
+  localStorage.setItem("selectedSitesSet", JSON.stringify(selectedSitesSet));
 
 }
 
 // Downloads all interpreted components to a CSV (export data)
 function downloadVGPsCSV() {
 
-  var collections = JSON.parse(localStorage.getItem("collections"));
+  var sitesSet = JSON.parse(localStorage.getItem("selectedSitesSet"));
+
+  var coordinates = JSON.parse(localStorage.getItem("coordinates"));
+  var COORDINATES = (coordinates) ? coordinates.data : {pca: 'specimen', stat: 'geographic', poles: 'geographic'};
+
+  var system = 'geo';
+  if (COORDINATES.poles == 'tectonic') system = 'strat';
 
   const FILENAME = "VGPs";
 
@@ -138,17 +159,18 @@ function downloadVGPsCSV() {
 
   var rows = new Array(CSV_HEADER.join(","));
 
-  collections.forEach(function(collection, i) {
+  sitesSet.sites.forEach(function(site, i) {
 
-    var pole = collection.vgp;
+    var vgp = site.vgp;
+    var num = vgp.index + 1;
 
     rows.push([
-      collection.name,
-      pole.lat.toFixed(2),
-      pole.lng.toFixed(2),
-      pole.pLat.toFixed(2),
-      pole.dp.toFixed(2),
-      pole.dm.toFixed(2)
+      num,
+      vgp[system].lat.toFixed(2),
+      vgp[system].lng.toFixed(2),
+      vgp[system].pLat.toFixed(2),
+      vgp[system].dp.toFixed(2),
+      vgp[system].dm.toFixed(2)
     ].join(ITEM_DELIMITER));
 
   });
@@ -161,7 +183,13 @@ function downloadVGPsCSV() {
 
 function downloadVGPsXLSX() {
 
-  var collections = JSON.parse(localStorage.getItem("collections"));
+  var sitesSet = JSON.parse(localStorage.getItem("selectedSitesSet"));
+
+  var coordinates = JSON.parse(localStorage.getItem("coordinates"));
+  var COORDINATES = (coordinates) ? coordinates.data : {pca: 'specimen', stat: 'geographic', poles: 'geographic'};
+
+  var system = 'geo';
+  if (COORDINATES.poles == 'tectonic') system = 'strat';
 
   const FILENAME = "VGPs";
 
@@ -171,17 +199,18 @@ function downloadVGPsXLSX() {
 
   var rows = [XLSX_HEADER];
 
-  collections.forEach(function(collection, i) {
+  sitesSet.sites.forEach(function(site, i) {
 
-    var pole = collection.vgp;
+    var vgp = site.vgp;
+    var num = vgp.index + 1;
 
     rows.push([
-      collection.name,
-      pole.lat.toFixed(2),
-      pole.lng.toFixed(2),
-      pole.pLat.toFixed(2),
-      pole.dp.toFixed(2),
-      pole.dm.toFixed(2)
+      num,
+      vgp[system].lat.toFixed(2),
+      vgp[system].lng.toFixed(2),
+      vgp[system].pLat.toFixed(2),
+      vgp[system].dp.toFixed(2),
+      vgp[system].dm.toFixed(2)
     ])
 
   });

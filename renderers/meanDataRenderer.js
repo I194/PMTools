@@ -29,6 +29,14 @@ ipcRenderer.on('redraw-table', (event) => {
   updateMeanTable();
 })
 
+ipcRenderer.on('export-means-xlsx', (event) => {
+  downloadMeansXLSX();
+})
+
+ipcRenderer.on('export-means-csv', (event) => {
+  downloadMeansCSV();
+})
+
 // Inner scripts
 
 // CSV delimiters
@@ -82,11 +90,17 @@ function updateMeanTable() {
 
   var saveBtns = new Array(
     "<div class='btn-group btn-block btn-group-sm btn-group-justified d-flex mx-auto'>",
+    "  <button onclick='ipcRenderer.send(" + '"' + 'open-magic-export' + '"' + ")' type='button' title='Save means data as MagIC' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    Export as MagIC <i class='fal fa-file-txt'></i>",
+    "  </button>",
     "  <button onclick='downloadMeansCSV()' type='button' title='Save means data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
-    "    <i class='fal fa-file-csv'></i>",
+    "    Export as .csv <i class='fal fa-file-csv'></i>",
     "  </button>",
     "  <button onclick='downloadMeansXLSX()' type='button' title='Save means data as .xlsx' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
-    "    <i class='fal fa-file-excel'></i>",
+    "    Export as .xlsx <i class='fal fa-file-excel'></i>",
+    "  </button>",
+    "  <button onclick='downloadMeansCSV(" + '"true"' + ")' type='button' title='' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    Open in Poles <i class='fas fa-arrow-square-right'></i>",
     "  </button>",
     "</div>"
   ).join("\n");
@@ -96,19 +110,19 @@ function updateMeanTable() {
     "  <thead class='thead-light'>",
     "    <tr>",
     "      <th><span title='Delete all means'><button onclick='deleteAllMeans()' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-trash-alt'></i></button></span></th>",
-    "      <th>ID</th>",
-    "      <th>Dspec</th>",
-    "      <th>Ispec</th>",
-    "      <th>Dgeo</th>",
-    "      <th>Igeo</th>",
-    "      <th>Dstrat</th>",
-    "      <th>Istrat</th>",
-    "      <th>a95</th>",
-    "      <th>k</th>",
-    "      <th>Code</th>",
-    "      <th>Steps</th>",
-    "      <th>N</th>",
-    "      <th>Comment</th>",
+    "      <th class='pb-0'>ID" + putCopyColBtn(".id") + "</th>",
+    "      <th class='pb-0'>N" + putCopyColBtn(".n") + "</th>",
+    "      <th class='pb-0'>Dgeo" + putCopyColBtn(".dgeo") + "</th>",
+    "      <th class='pb-0'>Igeo" + putCopyColBtn(".igeo") + "</th>",
+    "      <th class='pb-0'>kg" + putCopyColBtn(".kg") + "</th>",
+    "      <th class='pb-0'>a95g" + putCopyColBtn(".a95g") + "</th>",
+    "      <th class='pb-0'>Dstrat" + putCopyColBtn(".dstrat") + "</th>",
+    "      <th class='pb-0'>Istrat" + putCopyColBtn(".istrat") + "</th>",
+    "      <th class='pb-0'>ks" + putCopyColBtn(".ks") + "</th>",
+    "      <th class='pb-0'>a95s" + putCopyColBtn(".a95s") + "</th>",
+    "      <th class='pb-0'>Code" + putCopyColBtn(".code") + "</th>",
+    "      <th class='pb-0'>Steps" + putCopyColBtn(".steps") + "</th>",
+    "      <th class='pb-0'>Comment" + putCopyColBtn(".comment") + "</th>",
     "    </tr>",
     "  </thead>",
   ).join("\n");
@@ -121,30 +135,34 @@ function updateMeanTable() {
     var currSpecRows = collection.means.map(function(mean, j) {
 
       // Get the interpretation in the right reference frame
-      var directionSpec = mean.specimen[dirMode];
-      var directionGeo = mean.geographic[dirMode];
-      var directionStrat = mean.tectonic[dirMode];
+      var directionSpec = mean.specimen;
+      var directionGeo = mean.geographic;
+      var directionStrat = mean.tectonic;
 
       // Handle comments on mean
-      if (mean.comment === null) comment = ChRM_COMMENT;
+      if ((mean.comment === null) || !mean.comment) comment = ChRM_COMMENT;
       else comment = mean.comment;
 
       // Full code of mean
 
       var code = mean.code;
       // a95 angle (if forced this is unreliable)
-      var a95 = mean.a95[dirMode].toFixed(2);
+      // var a95 = mean.a95.toFixed(1);
+      var a95g = directionGeo.a95.toFixed(1);
+      var a95s = directionStrat.a95.toFixed(1);
       if((mean.code == 'GC') || (mean.code == 'GCn')) {
-        a95 = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95 + "</span>";
+        a95g = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95g + "</span>";
+        a95s = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95s + "</span>";
       }
-      var k = (mean.k[dirMode]) ? mean.k[dirMode].toFixed(2) : "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
+      var kg = (directionGeo.k) ? directionGeo.k.toFixed(1): "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
+      var ks = (directionStrat.k) ? directionStrat.k.toFixed(1): "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
 
       // check if specimen is not defined
       var specDec = '';
       var specInc = '';
       if (directionSpec) {
-        specDec = (directionSpec.dec) ? directionSpec.dec.toFixed(2) : '';
-        specInc = (directionSpec.dec) ? directionSpec.inc.toFixed(2) : '';
+        specDec = (directionSpec.dec) ? directionSpec.dec.toFixed(1) : '';
+        specInc = (directionSpec.dec) ? directionSpec.inc.toFixed(1) : '';
       }
       // Number of dots
       var N = mean.dots.length;
@@ -153,19 +171,19 @@ function updateMeanTable() {
       [
         "  </tr>",
         "    <td><span title='Delete mean'><button onclick='deleteAllMeans(" + i + ',' + j + ")' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-minus-square'></i></button></span></td>",
-        "    <td>" + collection.name + "</td>",
-        "    <td>" + specDec + "</td>",
-        "    <td>" + specInc + "</td>",
-        "    <td>" + directionGeo.dec.toFixed(2) + "</td>",
-        "    <td>" + directionGeo.inc.toFixed(2) + "</td>",
-        "    <td>" + directionStrat.dec.toFixed(2) + "</td>",
-        "    <td>" + directionStrat.inc.toFixed(2) + "</td>",
-        "    <td>" + a95 + "</td>",
-        "    <td>" + k + "</td>",
-        "    <td>" + code + "</td>",
-        "    <td>" + '"' + 'site avg' + '"' + "</td>",
-        "    <td>" + N + "</td>",
-        "    <td class='' contenteditable='true' style='cursor: pointer;' title='" + comment + "'>" + ((comment.length < COMMENT_LENGTH) ? comment : comment.slice(0, COMMENT_LENGTH) + "…") + "</td>",
+        "    <td class='id'>" + collection.name + "</td>",
+        "    <td class='n'>" + N + "</td>",
+        "    <td class='dgeo'>" + directionGeo.dec.toFixed(1) + "</td>",
+        "    <td class='igeo'>" + directionGeo.inc.toFixed(1) + "</td>",
+        "    <td class='kg'>" + kg + "</td>",
+        "    <td class='a95g'>" + a95g + "</td>",
+        "    <td class='dstrat'>" + directionStrat.dec.toFixed(1) + "</td>",
+        "    <td class='istrat'>" + directionStrat.inc.toFixed(1) + "</td>",
+        "    <td class='ks'>" + ks + "</td>",
+        "    <td class='a95s'>" + a95s + "</td>",
+        "    <td class='code'>" + code + "</td>",
+        "    <td class='steps'>" + '"' + 'site avg' + '"' + "</td>",
+        "    <td class='comment' contenteditable='true' style='cursor: pointer;' title='" + comment + "'>" + ((comment.length < COMMENT_LENGTH) ? comment : comment.slice(0, COMMENT_LENGTH) + "…") + "</td>",
         "  </tr>"
       ].join("\n"));
     });
@@ -275,7 +293,7 @@ function saveLocalStorage(collections, selectedCollection) {
 }
 
 // Downloads all interpreted components to a CSV (export data)
-function downloadMeansCSV() {
+function downloadMeansCSV(andOpen) {
 
   /*
    * Function downloadInterpretationsCSV
@@ -287,11 +305,18 @@ function downloadMeansCSV() {
 
   const FILENAME = "Statistics";
 
-  const CSV_HEADER = new Array(
-    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
-  );
+  const CSV_UPHEADER = new Array(
+    "from:", "dir_stat", "PMTools beta v" + getVersion(),
+  ).join(ITEM_DELIMITER);
 
-  var rows = new Array(CSV_HEADER.join(","));
+  var rows = new Array(CSV_UPHEADER);
+
+  const CSV_HEADER = new Array(
+    // "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "k", "a95", "Comment",// "Date",
+    "ID", "Code", "StepRange", "N", "Dgeo", "Igeo", "kg", "a95g", "Dstrat", "Istrat", "ks", "a95s", "Comment",// "Date",
+  ).join(ITEM_DELIMITER);
+
+  rows.push(CSV_HEADER);
 
   // Export the interpreted components as CSV
   collections.forEach(function(collection) {
@@ -301,8 +326,11 @@ function downloadMeansCSV() {
       var code = mean.code;
 
       // check if specimen is not defined
-      var specDec = (mean.specimen[dirMode].dec) ? mean.specimen[dirMode].dec.toFixed(2) : '';
-      var specInc = (mean.specimen[dirMode].dec) ? mean.specimen[dirMode].inc.toFixed(2) : '';
+      // var specDec = (mean.specimen.dec) ? mean.specimen.dec.toFixed(1) : '';
+      // var specInc = (mean.specimen.dec) ? mean.specimen.inc.toFixed(1) : '';
+
+      var kg = (mean.geographic.k) ? mean.geographic.k.toFixed(1) : "?";
+      var ks = (mean.tectonic.k) ? mean.tectonic.k.toFixed(1) : "?";
 
       // Number of dots
       var N = mean.dots.length;
@@ -310,15 +338,18 @@ function downloadMeansCSV() {
       rows.push(new Array(
         collection.name,
         code,
-        "site avg",
+        "avg",
         N,
-        specDec,
-        specInc,
-        mean.geographic[dirMode].dec.toFixed(2),
-        mean.geographic[dirMode].inc.toFixed(2),
-        mean.tectonic[dirMode].dec.toFixed(2),
-        mean.tectonic[dirMode].inc.toFixed(2),
-        mean.a95[dirMode].toFixed(2),
+        // specDec,
+        // specInc,
+        mean.geographic.dec.toFixed(1),
+        mean.geographic.inc.toFixed(1),
+        kg,
+        mean.geographic.a95.toFixed(1),
+        mean.tectonic.dec.toFixed(1),
+        mean.tectonic.inc.toFixed(1),
+        ks,
+        mean.tectonic.a95.toFixed(1),
         mean.comment,
       ).join(ITEM_DELIMITER));
 
@@ -327,7 +358,7 @@ function downloadMeansCSV() {
 
   outputMeans = rows.join(LINE_DELIMITER);
 
-  saveFile("Save statistics data", FILENAME, outputMeans);
+  saveFile("Save statistics data", FILENAME, outputMeans, 'csv', andOpen);
 
 }
 
@@ -338,11 +369,18 @@ function downloadMeansXLSX() {
 
   const FILENAME = "Statistics";
 
-  const XLSX_HEADER = new Array(
-    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+  const XLSX_UPHEADER = new Array(
+    "from:", "dir_stat", "PMTools beta v" + getVersion(),
   );
 
-  var rows = [XLSX_HEADER];
+  const XLSX_HEADER = new Array(
+    // "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "k", "a95", "Comment",// "Date",
+    "ID", "Code", "StepRange", "N", "Dgeo", "Igeo", "kg", "a95g", "Dstrat", "Istrat", "ks", "a95s", "Comment",// "Date",
+  );
+
+  var rows = [XLSX_UPHEADER];
+
+  rows.push(XLSX_HEADER);
 
   collections.forEach(function(collection, i) {
     collection.means.forEach(function(mean) {
@@ -351,24 +389,30 @@ function downloadMeansXLSX() {
       var code = mean.code;
 
       // check if specimen is not defined
-      var specDec = (mean.specimen[dirMode].dec) ? mean.specimen[dirMode].dec.toFixed(2) : '';
-      var specInc = (mean.specimen[dirMode].dec) ? mean.specimen[dirMode].inc.toFixed(2) : '';
+      var specDec = (mean.specimen.dec) ? mean.specimen.dec.toFixed(1) : '';
+      var specInc = (mean.specimen.dec) ? mean.specimen.inc.toFixed(1) : '';
 
       // Number of dots
       var N = mean.dots.length;
 
+      var kg = (mean.geographic.k) ? mean.geographic.k.toFixed(1) : "?";
+      var ks = (mean.tectonic.k) ? mean.tectonic.k.toFixed(1) : "?";
+
       rows.push([
         collection.name,
         code,
-        "site avg",
+        "avg",
         N,
-        specDec,
-        specInc,
-        mean.geographic[dirMode].dec.toFixed(2),
-        mean.geographic[dirMode].inc.toFixed(2),
-        mean.tectonic[dirMode].dec.toFixed(2),
-        mean.tectonic[dirMode].inc.toFixed(2),
-        mean.a95[dirMode].toFixed(2),
+        // specDec,
+        // specInc,
+        mean.geographic.dec.toFixed(1),
+        mean.geographic.inc.toFixed(1),
+        kg,
+        mean.geographic.a95.toFixed(1),
+        mean.tectonic.dec.toFixed(1),
+        mean.tectonic.inc.toFixed(1),
+        ks,
+        mean.tectonic.a95.toFixed(1),
         mean.comment,
       ]);
 

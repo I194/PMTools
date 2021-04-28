@@ -42,8 +42,8 @@
             <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
               <a class="nav-link active" id="general-tab" data-toggle="pill" role="tab" aria-selected="true" href="#general" aria-controls="general">General</a>
               <a class="nav-link" id="pca-tab" data-toggle="pill" role="tab" aria-selected="false" href="#pca" aria-controls="pca">PCA</a>
-              <a class="nav-link" id="stats-tab" data-toggle="pill" role="tab" aria-selected="false" href="#stats" aria-controls="stats">Statistics</a>
-              <a class="nav-link" id="poles-tab" data-toggle="pill" role="tab" aria-selected="false" href="#poles" aria-controls="poles">Poles, etc.</a>
+              <a class="nav-link" id="stats-tab" data-toggle="pill" role="tab" aria-selected="false" href="#stats" aria-controls="stats">Directional Statistics</a>
+              <a class="nav-link" id="poles-tab" data-toggle="pill" role="tab" aria-selected="false" href="#poles" aria-controls="poles">Poles</a>
             </div>
           </div>
         </div>
@@ -52,6 +52,7 @@
         <div class="card">
           <div class="card-body bg-light" style="height: 96vh; padding-left: 2vw; overflow-y: auto;">
             <div class="tab-content" id="v-pills-tabContent">
+              <!-- General -->
               <div class="tab-pane fade show active" id="general" role="tabpanel" aria-labelledby="general-tab">
                 <div class="table-responsive">
                   <table class="table">
@@ -100,12 +101,13 @@
                  </table>
                </div>
               </div>
+              <!-- PCA page -->
               <div class="tab-pane fade" id="pca" role="tabpanel" aria-labelledby="pca-tab">
                 <div class="table-responsive">
                   <table class="table">
                     <tbody>
                       <tr>
-                        <td>Container (zijd/stereo) scroll</td>
+                        <td>Container scroll</td>
                         <td class="text-primary text-center">Z</td>
                       </tr>
                       <tr>
@@ -144,12 +146,113 @@
                         <td>Erase dots from charts</td>
                         <td class="text-primary text-center">E</td>
                       </tr>
+                      <tr>
+                        <td>Redraw charts</td>
+                        <td class="text-primary text-center">R</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
               </div>
-              <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab"></div>
-              <div class="tab-pane fade" id="poles" role="tabpanel" aria-labelledby="poles-tab"></div>
+              <!-- Directional Statistics page -->
+              <div class="tab-pane fade" id="stats" role="tabpanel" aria-labelledby="stats-tab">
+                <div class="table-responsive">
+                  <table class="table">
+                    <tbody>
+                      <tr>
+                        <td>Coordinate reference scroll</td>
+                        <td class="text-primary text-center">X</td>
+                      </tr>
+                      <tr>
+                        <td>Zoom (in main container)</td>
+                        <td class="text-primary text-center">+/-</td>
+                      </tr>
+                      <tr>
+                        <td>Pan (after zoom)</td>
+                        <td class="text-primary text-center">Arrow buttons</td>
+                      </tr>
+                      <tr>
+                        <td>Select dots for Fisher</td>
+                        <td class="text-primary text-center">F</td>
+                      </tr>
+                      <tr>
+                        <td>Select dots for McFadden</td>
+                        <td class="text-primary text-center">M</td>
+                      </tr>
+                      <tr>
+                        <td>Select dots for GC</td>
+                        <td class="text-primary text-center">G</td>
+                      </tr>
+                      <tr>
+                        <td>Select dots for GCn</td>
+                        <td class="text-primary text-center">I</td>
+                      </tr>
+                      <tr>
+                        <td>Erase dots from charts</td>
+                        <td class="text-primary text-center">E</td>
+                      </tr>
+                      <tr>
+                        <td>Get dots antipodes</td>
+                        <td class="text-primary text-center">E</td>
+                      </tr>
+                      <tr>
+                        <td>Redraw charts</td>
+                        <td class="text-primary text-center">R</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <!-- Poles page -->
+              <div class="tab-pane fade" id="poles" role="tabpanel" aria-labelledby="poles-tab">
+
+                  <div class="table-responsive">
+                    <table class="table">
+                      <tbody>
+                        <tr>
+                          <td>Coordinate reference scroll</td>
+                          <td class="text-primary text-center">X</td>
+                        </tr>
+                        <tr>
+                          <td>Zoom (in main container)</td>
+                          <td class="text-primary text-center">+/-</td>
+                        </tr>
+                        <tr>
+                          <td>Pan (after zoom)</td>
+                          <td class="text-primary text-center">Arrow buttons</td>
+                        </tr>
+                        <tr>
+                          <td>Select dots for Fisher</td>
+                          <td class="text-primary text-center">F</td>
+                        </tr>
+                        <tr>
+                          <td>Select dots for McFadden</td>
+                          <td class="text-primary text-center">M</td>
+                        </tr>
+                        <tr>
+                          <td>Select dots for GC</td>
+                          <td class="text-primary text-center">G</td>
+                        </tr>
+                        <tr>
+                          <td>Select dots for GCn</td>
+                          <td class="text-primary text-center">I</td>
+                        </tr>
+                        <tr>
+                          <td>Erase dots from charts</td>
+                          <td class="text-primary text-center">E</td>
+                        </tr>
+                        <tr>
+                          <td>Get dots antipodes</td>
+                          <td class="text-primary text-center">E</td>
+                        </tr>
+                        <tr>
+                          <td>Redraw charts</td>
+                          <td class="text-primary text-center">R</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+              </div>
             </div>
           </div>
         </div>

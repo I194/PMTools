@@ -1,24 +1,26 @@
 // FILE IMPORTING
-function importFiles(modal) {
+function importFiles(modal, add) {
 
   /*
    * Function fileSelectionHandler
    *  Callback fired when input files are selected
    */
 
-  console.log('!!!!!!!!!!!!!!!!!!!!!!!!!!!!', lastOpenPath);
   $("#menu-file").click();
 
   // Options of openFileDialog
   var options = {
     title: "Open files",
     filters: [
-      { name: 'PaleoMac', extensions: ['pmd', 'pmm', 'dir'] },
-      // { name: 'Remasoft', extensions : ['rs3', 'rsf'] },
+      { name: 'PMD', extensions: ['pmd'] },
+      { name: 'PMM/DIR', extensions: ['pmm', 'dir'] },
+      { name: 'JRA', extensions : ['jra'] },
+      { name: 'RS3', extensions : ['rs3'] },
+      // { name: 'MagIC', extensions: ['txt']},
       // { name: 'JR5', extensions: ['JR5'] },
       // { name: 'JR6', extensions: ['JR6'] },
       { name: 'rmg non-format file', extensions: ['*'] },
-        { name: 'Custom', extensions: ['csv', 'json'] },
+      { name: 'Custom', extensions: ['csv'] },
     ],
     defaultPath: lastOpenPath,
     properties: [
@@ -41,7 +43,7 @@ function importFiles(modal) {
     if (modal) localStorage.setItem("lastOpenPath", lastOpenPath);
   });
 
-  loadCollectionFileCallback(files, modal);
+  loadCollectionFileCallback(files, modal, add);
 
   // var files = Array.from(event.target.files);
   // var filesContent = new Array();
@@ -66,68 +68,123 @@ function importFiles(modal) {
 
 }
 
-function loadCollectionFileCallback(files, modal) {
+function loadCollectionFileCallback(files, modal, add) {
 
   //const format = document.getElementById("format-selection").value;
-  const format = new Array();
+  // var numPMM = 0, numDIR = 0, numRS3 = 0, numCSV = 0;
+  var format = new Array();
   files.forEach((file, i) => {
     var filenameSplit = file.name.split('.');
-    //format.push((/[.]/.exec(file.name)) ? /[^.]+$/.exec(file.name) : undefined);
     if (filenameSplit.length == 1) format.push(""); // подразумевается, что название не содержит точек
     else format.push(filenameSplit[filenameSplit.length - 1]);
   });
-  // Drop the samples if not appending
-  if (modal) {
-    specimens = new Array();
-    collections = new Array();
+  var formats = format;
+
+  if (add) { // one-time Add-mode initialization
+    if (settings.global.appendFiles) add = false; // off one-time Add-mode
+    else settings.global.appendFiles = true; // on one-time Add-mode
   }
-  else if(!document.getElementById("append-input").checked) {
+
+  // Drop the samples if not appending
+  if (modal || (!settings.global.appendFiles)) {
     specimens = new Array();
     collections = new Array();
+    sitesSets = new Array();
   }
 
   var nSamples = specimens.length;
 
+  numSpec = 0, numColls = 0, numSiteSets = 0; // подсчёт новых файлов
   // Try adding the demagnetization data
-  addDegmagnetizationFiles(format, files);
+  format = addDegmagnetizationFiles(format, files);
 
-  specimens.forEach((specimen, i) => {
+  var headSpecNum = specimens.length - numSpec;
+  var headCollNum = collections.length - numColls;
+  var headSitesSetNum = sitesSets.length - numSiteSets;
+
+  for (let i = headSpecNum; i < specimens.length; i++) {
+    var specimen = specimens[i];
     specimen.steps.forEach((step, i) => {
       step.index = i;
     });
-  });
-  collections.forEach((collection, i) => {
+  }
+
+  var combineData;
+  if (numColls > 1) combineData = confirm('Combine data?');
+  if (combineData) {
+    var headCollNum = collections.length - numColls;
+    for (let i = headCollNum + 1; i < collections.length; i++) {
+      collections[headCollNum].interpretations = collections[headCollNum].interpretations.concat(collections[i].interpretations);
+    }
+    collections.splice(headCollNum + 1);
+  }
+
+  for (let i = headCollNum; i < collections.length; i++) {
+    var collection = collections[i];
+  // newCollections.forEach((collection, i) => {
     if (collection.interpretations[0].index != 0) {
-      var flipData = flipCollections(collection);
+      var flipData = flipCollections(collection, true);
       collection.interpretations.forEach((interpretation, i) => {
         // add index
         interpretation.index = i;
+        if (interpretation.code.slice(0, 2) == 'GC') interpretation.gc = true;
+        else interpretation.gc = false;
 
         // add reversed data
-        var dSpecR = flipData['specimen'] ? flipData['specimen'][i].x : interpretation.Dspec;
-        var iSpecR = flipData['specimen'] ? flipData['specimen'][i].x : interpretation.Ispec;
-
-        interpretation.Dspec = {normal: interpretation.Dspec, reversed: dSpecR};
-        interpretation.Ispec = {normal: interpretation.Ispec, reversed: iSpecR};
-        interpretation.Dgeo = {normal: interpretation.Dgeo, reversed: flipData['geographic'][i].x};
-        interpretation.Igeo = {normal: interpretation.Igeo, reversed: flipData['geographic'][i].y};
-        interpretation.Dstrat = {normal: interpretation.Dstrat, reversed: flipData['tectonic'][i].x};
-        interpretation.Istrat = {normal: interpretation.Istrat, reversed: flipData['tectonic'][i].y};
+        // var dSpecR = flipData['specimen'] ? flipData['specimen'][i].x : interpretation.Dspec;
+        // var iSpecR = flipData['specimen'] ? flipData['specimen'][i].x : interpretation.Ispec;
+        //
+        // interpretation.Dspec = {normal: interpretation.Dspec, reversed: dSpecR};
+        // interpretation.Ispec = {normal: interpretation.Ispec, reversed: iSpecR};
+        interpretation.geographic.dec = {normal: interpretation.geographic.dec, reversed: flipData['geographic'][i].x};
+        interpretation.geographic.inc = {normal: interpretation.geographic.inc, reversed: flipData['geographic'][i].y};
+        interpretation.tectonic.dec = {normal: interpretation.tectonic.dec, reversed: flipData['tectonic'][i].x};
+        interpretation.tectonic.inc = {normal: interpretation.tectonic.inc, reversed: flipData['tectonic'][i].y};
       });
-      // add vgp data
-      var pole = getVGPData(collection);
-      collection.vgp = pole;
-      if ((document.getElementById('site-lat')) && (document.getElementById('site-lon'))) {
-        document.getElementById("site-lat").value = collection.vgp.siteLat;
-        document.getElementById("site-lon").value = collection.vgp.siteLon;
-      }
     }
-  });
+  };
+
+  for (let i = headSitesSetNum; i < sitesSets.length; i++) {
+    var sitesSet = sitesSets[i];
+  // newSitesSets.forEach((sitesSet, i) => {
+    if (sitesSet.sites[0].index != 0) {
+      var flipData = flipCollections(sitesSet, true, true);
+      sitesSet.sites.forEach((site, i) => {
+        // add index
+        site.index = i;
+
+        // add reversed data
+        site.geographic.dec = {normal: site.geographic.dec, reversed: flipData['geographic'][i].x};
+        site.geographic.inc = {normal: site.geographic.inc, reversed: flipData['geographic'][i].y};
+        site.tectonic.dec = {normal: site.tectonic.dec, reversed: flipData['tectonic'][i].x};
+        site.tectonic.inc = {normal: site.tectonic.inc, reversed: flipData['tectonic'][i].y};
+
+        // add vgp data
+        var pole = siteToVGP(site);
+        site.vgp = pole;
+        // if ((document.getElementById('site-lat')) && (document.getElementById('site-lon'))) {
+        //   document.getElementById("site-lat").value = site.vgp.siteLat;
+        //   document.getElementById("site-lon").value = site.vgp.siteLon;
+        // }
+      });
+    }
+  };
 
   if (modal) {
-    if (specimens.length > 0) localStorage.setItem("specimens", JSON.stringify(specimens));
-    if (specimens.length > 0) localStorage.setItem("collections", JSON.stringify(collections));
-    return ipcRenderer.send('init-pages');
+    if (specimens.length > 0) {
+      localStorage.setItem("specimens", JSON.stringify(specimens));
+      localStorage.setItem("selectedSpecimen", JSON.stringify(specimens[0]));
+    }
+    if (collections.length > 0) {
+      localStorage.setItem("collections", JSON.stringify(collections));
+      localStorage.setItem("selectedCollection", JSON.stringify(collections[0]));
+    }
+    if (sitesSets.length > 0) {
+      localStorage.setItem("sitesSets", JSON.stringify(sitesSets));
+      localStorage.setItem("selectedSitesSet", JSON.stringify(sitesSets[0]));
+    }
+    ipcRenderer.sendSync('init-pages', formats);
+    return openCorresponindgPage(formats);
   }
   else saveLocalStorage();
 
@@ -137,15 +194,13 @@ function loadCollectionFileCallback(files, modal) {
 
   updateFileSelect('specimen');
   updateFileSelect('collection');
+  updateFileSelect('sitesSet');
 
   ipcRenderer.send('init-pages');
+  openCorresponindgPage(formats);
   redrawCharts();
 
-  // if(specimens.length) {
-  //   enableInterpretationTabs();
-  // }
-
-  //notify("success", "Succesfully added <b>" + (specimens.length - nSamples) + "</b> specimen(s) (" + format + ").");
+  if (add) settings.global.appendFiles = false; // off one-time Add-mode
 
 }
 
@@ -155,17 +210,26 @@ function addDegmagnetizationFiles(format, files) {
    * Function addDegmagnetizationFiles
    * Adds files loaded by the Filehandler API and delegates to the correct handler
    */
+  var combineData;
 
-  console.log(format);
   files.forEach((file, i) => {
-    if (format[i] == "PMD" || format[i] == "pmd") format[i] = "PALEOMAC";
+    if (format[i] == "PMD" || format[i] == "pmd") {
+      format[i] = "PALEOMAC";
+    }
     switch(format[i]) {
       case "dir":
       case "DIR":
-        return importDIR(file);
+        importDIR(file);
+        numColls += 1;
+        return;
       case "pmm":
       case "PMM":
-        return importPMM(file);
+        importPMM(file);
+        numColls += 1;
+        return;
+      case "csv":
+        format[i] = importPMCSV(file, format);
+        return;
       case "UNKNOWN":
         return importUnknown(file);
       case "BLACKMNT":
@@ -187,7 +251,9 @@ function addDegmagnetizationFiles(format, files) {
       case "NGU":
         return importNGU(file);
       case "PALEOMAC":
-        return importPaleoMac(file);
+        importPaleoMac(file);
+        numSpec += 1;
+        return;
       case "OXFORD":
         return importOxford(file);
       case "RS3":
@@ -197,10 +263,12 @@ function addDegmagnetizationFiles(format, files) {
         return importBCN2G(file);
       case "CENIEH":
         return importCenieh(file);
-      case "MAGIC":
+      case "txt": // it's a MagIC
         return importMagic(file);
       case "JR5":
       case "jr5":
+      case "jra":
+        numSpec += 1;
         return importJR5(file);
       case "JR6":
       case "jr6":
@@ -208,16 +276,20 @@ function addDegmagnetizationFiles(format, files) {
       case "CJONES":
         return importPaleoMag(file);
       case "":
-        return importRMG(file);
+        importRMG(file);
+        numSpec += 1;
+        return;
       default:
         throw(new Exception("Unknown importing format requested."));
     }
   });
 
+  return format;
+
 }
 
 // FILE EXPORTING
-function saveFile(windowTitle, fileName, data, extension) {
+function saveFile(windowTitle, fileName, data, extension, andOpen) {
 
   // Options of saveFileDialog
   if ((!extension) || (extension === 'csv')) {
@@ -247,6 +319,11 @@ function saveFile(windowTitle, fileName, data, extension) {
     });
 
     lastSavePath = savePath.split(savePath.replace(/^.*[\\\/]/, ''))[0];
+
+    if (andOpen) {
+      ipcRenderer.send('open-in-next-tab', savePath);
+    }
+
   }
   // Save lastSavePath to localStorage
 
@@ -334,18 +411,43 @@ function loadProjectCallback(project) {
 
   // Double parse 'couse first is not a true parse
   project_data = JSON.parse(project);
-  localStorage.setItem("specimens", JSON.stringify(project_data.specimens));
+
+  localStorage.setItem("specimens", JSON.stringify(project_data.specimens || []));
   localStorage.setItem("selectedSpecimen", JSON.stringify(project_data.selectedSpecimen));
+  localStorage.setItem("collections", JSON.stringify(project_data.collections || []));
+  localStorage.setItem("selectedCollection", JSON.stringify(project_data.selectedCollection));
+  localStorage.setItem("sitesSets", JSON.stringify(project_data.sitesSets || []));
+  localStorage.setItem("selectedSitesSet", JSON.stringify(project_data.selectedSitesSet));
+
   localStorage.setItem("settings", JSON.stringify(project_data.settings));
 
   ipcRenderer.send('reload-settWin');
 
 
   specimens = project_data.specimens;
+  collections = project_data.collections;
+  sitesSets = project_data.sitesSets;
+
   settings = project_data.settings;
 
-  updateSpecimenSelect();
+  ipcRenderer.send('reload-specDataWin');
+  ipcRenderer.send('reload-interpretDataWin');
+  ipcRenderer.send('reload-meansDataWin');
+
+  updateFileSelect('specimen');
+  updateFileSelect('collection');
+  updateFileSelect('sitesSet');
+
+  ipcRenderer.send('init-pages');
+  // openCorresponindgPage(formats);
+
   redrawCharts();
+
+}
+
+function loadPreviousProject() {
+
+  ipcRenderer.send('hide-openFilesModal');
 
 }
 
@@ -359,7 +461,11 @@ function saveProject() {
   var project = JSON.stringify(
     {
       specimens: JSON.parse(localStorage.getItem("specimens")),
-      selectedSpecimen: JSON.parse(localStorage.getItem("selectedSpecimen")),
+      selectedSpecimen: JSON.parse((localStorage.getItem("selectedSpecimen") != "undefined") ? localStorage.getItem("selectedSpecimen") : "{}"),
+      collections: JSON.parse(localStorage.getItem("collections")),
+      selectedCollection: JSON.parse((localStorage.getItem("selectedCollection") != "undefined") ? localStorage.getItem("selectedCollection") : "{}"),
+      sitesSets: JSON.parse(localStorage.getItem("sitesSets")),
+      selectedSitesSet: JSON.parse((localStorage.getItem("selectedSitesSet") != "undefined") ? localStorage.getItem("selectedSitesSet") : "{}"),
       settings: JSON.parse(localStorage.getItem("settings")),
     }
   )

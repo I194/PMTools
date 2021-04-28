@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width = device-width, initial-scale = 1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<html>
+  <head>
+    <!-- Bootstrap css -->
+    <link rel="stylesheet" href="../lib/style/bootstrap4/css/bootstrap.min.css">
+    <!-- Awesome css -->
+    <link rel="stylesheet" href="../lib/style/fontawesome-free-5.13.0-web/css/all.css">
+    <link rel="stylesheet" href="../lib/style/fontawesome-pro-5.13.0-web/css/all.css">
+    <!-- Custom style -->
+    <link rel="stylesheet" href="../lib/style/custom_style.css">
+    <!-- Titilebar style -->
+    <link rel="stylesheet" href="../lib/style/titlebar.css">
+    <!-- Title -->
+    <title>Manage Files</title>
+  </head>
+  <body style="overflow-y: hidden; line-height: 0;">
+    <div id="static-elements">
+      <!-- App titlebar -->
+      <div class="d-flex justify-content-center container-fluid">
+        <div class="row no-gutters justify-content-center container-fluid">
+          <div class="title-bar">
+            <div class="menu-button-container">
+              <button type="button" class="icon-button custom-btn no-hover" id="icon-button"><img src="../img/pm-tools-app-icon-dark.svg" height="16" width="auto" alt=""></button></div>
+            <div class="app-name-container">
+              Manage Files
+            </div>
+            <div class="window-controls-container">
+              <button type="button" class="minimize-button custom-btn" id="minimize-button"><i class="far fa-window-minimize"></i></button>
+              <button type="button" class="min-max-button custom-btn" id="min-max-button"><i class="fal fa-window-restore"></i></button>
+              <button type="button" class="close-button custom-btn" id="close-button"><i class="fal fa-times"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- File manager functions -->
+      <div class="card mt-1 mb-1 border-0">
+        <div class="card-body border-0">
+          <button type="button" class="btn btn-sm btn-secondary" style="vertical-align: middle;" name="openFiles" onclick="ipcRenderer.send('import-files')">Open files</button>
+          <div class="form-check form-check-inline " style="margin: 0; vertical-align: middle;">
+            <input class="form-check-input pt-1 btn-sm btn" style="vertical-align: middle;" type="checkbox" id="append-input" value="option1">
+            <label class="form-check-label btn-sm btn" style="vertical-align: middle;" for="append-input">Append files</label>
+          </div>
+          <button type="button" class="btn btn-sm btn-secondary" style="vertical-align: middle;" name="openProject" onclick="ipcRenderer.send('import-project')">Open project</button>
+          <button type="button" class="btn btn-sm btn-secondary" style="vertical-align: middle;" name="closeFiles" onclick="deleteFiles()">Close selected</button>
+          <!-- <button type="button" class="btn btn-sm btn-secondary" name="reloadFiles">Reload files</button> -->
+        </div>
+      </div>
+    </div>
+    <!-- Files table info -->
+    <div id="files-table-container" class="table-responsive"  style="overflow-y: auto; height: 84vh; line-height: 1.5;"></div>
+  </body>
+  <!-- Bootstrap.js, Popper.js, and jQuery -->
+  <script src="../lib/jquery/jquery.min.js"></script>
+  <script src="../lib/popper/popper.min.js"></script>
+  <script src="../lib/style/bootstrap4/js/bootstrap.min.js"></script>
+  <!-- Inner scripts -->
+  <script type="text/javascript" src="../extra_modules/setVersion.js"></script>
+  <!-- render process -->
+  <script type="text/javascript" src="../renderers/fileManagerRenderer.js"></script>
+</html>

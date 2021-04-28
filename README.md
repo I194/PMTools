@@ -1,3 +1,3 @@
 JS electron based version of PMTools.
 
-PMTools beta v0.9.2.
+PMTools beta v0.9.4.

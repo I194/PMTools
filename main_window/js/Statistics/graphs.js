@@ -7,80 +7,62 @@ function statPlotStereoDiagram(hover) {
   // Get the Boolean flags for the graph
   var enableLabels = settings.stat.statAnnotations;
   var enableTooltips = settings.stat.statTooltips;
-  var allowOverlap = settings.stat.allowOverlap;
-  var addTextOutline = settings.stat.addTextOutline;
+  var allowOverlap = settings.stat.statAllowOverlap;
+  var addTextOutline = settings.stat.statAddTextOutline;
   var showError = settings.stat.statError;
+  var showDir = settings.stat.statDir;
+  var showGC = settings.stat.statGC;
 
   // Format a Highcharts data bucket for samples that are visible
   var dataPos = new Array(), dataNeg = new Array(), dataAbs = new Array();
+  var dirDataPos = new Array(), dirDataNeg = new Array();
+  // var dataPosGCpos = new Array(), dataGCneg = new Array();
 
   var dataSeries = new Array(), dataErrors = new Array();
   var dataSeriesPole = new Array();
   var dataSeriesFlip = new Array();
-  var selectedInterpretationIndex = null;
+  var hoverIndex;
 
   var interpretations = collection.interpretations;
-  // var flipData = flipCollections();
-
-  var statistics = getStatisticalParameters(collection.interpretations);
-
-  var baseSite = getSite() // new Site(0, 0);
 
   interpretations.forEach(function(interpretation, i) {
 
     if (!interpretation.visible) return;
+    if (interpretation.hover) hoverIndex = interpretation.index;
 
-    var mean = collection.means[0];
-    if (collection.means.length > 1) mean = collection.means[collection.means.length - 1];
+    var mean = undefined;
+    if (collection.means.length > 0) mean = collection.means[collection.means.length - 1][COORDINATES.stat];
 
-    var dec, inc, meanDec, meanInc;
-    if (COORDINATES['stat'] == 'specimen') {
-      dec = interpretation.Dspec[DIRECTION_MODE];
-      inc = interpretation.Ispec[DIRECTION_MODE];
+    var position = 'normal';
+    if (interpretation.reversed) position = 'reversed';
+
+    var dec, inc, meanDec, meanInc, mad;
+    var dec = interpretation[COORDINATES.stat].dec[position];
+    var inc = interpretation[COORDINATES.stat].inc[position];
+    var mad = interpretation[COORDINATES.stat].mad;
+
+    if (TO_CENTER && mean) {
+      document.getElementById('calculate-f').innerHTML = '';
+      tmpdir = rotateTo({dec: dec, inc: inc}, mean.dec, 0);
+      tmpdir = rotateTo(tmpdir, 0, -(90-mean.inc));
+      dec = tmpdir.dec;
+      inc = tmpdir.inc;
     }
-    else if (COORDINATES['stat'] == 'geographic') {
-      dec = interpretation.Dgeo[DIRECTION_MODE];
-      inc = interpretation.Igeo[DIRECTION_MODE];
-    }
-    else {
-      dec = interpretation.Dstrat[DIRECTION_MODE];
-      inc = interpretation.Istrat[DIRECTION_MODE];
-    }
-
-    var pole = baseSite.poleFrom(new Direction(dec, inc));
-
-    // Simple rotation rotate all vectors with mean vector to up/north
-    pole = pole.toCartesian().rotateTo(-statistics.pole.mean.lng, 90).rotateFrom(0, statistics.pole.mean.lat).rotateTo(statistics.pole.mean.lng, 90).toVector(Pole);
-
-    // if (DIRECTION_MODE == 'reversed') {
-    //   dec = flipData[COORDINATES.stat][i].x;
-    //   inc = flipData[COORDINATES.stat][i].y;
-    // }
-
-    dataSeriesPole.push({
-      x: pole.lng,
-      y: projectInclination(pole.lat),
-      inc: pole.lat,
-      id: interpretation.id,
-      dotIndex: interpretation.index,
-      // "marker": {
-      //   "fillColor": (pole.lat < 0 ? 'white' : 'black'),
-      //   "lineWidth": 1,
-      //   "lineColor": 'black',
-      // }
-    });
 
     var interpret_data = {
       x: dec,
       y: Math.abs(inc),
       inc: inc,
+      mad: mad,
       dotIndex: interpretation.index,
       id: interpretation.id,
     };
+
     dataSeries.push({
       x: dec,
       y: Math.abs(inc),
       inc: inc,
+      mad: mad,
       // marker: {
       //   fillColor: (inc < 0 ? 'white' : 'black'),
       //   lineWidth: 1,
@@ -88,21 +70,23 @@ function statPlotStereoDiagram(hover) {
       // },
       dotIndex: interpretation.index,
       id: interpretation.id,
-      innerColor: (inc < 0 ? 'white' : 'black'),
+      innerColor: (inc < 0) ? 'white' : 'black',
     });
 
-    if (showError) {
-      if (settings.global.dashedLines) {
-        dataErrors.push(
-          getSmallCircle(dec, Math.abs(inc), interpretation.mad, true)
-        )
-      }
-      else {
-        dataErrors.push(
-          getSmallCircle(dec, Math.abs(inc), interpretation.mad, false)
-        )
-      }
+    if (showError && ((!showDir && interpretation.code.slice(0, 2) != 'GC') || showDir)) {
+      interpret_data.errorCircle = getSmallCircle(dec, Math.abs(inc), interpretation[COORDINATES.stat].mad, true);
     };
+
+    if ((interpretation.code.slice(0, 2) == 'GC') && showGC) {
+      var direction = new Direction(dec, inc);
+      interpret_data.GCpos = getPlaneData(direction).positive;
+      interpret_data.GCneg = getPlaneData(direction).negative;
+    }
+
+    if (interpretation.code.slice(0, 2) != 'GC') {
+      if (inc < 0) dirDataNeg.push(interpret_data);
+      else dirDataPos.push(interpret_data);
+    }
 
     if (inc < 0) dataNeg.push(interpret_data);
     else dataPos.push(interpret_data);
@@ -110,6 +94,7 @@ function statPlotStereoDiagram(hover) {
       x: dec,
       y: inc,
       inc: inc,
+      mad: mad,
       index: interpretation.index,
       id: interpretation.id,
       dotIndex: interpretation.index,
@@ -117,12 +102,9 @@ function statPlotStereoDiagram(hover) {
 
   });
 
-  var selectedDot;
-  if (selectedInterpretationIndex === null) {
-    selectedDot = {"x": null, "y": null}
-  } else {
-    selectedDot = dataSeries[selectedStepIndex];
-  }
+  var hoverDot;
+  if (!hoverIndex && (hoverIndex != 0)) hoverDot = {"x": null, "y": null}
+  else hoverDot = dataSeries[hoverIndex];
 
   var markerSize = {
     radius: 2.5,
@@ -135,32 +117,32 @@ function statPlotStereoDiagram(hover) {
 
   // Only redraw the hover series (series: 0, data: 0)
   if (chart && hover) {
-    // chart.series[0].data[0].update(selectedDot);
-    chart.series[0].update({
-      type: "scatter",
-      linkedTo: "Directions",
-      zIndex: 10,
-      data: [selectedDot], // [{x: selectedDot.x, y:selectedDot.y}],
-      marker: {
-        lineWidth: 1,
-        symbol: "square",
-        radius: 3,
-        lineColor: 'black',
-        fillColor: selectedDot['innerColor'],
-      }
-    });
+    chart.series[0].data[0].update(hoverDot);
     return;
   }
 
-  var A95Ellipse = getConfidenceEllipse(statistics.pole.confidence);
-  var a95ellipse = getPlaneData(statistics.dir.mean, statistics.dir.confidence);
+  var hoverSeries = {
+    type: "scatter",
+    linkedTo: "Down",
+    zIndex: 10,
+    data: [hoverDot],
+    marker: {
+      lineWidth: 1,
+      symbol: "circle",
+      radius: 4,
+      lineColor: 'black',
+      fillColor: hoverDot['innerColor'],
+    }
+  }
+
   // Initialize basic polar series
   var basicSeries = [
+    hoverSeries,
     {
       type: "scatter",
-      name: 'Up',
-      id: "Up",
-      data: dataPos,//plot_directions.pos,
+      name: 'Down',
+      id: "Down",
+      data: (showDir) ? dataPos : dirDataPos,
       zIndex: 5,
       marker: {
         radius: markerSize.radius,
@@ -186,9 +168,9 @@ function statPlotStereoDiagram(hover) {
     },
     {
       type: "scatter",
-      name: 'Down',
-      id: 'Down',
-      data: dataNeg,
+      name: 'Up',
+      id: 'Up',
+      data: (showDir) ? dataNeg : dirDataNeg,
       zIndex: 5,
       marker: {
         radius: markerSize.radius,
@@ -213,65 +195,103 @@ function statPlotStereoDiagram(hover) {
       color: "black",
     },
   ];
-  var poleSeries = [
-    {
-      type: "scatter",
-      name: 'VGP',
-      data: dataSeriesPole,//plot_directions.pos,
-      zIndex: 5,
-      marker: {
-        radius: markerSize.radius,
-        lineColor: "black",
-        lineWidth: markerSize.lineWidth,
-        fillColor: "black",
-        symbol: "circle",
-      },
-      dataLabels: {
-        color: "grey",
-        enabled: enableLabels,
-        allowOverlap: allowOverlap,
-        padding: 0,
-        style: {
-          fontSize: "10px",
-          textOutline: (addTextOutline) ? "1px contrast" : "0px",
-        },
-        formatter: function() {
-          return makeDataLabelStat(this.point);
-        }
-      },
+
+  dataPos.forEach((dir, i) => {
+    basicSeries = basicSeries.concat({
+      data: (dir.GCpos) ? dir.GCpos : [],
+      linkedTo: "Down",
+      type: "line",
       color: "black",
-    },
-    {
-      "name": "Confidence Ellipse",
-      "type": "line",
-      "color": '#119dff',
-      "data": A95Ellipse.map(prepareDirectionData),
-      "enableMouseTracking": false,
-      "marker": {
-        "enabled": false
+      enableMouseTracking: false,
+      marker: {
+        enabled: false
       }
-    }
-  ];
+    }, {
+      data: (dir.GCneg) ? dir.GCneg : [],
+      linkedTo: "Down",
+      type: "line",
+      color: "black",
+      enableMouseTracking: false,
+      dashStyle: (settings.global.dashedLines) ? "LongDash" : "Solid",
+      marker: {
+        enabled: false
+      }
+    }, {
+      enableMouseTracking: false,
+      type: "line",
+      name: "error_circles",
+      linkedTo: "Down",
+      lineWidth: 0.5,
+      data: (dir.errorCircle) ? dir.errorCircle.pos : [],
+      connectEnds: false,
+      marker: {
+        enabled: false
+      }
+    }, {
+      enableMouseTracking: false,
+      type: "line",
+      name: "error_circles",
+      linkedTo: "Down",
+      lineWidth: 0.5,
+      data: (dir.errorCircle) ? dir.errorCircle.neg : [],
+      dashStyle: (settings.global.dashedLines) ? "LongDash" : "Solid",
+      connectEnds: false,
+      marker: {
+        enabled: false
+      }
+    })
+  });
 
-  var selectedSeries = {
-    type: "scatter",
-    linkedTo: "Directions",
-    zIndex: 10,
-    data: [selectedDot], // [{x: selectedDot.x, y:selectedDot.y}],
-    marker: {
-      lineWidth: 1,
-      symbol: "square",
-      radius: 3,
-      lineColor: 'black',
-      fillColor: selectedDot['innerColor'],
-    }
-  }
-
-  // var bcPath = plot_big_circle_path(dataAbs);
+  dataNeg.forEach((dir, i) => {
+    basicSeries = basicSeries.concat({
+      data: (dataNeg[i].GCpos) ? dataNeg[i].GCpos : [],
+      linkedTo: "Up",
+      type: "line",
+      color: "black",
+      enableMouseTracking: false,
+      marker: {
+        enabled: false
+      }
+    }, {
+      data: (dataNeg[i].GCneg) ? dataNeg[i].GCneg : [],
+      linkedTo: "Up",
+      type: "line",
+      color: "black",
+      enableMouseTracking: false,
+      dashStyle: (settings.global.dashedLines) ? "LongDash" : "Solid",
+      marker: {
+        enabled: false
+      }
+    },  {
+      enableMouseTracking: false,
+      type: "line",
+      name: "error_circles",
+      linkedTo: "Up",
+      lineWidth: 0.5,
+      data: (dir.errorCircle) ? dir.errorCircle.pos : [],
+      connectEnds: false,
+      marker: {
+        enabled: false
+      }
+    }, {
+      enableMouseTracking: false,
+      type: "line",
+      name: "error_circles",
+      linkedTo: "Up",
+      lineWidth: 0.5,
+      data: (dir.errorCircle) ? dir.errorCircle.neg : [],
+      dashStyle: (settings.global.dashedLines) ? "LongDash" : "Solid",
+      connectEnds: false,
+      marker: {
+        enabled: false
+      }
+    })
+  });
 
   var element_width = chartContainer.offsetWidth;
   element_width -= element_width % 10;
 
+  // Chart ticks
   var ticksN = new Array();
   var ticksE = new Array();
   var ticksS = new Array();
@@ -328,66 +348,10 @@ function statPlotStereoDiagram(hover) {
 
   if (settings.stat.statTicks) {
     basicSeries.push(tickSeriesX, tickSeriesTop, tickSeriesBot);
-    poleSeries.push(tickSeriesX, tickSeriesTop, tickSeriesBot);
   }
 
-  if (settings.global.dashedLines) {
-    dataErrors.forEach((errorCircle, i) => {
-      var errorSeriesPos = {
-        enableMouseTracking: false,
-        type: "line",
-        name: "error_circles",
-        linkedTo: "Up",
-        lineWidth: 0.5,
-        data: errorCircle.pos,
-        connectEnds: false,
-        marker: {
-          enabled: false
-        }
-      };
-      var errorSeriesNeg = {
-        enableMouseTracking: false,
-        type: "line",
-        name: "error_circles",
-        linkedTo: "Down",
-        lineWidth: 0.5,
-        data: errorCircle.neg,
-        dashStyle: "LongDash",
-        connectEnds: false,
-        marker: {
-          enabled: false
-        }
-      };
-
-      basicSeries.push(errorSeriesPos);
-      basicSeries.push(errorSeriesNeg);
-      poleSeries.push(errorSeriesPos);
-      poleSeries.push(errorSeriesNeg);
-    });
-  }
-  else {
-    dataErrors.forEach((errorCircle, i) => {
-      var errorSeries = {
-        enableMouseTracking: false,
-        type: "line",
-        name: "error_circles",
-        linkedTo: "Up",
-        lineWidth: 0.5,
-        data: errorCircle,
-        connectEnds: false,
-        marker: {
-          enabled: false
-        }
-      };
-
-      basicSeries.push(errorSeries);
-      poleSeries.push(errorSeries);
-    });
-  }
-
-  var series = (CENTERED_MODE == 'centered') ? poleSeries : basicSeries;
-
-  if (CENTERED_MODE != 'centered') series = series.concat(formatMeansSeries(collection.means, 'stat'),);
+  // Final series
+  var series = basicSeries.concat(formatMeansSeries(collection.means[collection.means.length - 1], 'stat'),);
 
   var options = {
 
@@ -401,13 +365,30 @@ function statPlotStereoDiagram(hover) {
       // },
     },
 
+    boost: {
+      useGPUTranslations: true,
+      usePreallocated: true,
+    },
+
     tooltip: {
       enabled: enableTooltips,
-      formatter: generateStereoTooltip,
+      formatter: generateStereoTooltipStat,
     },
 
     title: {
-      text: ''
+      text: 'DirStat | ' + COORDINATES['stat'],
+      align: 'left',
+      margin: -25
+    },
+
+    // subtitle: {
+    //   text: 'System: ' + COORDINATES['poles'],
+    //   align: 'left',
+    //   margin: -50
+    // },
+
+    credits: {
+      text: 'PMTools v' + getVersion(),
     },
 
     // legend: {
@@ -434,11 +415,11 @@ function statPlotStereoDiagram(hover) {
         downloadJPEG: {
           text: 'Save as JPEG'
         },
-        downloadPDF: {
-          text: "Save as PDF"
+        downloadPNG: {
+          text: 'Save as PNG'
         },
         downloadSVG: {
-          text: "Save as SVG"
+          text: 'Save as SVG'
         },
         // separator: {
         //   style: {"margin-top": 0.5rem;
@@ -450,36 +431,26 @@ function statPlotStereoDiagram(hover) {
           symbolStroke: "#119DFF",
           align: "right",
           symbol: 'download',
-          menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
-          // menuItems: [
-          //   {
-          //   	textKey: 'downloadPNG',
-          //   	onclick: function () { this.exportChart(); }
-          //   }, {
-          //   	textKey: 'downloadJPEG',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'image/jpeg'
-          //   		});
-          //   	}
-          //   },
-          //   { separator: true },
-          //   {
-          //   	textKey: 'downloadPDF',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'application/pdf'
-          //   		});
-          //   	}
-          //   }, {
-          //   	textKey: 'downloadSVG',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'image/svg+xml'
-          //   		});
-          //   	}
-          //   },
-          // ],
+          // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
+          menuItems: [
+            'downloadPNG',
+            'downloadJPEG',
+            {
+            	text: 'Save as PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'application/pdf',
+                    filename: "stereo_chart",
+                  },
+                  undefined,
+                  'stereo'
+                );
+            	}
+            },
+            'downloadSVG',
+          ],
         },
       },
       chartOptions: {
@@ -522,16 +493,6 @@ function statPlotStereoDiagram(hover) {
       }
     },
 
-    // mapNavigation: {
-    //     enableMouseWheelZoom: true
-    // },
-
-    credits: {
-      enabled: false,
-      text: "PMTools.com (Zijderveld Diagram)",
-      href: ""
-    },
-
     xAxis: {
       minorTickPosition: "outside",
       lineColor: "black",
@@ -564,9 +525,9 @@ function statPlotStereoDiagram(hover) {
 
     yAxis: {
       type: "linear",
-      gridLineWidth: 0,
-      minorGridLineWidth: 0,
-      visible: false,
+      gridLineWidth: 1,
+      minorGridLineWidth: 1,
+      visible: true,
       reversed: true,
       labels: {
         enabled: false
@@ -587,6 +548,13 @@ function statPlotStereoDiagram(hover) {
         animation: false,
         cursor: "pointer",
         turboThreshold: 10000,
+        point: {
+          events: {
+            click: function () {
+              dotSelector.hoverDot(this.dotIndex, 'collection');
+            },
+          }
+        },
         states: {
           hover: {
             enabled: settings.stat.statHover,
@@ -594,7 +562,8 @@ function statPlotStereoDiagram(hover) {
           inactive: {
             opacity: 1
           }
-        }
+        },
+        stickyTracking: false
       }
     },
 
@@ -603,37 +572,32 @@ function statPlotStereoDiagram(hover) {
 
   var chart = Highcharts.chart('stat-container-center', options)
 
+  return chart;
+
 }
 
-function generateStereoTooltip() {
+function generateStereoTooltipStat() {
 
   /*
    * Function generateHemisphereTooltip
    * Generates the Hemisphere chart tooltip
    */
 
-  if (this.series.name === "Directions") {
+  if ((this.series.name === "Down") || (this.series.name === "Up")) {
     return [
-      "<b>#: </b>" + (this.point.stepIndex + 1),
-      "<b>Step: </b>" + this.point.step,
+      "<b>Direction</b>",
+      "<b>#: </b>" + (this.point.dotIndex + 1),
       "<b>Dec: </b>" + this.x.toFixed(2),
-      "<b>Inc </b>" + this.point.inc.toFixed(2)
-    ].join("<br>");
-  }
-  else if (this.series.name === "VGP") {
-    return [
-      "<b>VGP</b>",
-      "<b>Sample id: </b>" + this.point.id,
-      "<b>Longitude: </b>" + this.x.toFixed(2),
-      "<b>Latitude: </b>" + this.point.inc.toFixed(2)
+      "<b>Inc </b>" + this.point.inc.toFixed(2),
+      "<b>MAD </b>" + this.point.mad.toFixed(2)
     ].join("<br>");
   }
   else {
     return [
-      "<b>Direction</b>",
-      "<b>Sample id: </b>" + this.point.id,
+      "<b>Mean Direction</b>",
       "<b>Dec: </b>" + this.x.toFixed(2),
-      "<b>Inc: </b>" + this.point.inc.toFixed(2)
+      "<b>Inc: </b>" + this.point.inc.toFixed(2),
+      "<b>a95: </b>" + this.point.a95.toFixed(2)
     ].join("<br>");
   }
 

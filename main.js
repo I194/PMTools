@@ -6,6 +6,15 @@ const fs = require("fs");
 const WIDTH_RATIO = 0.8;
 const ASPECT_RATIO = 10 / 16;
 
+require('update-electron-app')();
+
+
+// this should be placed at top of main.js to handle setup events quickly
+if (handleSquirrelEvent(app)) {
+    // squirrel event handled and app will exit in 1000ms, so don't do anything else
+    return;
+}
+
 function createWindow() {
 
   const screenWidth = screen.getPrimaryDisplay().workAreaSize.width;
@@ -19,11 +28,19 @@ function createWindow() {
   const collDataPath = path.join('file://', __dirname, 'windows/collectionData.html');
   const interpretDataPath = path.join('file://', __dirname, 'windows/interpretationData.html');
   const meansDataPath = path.join('file://', __dirname, 'windows/meanData.html');
+  const polesMeansPath = path.join('file://', __dirname, 'windows/polesMean.html');
   const vgpDataPath = path.join('file://', __dirname, 'windows/vgpData.html');
   const openFilesPath = path.join(__dirname, 'main_window/openFilesModal.html');
   const formatsPath = path.join(__dirname, 'windows/help/supportedFormats.html');
+  const fileManagerPath = path.join(__dirname, 'windows/fileManager.html');
   const pcaPath = path.join('file://', __dirname, 'windows/pca.html');
   const fisherPath = path.join('file://', __dirname, 'windows/fisher.html');
+  const foldtestPath = path.join('file://', __dirname, 'windows/foldtest.html');
+  const revtestPath = path.join('file://', __dirname, 'windows/revtest.html');
+  const commonMeanTestPath = path.join('file://', __dirname, 'windows/commonMeanTest.html');
+  const congtestPath = path.join('file://', __dirname, 'windows/congtest.html');
+  const magicExportPath = path.join('file://', __dirname, 'windows/magicExport.html');
+
 
   // Initialize main window
   let win = new BrowserWindow({
@@ -45,11 +62,11 @@ function createWindow() {
     }
   });
 
-  win.once('ready-to-show', () => {
-    win.show();
-  })
-
-  win.maximize();
+  // win.once('ready-to-show', () => {
+  //   win.show();
+  // })
+  //
+  // win.maximize();
 
   win.loadURL(url.format({
     pathname: path.join(__dirname, 'main_window/index.html'),
@@ -57,11 +74,58 @@ function createWindow() {
     slashes: true,
   }));
 
-  ipcMain.on('reload-mainWin', () => { win.reload() });
+  ipcMain.on('reload-mainWin', () => {
+    win.reload()
+  });
 
   ipcMain.on('redraw-charts', (event) => {
     win.webContents.send('redraw');
   })
+
+  ipcMain.on('reload-mainWin-appendFiles', () => {
+    win.webContents.send('reload-appendFiles')
+  })
+
+  ipcMain.on('open-in-next-tab', (event, savePath) => {
+    win.webContents.send('open-in-next-tab', savePath);
+  })
+
+  // Initialize openFiles data window
+
+  let openFilesWin = new BrowserWindow({
+    width: screenWidth / 2,
+    height: screenHeight / 2,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    // parent: win,
+    show: false,
+    // Remove the window frame from windows applications
+    frame: false,
+    // Hide the titlebar from MacOS applications while keeping the stop lights
+    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    resizable: false,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
+
+  openFilesWin.loadURL(openFilesPath);
+
+  ipcMain.on('toggle-openFilesModal', () => {
+    if (openFilesWin.isVisible()) openFilesWin.hide();
+    else openFilesWin.show();
+  })
+
+  ipcMain.on('open-openFilesModal', (event, disableOpenPrev) => {
+    // win.hide();
+    openFilesWin.show();
+    // if (disableOpenPrev) openFilesWin.webContents.send('disable-openPrev');
+  })
+  ipcMain.on('hide-openFilesModal', () => { openFilesWin.hide(); win.show(); win.maximize(); })
+  ipcMain.on('close-openFilesModal', () => { win.close(); })
+
+  ipcMain.on('init-pages', (event, formats) => { win.webContents.send('init', formats); })
+
+  ipcMain.on('reload-openFilesModal', () => { openFilesWin.reload() });
 
   // Initialize settings window
   let settingsWin = new BrowserWindow({
@@ -95,7 +159,9 @@ function createWindow() {
   })
 
   ipcMain.on('reload-settWin', () => {
-    settingsWin.reload() });
+    settingsWin.webContents.send('reload-win');
+    // settingsWin.reload()
+  });
 
   // Initialize about window
   let aboutWin = new BrowserWindow({
@@ -259,6 +325,10 @@ function createWindow() {
     else interpretDataWin.show();
   })
 
+  ipcMain.on('hide-interpretData', () => {
+    interpretDataWin.hide();
+  })
+
   ipcMain.on('reload-interpretDataWin', () => { interpretDataWin.reload() });
 
   ipcMain.on('redraw-interpretDataWin', (event) => {
@@ -292,6 +362,10 @@ function createWindow() {
   ipcMain.on('toggle-meansData', () => {
     if (meansDataWin.isVisible()) meansDataWin.hide();
     else meansDataWin.show();
+  })
+
+  ipcMain.on('hide-meansData', () => {
+    meansDataWin.hide();
   })
 
   ipcMain.on('reload-meansDataWin', () => { meansDataWin.reload() });
@@ -335,38 +409,164 @@ function createWindow() {
     vgpDataWin.webContents.send('redraw-table');
   })
 
-  // Initialize openFiles data window
+  // Initialize poles means data window
 
-  let openFilesWin = new BrowserWindow({
-    width: screenWidth / 2,
-    height: screenHeight / 2,
+  let polesMeansWin = new BrowserWindow({
+    // width: screenWidth / 3,
+    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
-    // parent: win,
+    parent: win,
     show: false,
     // Remove the window frame from windows applications
     frame: false,
     // Hide the titlebar from MacOS applications while keeping the stop lights
     titleBarStyle: 'hidden', // or 'customButtonsOnHover',
-    resizable: false,
     webPreferences: {
       nodeIntegration: true
     }
   })
 
-  openFilesWin.loadURL(openFilesPath);
+  polesMeansWin.loadURL(polesMeansPath);
 
-  ipcMain.on('toggle-openFilesModal', () => {
-    if (openFilesWin.isVisible()) openFilesWin.hide();
-    else openFilesWin.show();
+  polesMeansWin.on('close', (event) => {
+    event.preventDefault();    // This will cancel the close
+    polesMeansWin.hide();
+  });
+
+  ipcMain.on('toggle-polesMeansData', () => {
+    if (polesMeansWin.isVisible()) polesMeansWin.hide();
+    else polesMeansWin.show();
   })
 
-  ipcMain.on('open-openFilesModal', () => { win.hide(); openFilesWin.show();  })
-  ipcMain.on('hide-openFilesModal', () => { openFilesWin.hide(); win.show(); })
-  ipcMain.on('close-openFilesModal', () => { win.close(); })
+  ipcMain.on('reload-polesMeansWin', () => { polesMeansWin.reload() });
 
-  ipcMain.on('init-pages', () => { win.webContents.send('init'); })
+  ipcMain.on('redraw-polesMeansWin', (event) => {
+    polesMeansWin.webContents.send('redraw-table');
+  })
 
-  ipcMain.on('reload-openFilesModal', () => { openFilesWin.reload() });
+  // Initialize foldtest window
+
+  let foldtestWin = new BrowserWindow({
+    // width: screenWidth / 3,
+    // height: screenHeight / 2,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    parent: win,
+    show: false,
+    // Remove the window frame from windows applications
+    frame: false,
+    // Hide the titlebar from MacOS applications while keeping the stop lights
+    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    webPreferences: {
+        nodeIntegration: true
+    }
+  });
+
+  foldtestWin.loadURL(foldtestPath);
+
+  foldtestWin.on('close', (event) => {
+    event.preventDefault();    // This will cancel the close
+    foldtestWin.hide();
+  });
+
+  ipcMain.on('toggle-foldtest', ()  => {
+    if (foldtestWin.isVisible()) foldtestWin.hide();
+    else foldtestWin.show();
+  });
+
+  ipcMain.on('reload-foldtest', () => { foldtestWin.reload() });
+
+  // Initialize revtest window
+
+  let revtestWin = new BrowserWindow({
+    width: 1000,
+    height: 720,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    parent: win,
+    show: false,
+    // Remove the window frame from windows applications
+    frame: false,
+    // Hide the titlebar from MacOS applications while keeping the stop lights
+    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    webPreferences: {
+        nodeIntegration: true
+    }
+  });
+
+  revtestWin.loadURL(revtestPath);
+
+  revtestWin.on('close', (event) => {
+    event.preventDefault();    // This will cancel the close
+    revtestWin.hide();
+  });
+
+  ipcMain.on('toggle-revtest', ()  => {
+    if (revtestWin.isVisible()) revtestWin.hide();
+    else revtestWin.show();
+  });
+
+  ipcMain.on('reload-revtest', () => { revtestWin.reload() });
+
+  // Initialize revtest window
+
+  let commonMeanTestWin = new BrowserWindow({
+    width: 1000,
+    height: 720,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    parent: win,
+    show: false,
+    // Remove the window frame from windows applications
+    frame: false,
+    // Hide the titlebar from MacOS applications while keeping the stop lights
+    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    webPreferences: {
+        nodeIntegration: true
+    }
+  });
+
+  commonMeanTestWin.loadURL(commonMeanTestPath);
+
+  commonMeanTestWin.on('close', (event) => {
+    event.preventDefault();    // This will cancel the close
+    commonMeanTestWin.hide();
+  });
+
+  ipcMain.on('toggle-commonMeanTest', ()  => {
+    if (commonMeanTestWin.isVisible()) commonMeanTestWin.hide();
+    else commonMeanTestWin.show();
+  });
+
+  ipcMain.on('reload-commonMeanTest', () => { commonMeanTestWin.reload() });
+
+  // Initialize revtest window
+
+  let congtestWin = new BrowserWindow({
+    // width: screenWidth / 3,
+    height: 300,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    parent: win,
+    show: false,
+    // Remove the window frame from windows applications
+    frame: false,
+    // Hide the titlebar from MacOS applications while keeping the stop lights
+    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    webPreferences: {
+        nodeIntegration: true
+    }
+  });
+
+  congtestWin.loadURL(congtestPath);
+
+  congtestWin.on('close', (event) => {
+    event.preventDefault();    // This will cancel the close
+    congtestWin.hide();
+  });
+
+  ipcMain.on('toggle-congtest', ()  => {
+    if (congtestWin.isVisible()) congtestWin.hide();
+    else congtestWin.show();
+  });
+
+  ipcMain.on('reload-congtest', () => { congtestWin.reload() });
 
   // Initialize formats window
 
@@ -393,63 +593,119 @@ function createWindow() {
     else formatsWin.show();
   })
 
-  // Initialize pca window
+  // Initialize formats window
 
-  let pcaWin = new BrowserWindow({
-    width: screenWidth/6,
-    height: 58, // 500,
-    useContentSize: true,
-    x: 5 * screenWidth / 12,
-    y: 5,
-    center: false,
-    parent: win,
-    modal: true,
+  let fileManagerWin = new BrowserWindow({
+    width: screenWidth / 3,
+    height: screenHeight / 3,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    // parent: win,
     show: false,
+    // Remove the window frame from windows applications
     frame: false,
-    title: 'Select steps',
-    resizable: false,
+    // Hide the titlebar from MacOS applications while keeping the stop lights
+    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    resizable: true,
     webPreferences: {
-        nodeIntegration: true
-    }
-  });
-
-  pcaWin.loadURL(pcaPath);
-
-  pcaWin.on('close', () => { pcaWin = null });
-
-  ipcMain.on('toggle-pca', ()  => {
-    if (pcaWin.isVisible()) pcaWin.hide();
-    else {
-      pcaWin.show();
+      nodeIntegration: true
     }
   })
 
-  // Initialize fisher window
+  fileManagerWin.loadURL(fileManagerPath);
 
-  let fisherWin = new BrowserWindow({
-    width: screenWidth * 0.3,
-    height: screenHeight * 0.4,
-    parent: win,
-    // modal: true,
+  ipcMain.on('toggle-file-manager', () => {
+    if (fileManagerWin.isVisible()) fileManagerWin.hide();
+    else fileManagerWin.show();
+  })
+
+  ipcMain.on('reload-fileManager', () => {
+    fileManagerWin.webContents.send('reload-win');
+  })
+
+  // Initialize formats window
+
+  let magicExportWin = new BrowserWindow({
+    width: screenWidth / 3,
+    height: 720,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    // parent: win,
     show: false,
+    // Remove the window frame from windows applications
     frame: false,
+    // Hide the titlebar from MacOS applications while keeping the stop lights
+    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    resizable: true,
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
-  });
+  })
 
-  fisherWin.loadURL(fisherPath);
+  magicExportWin.loadURL(magicExportPath);
 
-  fisherWin.on('close', () => { fisherWin = null });
+  ipcMain.on('open-magic-export', () => {
+    magicExportWin.show();
+  })
 
-  ipcMain.on('toggle-fisher', ()  => {
-    if (fisherWin.isVisible()) fisherWin.hide();
-    else {
-      fisherWin.show();
-    }
+  ipcMain.on('toggle-magic-export', () => {
+    if (magicExportWin.isVisible()) magicExportWin.hide();
+    else fileManagerWin.show();
+  })
+
+  ipcMain.on('reload-magicExport', () => {
+    magicExportWin.webContents.send('reload-win');
+  })
+
+  // Export interpretations
+  ipcMain.on('export-interpretations-xlsx', () => {
+    interpretDataWin.webContents.send('export-interpretation-xlsx');
+  })
+
+  ipcMain.on('export-interpretations-csv', () => {
+    interpretDataWin.webContents.send('export-interpretation-csv');
+  })
+
+  // Export means
+  ipcMain.on('export-means-xlsx', () => {
+    meansDataWin.webContents.send('export-means-xlsx');
+  })
+
+  ipcMain.on('export-means-csv', () => {
+    meansDataWin.webContents.send('export-means-csv');
+  })
+
+  // Export poles
+  ipcMain.on('export-poles-xlsx', () => {
+    vgpDataWin.webContents.send('export-poles-xlsx');
+  })
+
+  ipcMain.on('export-poles-csv', () => {
+    vgpDataWin.webContents.send('export-poles-csv');
+  })
+
+  // Importing
+  ipcMain.on('import-files', () => {
+    win.webContents.send('import-files');
+  })
+
+  ipcMain.on('import-project', () => {
+    win.webContents.send('import-project');
   })
 
   // Initialize app shortcuts
+
+  ipcMain.on('reload-main-win', () => {
+    win.webContents.send('init');
+  })
+
+  ipcMain.on('reload-wins', () => {
+    win.reload();
+    specDataWin.reload();
+    collDataWin.reload();
+    interpretDataWin.reload();
+    meansDataWin.reload();
+    vgpDataWin.reload();
+    fileManagerWin.reload();
+  })
 
   electronLocalshortcut.register('f5', function() {
 		win.reload();
@@ -461,9 +717,22 @@ function createWindow() {
     interpretDataWin.reload();
     meansDataWin.reload();
     vgpDataWin.reload();
+    polesMeansWin.reload();
     openFilesWin.reload();
     formatsWin.reload();
+    fileManagerWin.reload();
+    foldtestWin.reload();
+    revtestWin.reload();
+    commonMeanTestWin.reload();
+    congtestWin.reload();
+    magicExportWin.reload();
 	})
+
+  electronLocalshortcut.register('f1', function() {
+    // if (shortcutsWin.isVisible()) shortcutsWin.hide();
+    // else shortcutsWin.show();
+    shortcutsWin.show();
+  })
 
 	// electronLocalshortcut.register('CommandOrControl+R', function() {
 	// 	win.reload()
@@ -476,28 +745,119 @@ function createWindow() {
 
 
   // Initialize developer tools
-
-  win.webContents.openDevTools();
-  openFilesWin.webContents.openDevTools();
-  formatsWin.webContents.openDevTools();
-  vgpDataWin.webContents.openDevTools();
+  //
+  // win.webContents.openDevTools();
+  // openFilesWin.webContents.openDevTools();
+  // formatsWin.webContents.openDevTools();
+  // vgpDataWin.webContents.openDevTools();
   // settingsWin.webContents.openDevTools();
   // specDataWin.webContents.openDevTools();
-  collDataWin.webContents.openDevTools();
-  interpretDataWin.webContents.openDevTools();
-  meansDataWin.webContents.openDevTools();
-  // pcaWin.webContents.openDevTools();
+  // collDataWin.webContents.openDevTools();
+  // interpretDataWin.webContents.openDevTools();
+  // meansDataWin.webContents.openDevTools();
   // shortcutsWin.webContents.openDevTools();
+  // fileManagerWin.webContents.openDevTools();
+  // polesMeansWin.webContents.openDevTools();
+  // foldtestWin.webContents.openDevTools();
+  // revtestWin.webContents.openDevTools();
+  // commonMeanTestWin.webContents.openDevTools();
+  // congtestWin.webContents.openDevTools();
+  // magicExportWin.webContents.openDevTools();
   // Close main window = close main process and then very program
 
-  win.on('closed', () => {
+  win.on('close', () => {
     win.webContents.send('clear-storage');
+  })
+
+  win.on('closed', () => {
     win = null;
   })
 }
 
 app.on('ready', createWindow);
 
+// app.on('before-quit', () => {
+//   win.webContents.send('clear-storage');
+// })
+
 app.on('window-all-closed', () => {
   app.quit();
 })
+
+function handleSquirrelEvent(application) {
+    if (process.argv.length === 1) {
+        return false;
+    }
+
+    const ChildProcess = require('child_process');
+    const path = require('path');
+
+    const appFolder = path.resolve(process.execPath, '..');
+    const rootAtomFolder = path.resolve(appFolder, '..');
+    const updateDotExe = path.resolve(path.join(rootAtomFolder, 'Update.exe'));
+    const exeName = path.basename(process.execPath);
+
+    const spawn = function(command, args) {
+        let spawnedProcess, error;
+
+        try {
+            spawnedProcess = ChildProcess.spawn(command, args, {
+                detached: true
+            });
+        } catch (error) {}
+
+        return spawnedProcess;
+    };
+
+    const spawnUpdate = function(args) {
+        return spawn(updateDotExe, args);
+    };
+
+    const squirrelEvent = process.argv[1];
+    switch (squirrelEvent) {
+        case '--squirrel-install':
+        case '--squirrel-updated':
+            // Optionally do things such as:
+            // - Add your .exe to the PATH
+            // - Write to the registry for things like file associations and
+            //   explorer context menus
+
+            // Install desktop and start menu shortcuts
+            spawnUpdate(['--createShortcut', exeName]);
+
+            setTimeout(application.quit, 1000);
+            return true;
+
+        case '--squirrel-uninstall':
+            // Undo anything you did in the --squirrel-install and
+            // --squirrel-updated handlers
+
+            // Remove desktop and start menu shortcuts
+            spawnUpdate(['--removeShortcut', exeName]);
+
+            setTimeout(application.quit, 1000);
+            return true;
+
+        case '--squirrel-obsolete':
+            // This is called on the outgoing version of your app before
+            // we update to the new version - it's the opposite of
+            // --squirrel-updated
+
+            application.quit();
+            return true;
+    }
+};
+
+// NB: Use this syntax within an async function, Node does not have support for
+//     top-level await as of Node 12.
+// try {
+//   await electronInstaller.createWindowsInstaller({
+//     appDirectory: 'C:\Programms\PyProjects\pmtools_beta',
+//     outputDirectory: 'C:\Programms',
+//     authors: 'Ivan Efremov',
+//     exe: 'PMTools.exe'
+//   });
+//   console.log('It worked!');
+// } catch (e) {
+//   console.log(`No dice: ${e.message}`);
+// }

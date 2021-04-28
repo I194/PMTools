@@ -109,6 +109,7 @@ function eraseStep(dotToErase) {
   var elemTypes = {
     pca: 'specimen',
     stat: 'collection',
+    poles: 'sitesSet'
   }
   var pageType = pageID.split('-')[1];
   var type = elemTypes[pageType];
@@ -116,6 +117,7 @@ function eraseStep(dotToErase) {
   var elems = {
     specimen: 'steps',
     collection: 'interpretations',
+    sitesSet: 'sites',
   }
 
   file = getSelectedFile(type);
@@ -134,8 +136,155 @@ function eraseStep(dotToErase) {
 
   saveLocalStorage();
   deleteAllResults(undefined, pageType);
-  redrawCharts();
-  formatCollectionTable();
+  // redrawCharts();
+  // formatCollectionTable();
+
+}
+
+function reverseVisibility() {
+  // we cant get type as a function argument, so we get type from selected page
+  var pageID = getSelectedPage();
+
+  var elemTypes = {
+    pca: 'specimen',
+    stat: 'collection',
+    poles: 'sitesSet'
+  }
+  var pageType = pageID.split('-')[1];
+  var type = elemTypes[pageType];
+
+  var elems = {
+    specimen: 'steps',
+    collection: 'interpretations',
+    sitesSet: 'sites',
+  }
+
+  file = getSelectedFile(type);
+
+  var independentIndex = 0;
+  file[elems[type]].forEach((elem, i) => {
+    elem.visible = !elem.visible;
+
+    if (elem.visible) {
+      elem.index = independentIndex;
+      independentIndex++;
+    }
+    else elem.index = '-';
+  });
+
+  saveLocalStorage();
+  deleteAllResults(undefined, pageType);
+  // redrawCharts();
+}
+
+function reversePolarity() {
+  // we cant get type as a function argument, so we get type from selected page
+  var pageID = getSelectedPage();
+
+  var elemTypes = {
+    pca: 'specimen',
+    stat: 'collection',
+    poles: 'sitesSet'
+  }
+  var pageType = pageID.split('-')[1];
+  var type = elemTypes[pageType];
+
+  var elems = {
+    specimen: 'steps',
+    collection: 'interpretations',
+    sitesSet: 'sites',
+  }
+
+  file = getSelectedFile(type);
+
+  var independentIndex = 0;
+  file[elems[type]].forEach((elem, i) => {
+    elem.reversed = !elem.reversed;
+  });
+
+  saveLocalStorage();
+  deleteAllResults(undefined, pageType);
+}
+
+function reverseDot(dotToReverse) {
+
+  // var dName, iName;
+  //
+  // if (COORDINATES.stat == 'specimen') {
+  //   dName = 'Dspec';
+  //   iName = 'Ispec';
+  // }
+  // else if (COORDINATES.stat == 'geographic') {
+  //   dName = 'Dgeo';
+  //   iName = 'Igeo';
+  // }
+  // else {
+  //   dName = 'Dstrat';
+  //   iName = 'Istrat';
+  // }
+
+  // we cant get type as a function argument, so we get type from selected page
+  var pageID = getSelectedPage();
+
+  var elemTypes = {
+    pca: 'specimen',
+    stat: 'collection',
+    poles: 'sitesSet'
+  }
+  var pageType = pageID.split('-')[1];
+  var type = elemTypes[pageType];
+
+  var elems = {
+    specimen: 'steps',
+    collection: 'interpretations',
+    sitesSet: 'sites',
+  }
+
+  file = getSelectedFile(type);
+
+  file[elems[type]][dotToReverse].reversed = !file[elems[type]][dotToReverse].reversed;
+
+  // var dotData = file[elems[type]][dotToReverse];
+  // var dir = {d: dotData[dName][DIRECTION_MODE], i: dotData[iName][DIRECTION_MODE]};
+  // console.log(dir);
+  // // flipData(dir, false);
+  //
+  // var d = (dir.d - 180) % 360;
+  // if (d < 0) d += 360;
+  // var i = -dir.i;
+  //
+  // file[elems[type]][dotToReverse][dName][DIRECTION_MODE] = d;
+  // file[elems[type]][dotToReverse][iName][DIRECTION_MODE] = i
+
+  saveLocalStorage();
+  deleteAllResults(undefined, pageType);
+  // redrawCharts();
+
+}
+
+function reverseDots(type) {
+
+  var pageID = getSelectedPage();
+  var pageType = pageID.split('-')[1];
+
+  var elems = {
+    specimen: 'steps',
+    collection: 'interpretations',
+  }
+
+  file = getSelectedFile(type);
+  var independentIndex = 0;
+  file[elems[type]].forEach((elem, i) => {
+    elem.reversed = elem.selected;
+  });
+
+  saveLocalStorage();
+  deleteAllResults(undefined, pageType);
+
+  if (type == 'specimen') ipcRenderer.send('redraw-specDataWin');
+  else ipcRenderer.send('redraw-collDataWin');
+
+  dotSelector.render(redraw = true, hover = false);
 
 }
 
@@ -219,9 +368,38 @@ function getRotationMatrixR(lambda, phi) {
 
 }
 
-function getVGPData(givenCollection) {
+function sitesSetToVGP() {
 
-  var collection = (givenCollection) ? givenCollection : getSelectedFile('collection', true);
+  var siteSet = getSelectedFile('sitesSet');
+
+  var VGPs = siteSet.sites.map(function(site, i) {
+
+    var pole = siteToVGP(site);
+    if (!pole) return;
+    pole.index = site.index;
+    pole.visible = site.visible;
+    pole.reversed = false;
+    return pole;
+
+  })
+
+  return VGPs;
+
+}
+
+function siteToVGP(site) {
+
+  if ((site.sLat == 0) && (site.sLon == 0)) return;
+  var pole = getSite(site.sLat, site.sLon).poleFrom(site);
+  site.vgp = pole;
+
+  return pole;
+
+}
+
+function getVGPData(site) {
+
+  var collection = (givenCollection) ? givenCollection : getSelectedFile('collection');
 
   if (!collection) return;
 
@@ -263,14 +441,14 @@ function getVGPData(givenCollection) {
 
 }
 
-function getSite(givenCollection) {
+function getSite(sLat, sLon) {
 
   // var collection = (givenCollection) ? givenCollection : getSelectedFile('collection');
-  if ((!document.getElementById('site-lat')) || (!document.getElementById('site-lon'))) return new Site(0, 0);
-  var siteLat = Number(document.getElementById('site-lat').value | 0);
-  var siteLon = Number(document.getElementById('site-lon').value | 0);
+  // if ((!document.getElementById('site-lat')) || (!document.getElementById('site-lon'))) return new Site(0, 0);
+  // var siteLat = Number(document.getElementById('site-lat').value | 0);
+  // var siteLon = Number(document.getElementById('site-lon').value | 0);
 
-  return new Site(siteLon, siteLat);
+  return new Site(sLat, sLon);
 
 }
 
@@ -397,7 +575,7 @@ function meanDirection(vectors) {
 
 }
 
-function normalize(intensities) {
+function normalize(intensities, hideSteps) {
 
   // Normalize the intensities to the maximum resultant intensity
   // if(document.getElementById("normalize-intensities").checked) {
@@ -405,19 +583,27 @@ function normalize(intensities) {
   // } else {
   //   var normalizationFactor = 1;
   // }
+  if (intensities.length == 0) return [];
   var specimen = getSelectedFile('specimen');
   var intensitiesForNormalize = new Array();
-  specimen.steps.forEach((step, i) => {
-    if (step.visible) {
-      intensitiesForNormalize.push({
-        "x": parseInt(step.step.match(/\d+/)),
-        "y": (new Coordinates(step.x, step.y, step.z).length)/specimen.volume,
-      });
-    }
-  });
+
+  var volume = (specimen.volume) ? specimen.volume : 1;
+  if (hideSteps) {
+    intensitiesForNormalize = intensities;
+  }
+  else {
+    specimen.steps.forEach((step, i) => {
+      if (step.visible) {
+        intensitiesForNormalize.push({
+          "x": parseInt(step.step.match(/\d+/)),
+          "y": (new Coordinates(step.x, step.y, step.z).length) / volume,
+        });
+      }
+    });
+  }
 
   var normalizationFactor = Math.max.apply(null, intensitiesForNormalize.map(x => x.y));
-
+  // if (intensitiesForNormalize.length == 0) normalizationFactor = 1;
   return intensities.map(function(x) {
     return {
       "x": x.x,
@@ -540,7 +726,7 @@ function makePrincipalComponents(dirs) {
   var vectors = dirs.map(function(dir) {
     if (dir.x) return new Array(dir.x, dir.y, dir.z);
     else {
-      var xyz = dir_to_xyz(dir.d, dir.i, 1);
+      var xyz = dir_to_xyz(dir.dec, dir.inc, 1);
       return new Array(xyz.x, xyz.y, xyz.z);
     }
   });
@@ -565,24 +751,26 @@ function makePrincipalComponents(dirs) {
 
 }
 
-function flipData(data, combine) {
+function flipData(data, combine, noReturn) {
 
   var princDir = makePrincipalComponents(data);
 
   var D1 = [], D2 = [], D3 = [];
 
   data.forEach((dir, j) => {
-    var angle = getAngleBetween(dir.d, dir.i, princDir.dec, princDir.inc);
+    // var angle = getAngleBetween(dir.dec, dir.inc, princDir.dec, princDir.inc);
+    var angle = new Direction(dir.dec, dir.inc).angle(new Direction(princDir.dec, princDir.inc));
+    console.log(angle);
     if (angle > 90) {
-      var d = (dir.d - 180) % 360;
+      var d = (dir.dec - 180) % 360;
       if (d < 0) d += 360;
-      var i = -dir.i;
+      var i = -dir.inc;
       D2.push({x: d, y: i})
       D3.push({x: d, y: i})
     }
     else {
-      D1.push({x: dir.d, y: dir.i});
-      D3.push({x: dir.d, y: dir.i});
+      D1.push({x: dir.dec, y: dir.inc});
+      D3.push({x: dir.dec, y: dir.inc});
     }
   });
 
@@ -591,99 +779,415 @@ function flipData(data, combine) {
 
 }
 
-function flipCollections(collection) {
+function reverseData(data) {
+
+  var reversed = [];
+
+  data.forEach((dir, j) => {
+    var d = (dir.dec - 180) % 360;
+    if (d < 0) d += 360;
+    var i = -dir.inc;
+    reversed.push({x: d, y: i});
+  });
+
+  return reversed;
+
+}
+
+function flipCollections(data, full, isSites) {
 
   // var collection = getSelectedFile('collection');
 
+  var elems = 'interpretations';
+  if (isSites) elems = "sites";
+
+  var dirs = {geographic: [], tectonic: []};
+
+  data[elems].forEach((elem, i) => {
+    dirs.geographic.push(elem.geographic);
+    dirs.tectonic.push(elem.tectonic);
+  });
+
+  // var geographic = JSON.parse(JSON.stringify(data[elems].geographic));
+  // var tectonic = JSON.parse(JSON.stringify(data[elems].tectonic));
+
+  if (full) {
+    dirs.geographic = reverseData(dirs.geographic, true);
+    dirs.tectonic = reverseData(dirs.tectonic, true);
+  }
+  else {
+    dirs.geographic = flipData(dirs.geographic, true);
+    dirs.tectonic = flipData(dirs.tectonic, true);
+  }
+
+  return dirs;
+
+  // if (isSites) {
+  //
+  //   elems = 'sites'
+  //
+  //
+  //   var dirs = {
+  //     geographic: [],
+  //     stratigraphic: [],
+  //   };
+  //
+  //   data[elems].forEach((elem, i) => {
+  //     dirs.geographic.push({d: elem.Dgeo, i: elem.Igeo});
+  //     dirs.tectonic.push({d: elem.Dstrat, i: elem.Istrat});
+  //   });
+  //
+  //   if (full) {
+  //     dirs.geographic = reverseData(dirs.geographic, true);
+  //     dirs.tectonic = reverseData(dirs.stratigraphic, true);
+  //   }
+  //   else {
+  //     dirs.geographic = flipData(dirs.geographic, true);
+  //     dirs.tectonic = flipData(dirs.stratigraphic, true);
+  //   }
+  //
+  //   return dirs;
+  //
+  // }
+  //
+  // var dirs = {
+  //   specimen: [],
+  //   geographic: [],
+  //   stratigraphic: [],
+  // };
+  //
+  // data[elems].forEach((elem, i) => {
+  //   dirs.specimen.push({d: elem.Dspec, i: elem.Ispec});
+  //   dirs.geographic.push({d: elem.Dgeo, i: elem.Igeo});
+  //   dirs.stratigraphic.push({d: elem.Dstrat, i: elem.Istrat});
+  // });
+  //
+  //
+  // if (full) {
+  //   if (!dirs.specimen[0].d) dirs.specimen = undefined;
+  //   else dirs.specimen = reverseData(dirs.specimen, true);
+  //   dirs.geographic = reverseData(dirs.geographic, true);
+  //   dirs.tectonic = reverseData(dirs.stratigraphic, true);
+  // }
+  // else {
+  //   if ((!dirs.specimen[0].d) || isEmptyObject(dirs.specimen[0].d)) dirs.specimen = undefined;
+  //   else dirs.specimen = flipData(dirs.specimen, true);
+  //   dirs.geographic = flipData(dirs.geographic, true);
+  //   dirs.tectonic = flipData(dirs.stratigraphic, true);
+  // }
+  //
+  // return dirs;
+
+}
+
+function antiCollection(collection) {
   var dirs = {
-    specimen: [],
+    // specimen: [],
     geographic: [],
     stratigraphic: [],
   };
 
   collection.interpretations.forEach((interpretation, i) => {
-    dirs.specimen.push({d: interpretation.Dspec, i: interpretation.Ispec});
-    dirs.geographic.push({d: interpretation.Dgeo, i: interpretation.Igeo});
-    dirs.stratigraphic.push({d: interpretation.Dstrat, i: interpretation.Istrat});
+    // dirs.specimen.push({d: interpretation.geographic.dec.normal, i: interpretation.Ispec.normal});
+    dirs.geographic.push({dec: interpretation.geographic.dec.normal, inc: interpretation.geographic.inc.normal});
+    dirs.stratigraphic.push({dec: interpretation.tectonic.dec.normal, inc: interpretation.tectonic.inc.normal});
   });
 
 
-  if (!dirs.specimen[0].d) dirs.specimen = undefined;
-  else dirs.specimen = flipData(dirs.specimen, true);
+  // if ((!dirs.specimen[0].d) || isEmptyObject(dirs.specimen[0].d)) dirs.specimen = undefined;
+  // else dirs.specimen = flipData(dirs.specimen, true);
   dirs.geographic = flipData(dirs.geographic, true);
   dirs.tectonic = flipData(dirs.stratigraphic, true);
 
   return dirs;
+}
+
+function autoAntipode() {
+
+  var pageID = getSelectedPage();
+  var pageType = pageID.split('-')[1];
+
+  collection = getSelectedFile('collection');
+  var flipData = antiCollection(collection, false);
+
+  collection.interpretations.forEach((elem, i) => {
+    if (elem.geographic.inc.reversed == flipData['geographic'][i].y) elem.reversed = true;
+    else elem.reversed = false;
+  });
+
+  saveLocalStorage();
+  deleteAllResults(undefined, pageType);
+
+  ipcRenderer.send('redraw-collDataWin');
+
+  dotSelector.render(redraw = true, hover = false);
 
 }
 
-function makeStatGC(normalized) {
+function toNormal() {
 
-  collection = getSelectedFile('collection');
+  var pageID = getSelectedPage();
+
+  var elemTypes = {
+    pca: 'specimen',
+    stat: 'collection',
+    poles: 'sitesSet'
+  }
+  var pageType = pageID.split('-')[1];
+  var type = elemTypes[pageType];
+
+  var elems = {
+    specimen: 'steps',
+    collection: 'interpretations',
+    sitesSet: 'sites',
+  }
+
+  file = getSelectedFile(type);
+
+  file[elems[type]].forEach((elem, i) => {
+    elem.reversed = false;
+  });
+
+  TO_CENTER = false;
+
+  saveLocalStorage();
+  deleteAllResults(undefined, pageType);
+
+  ipcRenderer.send('redraw-collDataWin');
+  // ipcRenderer.send('redraw-sitesSetDataWin');
+
+  dotSelector.render(redraw = true, hover = false);
+
+}
+
+function toCenter() {
+
+  TO_CENTER = !TO_CENTER;
+
+  dotSelector.render(redraw = true, hover = false);
+
+}
+
+function McFaddenIncFishMean(data) {
+
+  /*
+    Calculates Fisher mean inclination from inclination-only data.
+    Parameters
+    ----------
+    inc: list of inclination values
+    Returns
+    -------
+    dictionary of
+        'n' : number of inclination values supplied
+        'ginc' : gaussian mean of inclinations
+        'inc' : estimated Fisher mean
+        'r' : estimated Fisher R value
+        'k' : estimated Fisher kappa
+        'alpha95' : estimated fisher alpha_95
+        'csd' : estimated circular standard deviation
+  */
+  var inc = [];
+  data.forEach((dir, i) => {
+    inc.push(dir.y);
+  });
+
+  var rad = Math.PI / 180, SCOi = 0, SSOi = 0; // some definitions
+  var abinc = []
+  inc.forEach((i, k) => {
+    abinc.push(Math.abs(i));
+  });
+  var gausspars = gausspars(abinc); // get mean inc and standard deviation
+  var fpars = {}
+  N = inc.length;
+
+  if (gausspars.MI < 30) {
+    fpars = {ginc: gausspars.MI, inc: gausspars.MI, n: N, r: 0, k: 0, a95: 0, csd: 0};
+    console.log('WARNING: mean inc < 30, returning gaussian mean');
+    return fpars;
+  }
+
+  inc.forEach((i, k) => {
+    // sum over all incs (but take only positive inc)
+    var coinc = (90 - Math.abs(i)) * rad;
+    SCOi += Math.cos(coinc);
+    SSOi += Math.sin(coinc);
+  });
+
+  var Oo = (90 - gausspars.MI) * rad; // first guess at mean
+  var SCFlag = -1; // sign change flag
+  var epsilon = N * Math.cos(Oo); // RHS of zero equations
+  epsilon += (Math.pow(Math.sin(Oo), 2) - Math.pow(Math.cos(Oo), 2)) * SCOi;
+  epsilon -= 2 * Math.sin(Oo) * Math.cos(Oo) * SSOi;
+
+  while (SCFlag < 0) {
+    // loop until cross zero
+    if (gausspars.MI > 0) Oo -= (0.01 * rad); // get steeper
+    if (gausspars.MI < 0) Oo += (0.01 * rad); // get shallower
+    var prev = epsilon;
+    epsilon = N * Math.cos(Oo); // RHS of zero equations
+    epsilon += (Math.pow(Math.sin(Oo), 2) - Math.pow(Math.cos(Oo), 2)) * SCOi;
+    epsilon -= 2 * Math.sin(Oo) * Math.cos(Oo) * SSOi;
+    if (Math.abs(epsilon) > Math.abs(prev)) gausspars.MI = -1 * gausspars.MI; // reverse direction
+    if (epsilon * prev < 0) SCFlag = 1; // changed sign
+  }
+  var S = 0, C = 0; // initialize for summation
+  inc.forEach((i, k) => {
+    var coinc = (90 - Math.abs(i)) * rad;
+    S += Math.sin(Oo - coinc);
+    C += Math.cos(Oo - coinc);
+  });
+
+  var k = (N - 1) / (2 * (N - C));
+  var Imle = 90 - (Oo / rad);
+  R = 2 * C - N;
+  f = fcalc(2, N - 1);
+  var a95 = 1 - (0.5) * Math.pow((S / C), 2) - (f / (2. * C * k));
+  // b = Math.pow(20, (1 / (N - 1)) - 1);
+  // a = 1 - b * (N - R) / R;
+  a95 = Math.arccos(a95) * 180 / np.pi;
+  var csd = 81 / np.sqrt(k);
+
+  fpars = {ginc: gausspars.MI, inc: Imle, n: N, r: R, k: k, a95: a95, csd: csd};
+  return fpars;
+
+}
+
+function gausspars(data) {
+  /*
+  calculates gaussian statistics for data
+  */
+  var N = data.length;
+  var mean = 0, d = 0;
+  if (N < 1) return "", ""
+  if (N == 1) return data[0], 0
+
+  for (let i = 0; i < N; i++) mean += data[i] / N;
+  for (let i = 0; i < N; i++) d += Math.pow((data[i] - mean), 2);
+
+  var stdev = Math.sqrt(d * (1 / (N - 1)));
+  return {MI: mean, std: stdev};
+}
+
+function makeStatGC(normalized, type) {
+
+  file = getSelectedFile(type);
+
+  var allElems = {
+    specimen: 'steps',
+    collection: 'interpretations',
+    sitesSet: 'sites',
+  }
+
+  var elems = allElems[type];
 
   var centerMass = new Array(0, 0, 0);
   var code = (normalized) ? 'GCn' : 'GC';
 
-  var selectedDots = collection.interpretations.filter((interpretation) => {
-    return interpretation.selected;
+  var selectedDots = file[elems].filter((elem) => {
+    return elem.selected;
   });
 
   if (selectedDots.length < 2) return;
 
-  data = {
-    spec: {normal: [], reversed: []},
-    geo: {normal: [], reversed: []},
-    strat: {normal: [], reversed: []},
+  var data = {
+    spec: [],
+    geo: [],
+    strat: [],
+  }
+
+  if (type == 'sitesSet') {
+    data = {
+      sites: {
+        geo: [],
+        strat: [],
+      },
+      vgp: {
+        geo: [],
+        strat: [],
+      }
+    }
+
+    selectedDots.forEach((dot, i) => {
+      var position = 'normal';
+      if (dot.reversed) position = 'reversed';
+
+      data.sites.geo.push({'x': dot.geographic.dec[position], 'y': dot.geographic.inc[position]});
+      data.sites.strat.push({'x': dot.tectonic.dec[position], 'y': dot.tectonic.inc[position]});
+      data.vgp.geo.push({'x': dot.vgp.geo.lng, 'y': dot.vgp.geo.lat});
+      data.vgp.strat.push({'x': dot.vgp.geo.lng, 'y': dot.vgp.geo.lat});
+    });
+
+    specMean = {dec: 0, inc: 0, a95: 0};
+    var vectorsSitesGeo = makeVectorsForEig(data.sites.geo);
+    var vectorsSitesStrat = makeVectorsForEig(data.sites.strat);
+    var vectorsVGPGeo = makeVectorsForEig(data.vgp.geo);
+    var vectorsVGPStrat = makeVectorsForEig(data.vgp.strat);
+
+    var sitesGeoMean = gcMean(vectorsSitesGeo);
+    var sitesStratMean = gcMean(vectorsSitesStrat);
+    var vgpGeoMean = gcMean(vectorsVGPGeo);
+    var vgpStratMean = gcMean(vectorsVGPStrat);
+
+    file.means.push({
+      "dots": selectedDots,
+      "created": new Date().toISOString(),
+      "code": code + 'S',
+      // "a95": {geographic: sitesGeoMean.a95, tectonic: sitesStratMean.a95},
+      // "k": {geographic: sitesGeoMean.k, tectonic: sitesStratMean.k},
+      "specimen": specMean,
+      "geographic": sitesGeoMean,
+      "tectonic": sitesStratMean,
+      "version": __VERSION__,
+    });
+
+    file.means.push({
+      "dots": selectedDots,
+      "created": new Date().toISOString(),
+      "code": code + 'P',
+      // "a95": {geographic: sitesGeoMean.a95, tectonic: sitesStratMean.a95},
+      // "k": {geographic: sitesGeoMean.k, tectonic: sitesStratMean.k},
+      "specimen": specMean,
+      "geographic": vgpGeoMean,
+      "tectonic": vgpStratMean,
+      "version": __VERSION__,
+    });
+
+    saveLocalStorage();
+
+    redrawCharts(false);
+
+    return;
   }
 
   selectedDots.forEach((dot, i) => {
-    data.spec.normal.push({'x': dot.Dspec.normal, 'y': dot.Ispec.normal});
-    data.spec.reversed.push({'x': dot.Dspec.reversed, 'y': dot.Ispec.reversed});
-    data.geo.normal.push({'x': dot.Dgeo.normal, 'y': dot.Igeo.normal});
-    data.geo.reversed.push({'x': dot.Dgeo.reversed, 'y': dot.Igeo.reversed});
-    data.strat.normal.push({'x': dot.Dstrat.normal, 'y': dot.Istrat.normal});
-    data.strat.reversed.push({'x': dot.Dstrat.reversed, 'y': dot.Istrat.reversed});
+    var position = 'normal';
+    if (dot.reversed) position = 'reversed';
+
+    // data.spec.push({'x': dot.Dspec[position], 'y': dot.Ispec[position]});
+    data.geo.push({'x': dot.geographic.dec[position], 'y': dot.geographic.inc[position]});
+    data.strat.push({'x': dot.tectonic.dec[position], 'y': dot.tectonic.inc[position]});
   });
 
-  var vectorsSpec = makeVectorsForEig(data.spec.normal);
-  var vectorsGeo = makeVectorsForEig(data.geo.normal);
-  var vectorsStrat = makeVectorsForEig(data.strat.normal);
-  var vectorsSpecReversed = makeVectorsForEig(data.spec.reversed);
-  var vectorsGeoReversed = makeVectorsForEig(data.geo.reversed);
-  var vectorsStratReversed = makeVectorsForEig(data.strat.reversed);
+  // var vectorsSpec = makeVectorsForEig(data.spec);
+  var vectorsGeo = makeVectorsForEig(data.geo, normalized);
+  var vectorsStrat = makeVectorsForEig(data.strat, normalized);
 
-  var specMean = gcMean(vectorsSpec);
+  // var specMean = gcMean(vectorsSpec);
   var geoMean = gcMean(vectorsGeo);
   var stratMean = gcMean(vectorsStrat);
-  var specReversedMean = gcMean(vectorsSpecReversed);
-  var geoReversedMean = gcMean(vectorsGeoReversed);
-  var stratReversedMean = gcMean(vectorsStratReversed);
-
-  // var specSeries = makeGCSeries(vectorsSpec, code);
-  // var geoSeries = makeGCSeries(vectorsGeo, code);
-  // var stratSeries = makeGCSeries(vectorsStrat, code);
-  // var specReversedSeries = makeGCSeries(vectorsSpecReversed, code);
-  // var geoReversedSeries = makeGCSeries(vectorsGeoReversed, code);
-  // var stratReversedSeries = makeGCSeries(vectorsStratReversed, code);
 
   var comment = null;
 
-  collection.means.push({
+  file.means.push({
     "dots": selectedDots,
     "created": new Date().toISOString(),
     "code": code,
-    "a95": {normal: geoMean.a95, reversed: geoReversedMean.a95},
-    "k": {normal: '', reversed: ''},
-    // "dirSpec": {normal: specSeries[2], reversed: specReversedSeries[2]},
-    // "dirGeo": {normal: geoSeries[2], reversed: geoReversedSeries[2]},
-    // "dirStrat": {normal: stratSeries[2], reversed: stratReversedSeries[2]},
+    // "a95": {geographic: geoMean.a95, tectonic: stratMean.a95},
+    // "k": {geographic: geoMean.k, tectonic: stratMean.k},
     "comment": comment,
-    // "specimen": {normal: specSeries[0], reversed: specReversedSeries[0]},
-    // "geographic": {normal: geoSeries[0], reversed: geoReversedSeries[0]},
-    // "tectonic": {normal: stratSeries[0], reversed: stratReversedSeries[0]},
-    "specimen":  {normal: specMean, reversed: specReversedMean},
-    "geographic": {normal: geoMean, reversed: geoReversedMean},
-    "tectonic": {normal: stratMean, reversed: stratReversedMean},
+    // "specimen": specMean,
+    "geographic": geoMean,
+    "tectonic": stratMean,
     "version": __VERSION__,
   });
 
@@ -693,13 +1197,13 @@ function makeStatGC(normalized) {
 
 }
 
-function makeVectorsForEig(data) {
+function makeVectorsForEig(data, normalized) {
 
   if (!data[0].x) return undefined;
   var vectors = data.map(function(dot) {
     var Dot = dir_to_xyz(dot.x, dot.y, 1);
 
-    var normalizer = Math.sqrt((Dot.x * Dot.x) + (Dot.y * Dot.y) + (Dot.z * Dot.z));
+    var normalizer = (normalized) ? Math.sqrt((Dot.x * Dot.x) + (Dot.y * Dot.y) + (Dot.z * Dot.z)) : 1;
     return new Array(Dot.x / normalizer, Dot.y / normalizer, Dot.z / normalizer);
   });
 
@@ -753,6 +1257,7 @@ function makeGCSeries(mean, ellipse, dashedLines) {
         x: direction.dec,
         y: Math.abs(direction.inc), // projectInclination(direction.inc),
         inc: direction.inc,
+        a95: mean.a95
       }]
     },
     {
@@ -831,21 +1336,21 @@ function makeGCSeries(mean, ellipse, dashedLines) {
   return series;
 }
 
-function makeFisherMean(type) {
+function makeFisherMean(type, McFadden) {
 
-  // Get selected specimen
   file = getSelectedFile(type);
 
   var allElems = {
     specimen: 'steps',
     collection: 'interpretations',
+    sitesSet: 'sites',
   }
 
   var elems = allElems[type];
 
   // Get the selected steps
-  var selectedDots = file[elems].filter(function(elem) {
-    return elem.selected;
+  var selectedDots = file[elems].filter(function(dot) {
+    if (dot.selected) return dot;
   });
 
   if (selectedDots.length < 2) {
@@ -870,67 +1375,174 @@ function makeFisherMean(type) {
   }
   else if (type == 'collection')  {
     data = {
-      spec: {normal: [], reversed: []},
-      geo: {normal: [], reversed: []},
-      strat: {normal: [], reversed: []},
+      geo: [],
+      strat: [],
     }
 
     selectedDots.forEach((dot, i) => {
-      data.spec.normal.push({'x': dot.Dspec.normal, 'y': dot.Ispec.normal});
-      data.spec.reversed.push({'x': dot.Dspec.reversed, 'y': dot.Ispec.reversed});
-      data.geo.normal.push({'x': dot.Dgeo.normal, 'y': dot.Igeo.normal});
-      data.geo.reversed.push({'x': dot.Dgeo.reversed, 'y': dot.Igeo.reversed});
-      data.strat.normal.push({'x': dot.Dstrat.normal, 'y': dot.Istrat.normal});
-      data.strat.reversed.push({'x': dot.Dstrat.reversed, 'y': dot.Istrat.reversed});
+      var position = 'normal';
+      if (dot.reversed) position = 'reversed';
+
+      data.geo.push({'x': dot.geographic.dec[position], 'y': dot.geographic.inc[position], 'gc': dot.gc});
+      data.strat.push({'x': dot.tectonic.dec[position], 'y': dot.tectonic.inc[position], 'gc': dot.gc});
     });
 
-    specMean = fisherMean(data.spec.normal);
-    geoMean = fisherMean(data.geo.normal);
-    stratMean = fisherMean(data.strat.normal);
-    specReversedMean = fisherMean(data.spec.reversed);
-    geoReversedMean = fisherMean(data.geo.reversed);
-    stratReversedMean = fisherMean(data.strat.reversed);
+    geoMean = (McFadden) ? mcFaddenCombineMean(data.geo) : fisherMean(data.geo);
+    stratMean = (McFadden) ? mcFaddenCombineMean(data.strat) : fisherMean(data.strat);
+  }
+  else if (type == 'sitesSet') {
+    data = {
+      sites: {
+        geo: [],
+        strat: [],
+      },
+      vgp: {
+        geo: [],
+        strat: [],
+      }
+    }
+
+    selectedDots.forEach((dot, i) => {
+      var position = 'normal';
+      if (dot.reversed) position = 'reversed';
+
+      data.sites.geo.push({'x': dot.geographic.dec[position], 'y': dot.geographic.inc[position]});
+      data.sites.strat.push({'x': dot.tectonic.dec[position], 'y': dot.tectonic.inc[position]});
+      data.vgp.geo.push({'x': dot.vgp.geo.lng, 'y': dot.vgp.geo.lat});
+      data.vgp.strat.push({'x': dot.vgp.geo.lng, 'y': dot.vgp.geo.lat});
+    });
+
+    specMean = {dec: 0, inc: 0, a95: 0};
+    sitesGeoMean = (McFadden) ? mcFaddenCombineMean(data.sites.geo) : fisherMean(data.sites.geo);
+    sitesStratMean = (McFadden) ? mcFaddenCombineMean(data.sites.strat) : fisherMean(data.sites.strat);
+    vgpGeoMean = (McFadden) ? mcFaddenCombineMean(data.vgp.geo) : fisherMean(data.vgp.geo);
+    vgpStratMean = (McFadden) ? mcFaddenCombineMean(data.vgp.strat) : fisherMean(data.vgp.strat);
   }
 
-  // get evidence ellipses
-  var specEvidEllipse = getSmallCircle(specMean.dec, specMean.inc, specMean.a95, true);
-  var geoEvidEllipse = getSmallCircle(geoMean.dec, geoMean.inc, geoMean.a95, true);
-  var stratEvidEllipse = getSmallCircle(stratMean.dec, stratMean.inc, stratMean.a95, true);
-  var specReversedEvidEllipse = getSmallCircle(specReversedMean.dec, specReversedMean.inc, specReversedMean.a95, true);
-  var geoReversedEvidEllipse = getSmallCircle(geoReversedMean.dec, geoReversedMean.inc, geoReversedMean.a95, true);
-  var stratReversedEvidEllipse = getSmallCircle(stratReversedMean.dec, stratReversedMean.inc, stratReversedMean.a95, true);
+  if (type == 'sitesSet') {
 
-  // get series
-  var specSeries = makeFisherSeries(specMean, specEvidEllipse);
-  var geoSeries = makeFisherSeries(geoMean, geoEvidEllipse);
-  var stratSeries = makeFisherSeries(stratMean, stratEvidEllipse);
-  var specReversedSeries = makeFisherSeries(specReversedMean, specReversedEvidEllipse);
-  var geoReversedSeries = makeFisherSeries(geoReversedMean, geoReversedEvidEllipse);
-  var stratReversedSeries = makeFisherSeries(stratReversedMean, stratReversedEvidEllipse);
+    var comment = null;
 
+    file.means.push({
+      "dots": selectedDots,
+      "created": new Date().toISOString(),
+      "code": (McFadden) ? 'McFaddenS' : 'FisherS',
+      "specimen": specMean,
+      "geographic": sitesGeoMean,
+      "tectonic": sitesStratMean,
+      "version": __VERSION__,
+    });
 
-  var comment = null;
+    file.means.push({
+      "dots": selectedDots,
+      "created": new Date().toISOString(),
+      "code": (McFadden) ? 'McFaddenP' : 'FisherP',
+      "specimen": specMean,
+      "geographic": vgpGeoMean,
+      "tectonic": vgpStratMean,
+      "version": __VERSION__,
+    });
+  }
+  else {
+    var geoEvidEllipse = getSmallCircle(geoMean.dec, geoMean.inc, geoMean.a95, true);
+    var stratEvidEllipse = getSmallCircle(stratMean.dec, stratMean.inc, stratMean.a95, true);
 
-  file.means.push({
-    "dots": selectedDots,
-    "created": new Date().toISOString(),
-    "code": 'Fisher',
-    "a95": {normal: geoMean.a95, reversed: geoReversedMean.a95},
-    "k": {normal: geoMean.k, reversed: geoReversedMean.k},
-    // "dirSpec": {normal: specMean, reversed: specReversedMean},
-    // "dirGeo": {normal: geoMean, reversed: geoReversedMean},
-    // "dirStrat": {normal: stratMean, reversed: stratReversedMean},
-    "comment": comment,
-    // "specimen": {normal: specSeries, reversed: specReversedSeries},
-    // "geographic": {normal: geoSeries, reversed: geoReversedSeries},
-    // "tectonic": {normal: stratSeries, reversed: stratReversedSeries},
-    "specimen":  {normal: specMean, reversed: specReversedMean},
-    "geographic": {normal: geoMean, reversed: geoReversedMean},
-    "tectonic": {normal: stratMean, reversed: stratReversedMean},
-    "version": __VERSION__,
-  });
+    var comment = null;
+
+    file.means.push({
+      "dots": selectedDots,
+      "created": new Date().toISOString(),
+      "code": (McFadden) ? 'McFadden' : 'Fisher',
+      "specimen": specMean,
+      "geographic": geoMean,
+      "tectonic": stratMean,
+      "version": __VERSION__,
+    });
+  }
+
   redrawCharts();
   saveLocalStorage();
+
+}
+
+function calcRvector(dirs) {
+
+  var R = 0, Xbar = [0, 0, 0], X = [];
+  dirs.forEach((dir, i) => {
+    var xyz = dir_to_xyz(dir.x, dir.y, 1);
+    X.push([xyz.x, xyz.y, xyz.z]);
+    for (let j = 0; j < 3; j++) Xbar[j] += X[i][j];
+  });
+  for (let j = 0; j  < 3; j++) R += Math.pow(Xbar[j], 2);
+
+  return {r: Math.sqrt(R), xbar: Xbar};
+
+}
+
+function mcFaddenCombineMean(data) {
+
+  var gcData = [], dirData = [];
+  data.forEach((dir, i) => {
+    if (dir.gc) gcData.push(dir);
+    else dirData.push(dir);
+  });
+
+  var bestGCdirs = [];
+  var newDirData = dirData.slice();
+  gcData.forEach((nDir, i) => {
+    // for each normal direction...
+    var direction = new Direction(nDir.x, nDir.y);
+    var gcPath = getPlaneData(direction);
+    gcPath = gcPath.negative.concat(gcPath.positive);
+
+    var bestGCdir = {r: 0, circle: i, dot: -1};
+    gcPath.forEach((dot, k) => {
+      if (!dot) return;
+
+      dot.y = dot.inc;
+      dirs = newDirData.slice();
+      dirs.push(dot);
+      var testR = calcRvector(dirs);
+
+      if (testR.r > bestGCdir.r) {
+        bestGCdir.r = testR.r;
+        bestGCdir.dot = k;
+      }
+    });
+
+    bestGCdir.dir = gcPath[bestGCdir.dot];
+    newDirData.push({x: bestGCdir.dir.x, y: bestGCdir.dir.inc});
+
+    bestGCdirs.push(bestGCdir);
+
+  });
+
+  var M = dirData.length, N = gcData.length;
+
+  var dirs = dirData.slice();
+  bestGCdirs.forEach((dir, i) => {
+    dir.dir.y = dir.dir.inc;
+    dirs.push(dir.dir);
+  });
+
+  var rVector = calcRvector(dirs);
+  var R = rVector.r, Xbar = rVector.xbar;
+
+  // standard Fisher statistics
+  for (let j = 0; j  < 3; j++) Xbar[j] /= R;
+  var dir = xyz_to_dir(Xbar[0], Xbar[1], Xbar[2]);
+
+  k = (2 * M + N - 2) / (2 * (M + N - R));
+  csd = 81 / Math.sqrt(k);
+
+  var Q = M + N / 2;
+  var b = Math.pow((1 / 0.05), (1 / (Q - 1))) - 1;
+  var a = 1 - (((Q - 1) / (k * R)) * b);
+  if (a < -1) a = -1;
+  var a95 = Math.degrees(Math.acos(a));
+  if (a < 0) a95 = 180;
+  fpars = {dec: dir.dec, inc: dir.inc, n: (N + M), r: R, k: k, a95: a95, csd: csd};
+  return fpars
 
 }
 
@@ -959,13 +1571,14 @@ function fisherMean(data) {
   var N = data.length;
   if (N < 2) return fpars;
   for (let i = 0; i < data.length; i++) {
-    xyz = dir_to_xyz(data[i].x, data[i].y, 1);
+    var xyz = dir_to_xyz(data[i].x, data[i].y, 1);
     X.push([xyz.x, xyz.y, xyz.z]);
     for (let j = 0; j < 3; j++) Xbar[j] += X[i][j];
   }
   for (let j = 0; j  < 3; j++) R += Math.pow(Xbar[j], 2);
   R = Math.sqrt(R);
-  for (let j = 0; j  < 3; j++) Xbar[j] /= R; //Xbar[j]/R
+
+  for (let j = 0; j  < 3; j++) Xbar[j] /= R;
   dir = xyz_to_dir(Xbar[0], Xbar[1], Xbar[2]);
   if (N != R) {
     k = (N - 1) / (N - R);
@@ -981,17 +1594,33 @@ function fisherMean(data) {
   var a95 = Math.degrees(Math.acos(a));
   if (a < 0) a95 = 180;
   fpars = {dec: dir.dec, inc: dir.inc, n: N, r: R, k: k, a95: a95, csd: csd};
-  return fpars
+  return fpars;
 
 }
 
 function makeFisherSeries(mean, ellipse, dashedLines) {
 
+  // var x = mean.dec;
+  // var y = Math.abs(mean.inc);
+  //
+  // var toCenter = true;
+  // // var toCenter = false;
+  //
+  // if (toCenter) {
+  //   x = 0;
+  //   y = 90;
+  // }
+
   var series = [
     {
       type: "scatter",
       name: 'Fisher mean',
-      data: [{'x': mean.dec, 'y': Math.abs(mean.inc)}],
+      data: [{
+        'x': mean.dec,
+        'y': Math.abs(mean.inc),
+        'inc': mean.inc,
+        'a95': mean.a95,
+      }],
       zIndex: 500,
       marker: {
         radius: 2,
@@ -1094,7 +1723,7 @@ function makeInterpretations(type, anchored, normalized, selectedSteps, referenc
   var firstVector = new Coordinates(...vectors[0]);
 
   // When anchoring we mirror the points and add them
-  if(anchored) {
+  if (anchored) {
     vectors = vectors.concat(selectedSteps.map(function(step) {
       var normalizer = 1;
       if (normalized) normalizer = Math.sqrt((step.x * step.x) + (step.y * step.y) + (step.z * step.z));
@@ -1105,7 +1734,7 @@ function makeInterpretations(type, anchored, normalized, selectedSteps, referenc
   var lastVector = new Coordinates(...vectors[vectors.length - 1]);
 
   // Transform to the center of mass (not needed when anchoring)
-  if(!anchored) {
+  if (!anchored) {
 
     for(var i = 0; i < vectors.length; i++) {
       for(var j = 0; j < 3; j++) {
@@ -1162,22 +1791,6 @@ function makeInterpretations(type, anchored, normalized, selectedSteps, referenc
       // Calculation of maximum angle of deviation
       var s1 = Math.sqrt((eig.tau[2] / eig.tau[1]) + (eig.tau[2] / eig.tau[0]));
       var MAD = Math.atan(s1) * RADIANS;
-      // console.log('dsdads@@@@', eig.tau);
-      // console.log('------------>>>', MAD, (Math.atan(Math.sqrt(eig.tau[1] + eig.tau[2]) / Math.sqrt(eig.tau[0]))  * RADIANS),);
-      // console.log('------------>>>', MAD, (Math.atan(Math.sqrt(eig.tau[2] + eig.tau[2]) / Math.sqrt(eig.tau[0]))  * RADIANS),);
-      // console.log('------------>>>', MAD, (Math.atan(Math.sqrt(eig.tau[1] + eig.tau[1]) / Math.sqrt(eig.tau[0]))  * RADIANS),);
-      // console.log('------------>>>', MAD, (Math.atan(Math.sqrt(eig.tau[1] + eig.tau[1]) / Math.sqrt(eig.tau[1]))  * RADIANS),);
-      // console.log('------------>>>', MAD, (Math.atan(Math.sqrt(eig.tau[1] + eig.tau[2]) / Math.sqrt(eig.tau[1]))  * RADIANS),);
-      // console.log('------------>>>', MAD, (Math.atan(Math.sqrt(eig.tau[1] + eig.tau[2]) / Math.sqrt(eig.tau[2]))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[2] / eig.tau[1]) + (eig.tau[2] / eig.tau[1])))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[1] / eig.tau[1]) + (eig.tau[2] / eig.tau[0])))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[2] / eig.tau[1]) + (eig.tau[1] / eig.tau[0])))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[2] / eig.tau[1]) + (eig.tau[1] / eig.tau[2])))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[2] / eig.tau[1]) + (eig.tau[2] / eig.tau[1])))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[0] / eig.tau[2]) + (eig.tau[1] / eig.tau[2])))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[0] / eig.tau[2]) + (eig.tau[0] / eig.tau[2])))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[1] / eig.tau[2]) + (eig.tau[0] / eig.tau[1])))  * RADIANS),);
-      // console.log('!!!!!!!!!!!->>>', MAD, (Math.atan(Math.sqrt((eig.tau[1] / eig.tau[2]) + (eig.tau[1] / eig.tau[1])))  * RADIANS),);
 
       // Get the coordinates of the maximum eigenvector stored in v3
       var eigenVectorCoordinates = vectorTAU3;
@@ -1210,37 +1823,29 @@ function makeInterpretations(type, anchored, normalized, selectedSteps, referenc
 }
 
 // Does a PCA on the selected specimen (and its selected steps)
-function makeInterpretation(type, anchored, normalized, code) {
+function makeInterpretation(type, anchored, normalized, code, specimen) {
 
+  var time = performance.now();
   /*
    * Function makeInterpretation
-   * Does a PCA on the selected specimen (and its selected steps)
+   * Does a PCA on the selected specimen
    */
   // Get selected specimen
-  specimen = getSelectedFile('specimen');
+  if (!specimen) specimen = getSelectedFile('specimen');
 
   // Get the selected steps
   var selectedSteps = specimen.steps.filter(function(step) {
     return step.selected;
   });
 
-  if (selectedSteps.length < 2) {
-    return;
-  }
+  if (selectedSteps.length < 2) return;
 
   var stepValues = selectedSteps.map(x => x.step);
 
-  // Check if the interpretation already exists
-  // var exists = Boolean(specimen.interpretations.filter(function(interpretation) {
-  //   return interpretation.steps.join() === stepValues.join() && interpretation.type === options.type && interpretation.anchored === options.anchored;
-  // }).length);
-  //
-  // if(exists) {
-  //   return notify("warning", "This component already exists.");
-  // }
-
   // Get the prinicple component
   var PCA = makeInterpretations(type, anchored, normalized, selectedSteps, "specimen");
+  time2 = performance.now() - time;
+  console.log('Время выполнения (interpretation calculation) = ', time2);
 
   // Rotate component to geographic coordinates
   var geoCoordinates = inReferenceCoordinates("geographic", specimen, PCA.component.coordinates);
@@ -1252,11 +1857,6 @@ function makeInterpretation(type, anchored, normalized, code) {
 
   var comment = "";
 
-  // if(document.getElementById("auto-comment").checked) {
-  //   comment = prompt("Enter a comment for this interpretation.");
-  // } else {
-  //   comment = null
-  // }
   // Attach the interpretation to the specimen \
 
   specimen.interpretations.push({
@@ -1277,9 +1877,16 @@ function makeInterpretation(type, anchored, normalized, code) {
     "version": __VERSION__,
   });
 
+
   saveLocalStorage();
 
+  time1 = performance.now() - time;
+  console.log('Время выполнения (interpretation save) = ', time1);
+
   redrawCharts(false);
+
+  time3 = performance.now() - time;
+  console.log('Время выполнения (interpretation draw) = ', time3);
 }
 
 function getConfidenceEllipseDouble(dDx, dIx, N) {
@@ -1337,19 +1944,12 @@ function coordsFromSteps(steps) {
   var dirs = new Array();
   var intensities = new Array();
   var graphScale = new Array();
-  var selectedStepIndex = null;
-
+  var hoverIndex;
 
   steps.forEach(function(step, i) {
 
-    // If the step is not visible: stop
-    if(!step.visible) {
-      return;
-    }
-    // Save index of the active step for displaying the hover icon
-    if (dotSelector._selectedStep === i) {
-      selectedStepIndex = horizontal.length;
-    }
+    if (!step.visible) return;
+    if (step.hover) hoverIndex = step.index;
 
     // Calculate the correction direction for this step
     var coordinates = inReferenceCoordinates(COORDINATES['pca'], specimen, new Coordinates(step.x, step.y, step.z));
@@ -1360,6 +1960,8 @@ function coordsFromSteps(steps) {
     var direction = coordinates.toVector(Direction);
     var title = titleToSpec(COORDINATES['pca'], PROJECTION);
 
+    var volume = (specimen.volume) ? specimen.volume : 1;
+
     dirs.push({
       "x": direction.dec,
       "y": Math.abs(direction.inc),
@@ -1367,23 +1969,9 @@ function coordsFromSteps(steps) {
     })
     intensities.push({
       "x": parseInt(step.step.match(/\d+/)),
-      "y": direction.length,
+      "y": (new Coordinates(step.x, step.y, step.z).length) / volume,//direction.length,
       "stepIndex": step.index,
     })
-
-    // var normalizationFactor = Math.max.apply(null, intensities.map(x => x.y));
-    //
-    // return intensities.map(function(x) {
-    //   return {
-    //     "x": x.x,
-    //     "y": x.y / normalizationFactor,
-    //     "stepIndex": x.stepIndex,
-    //     "step": x.step,
-    //     "intensity": x.y,
-    //     "maxIntensity": normalizationFactor
-    //   }
-    // });
-
 
     if (PROJECTION == "upwest") {
       // Horizontal projection is in the x, y plane
@@ -1392,7 +1980,7 @@ function coordsFromSteps(steps) {
         "y": -coordinates.y,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length / specimen.volume,
+        "intensity": direction.length / volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[0],
@@ -1403,7 +1991,7 @@ function coordsFromSteps(steps) {
         "y": -coordinates.z,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length / specimen.volume,
+        "intensity": direction.length / volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[1],
@@ -1416,7 +2004,7 @@ function coordsFromSteps(steps) {
         "y": coordinates.x,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length / specimen.volume,
+        "intensity": direction.length / volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[0],
@@ -1427,7 +2015,7 @@ function coordsFromSteps(steps) {
         "y": -coordinates.z,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length / specimen.volume,
+        "intensity": direction.length / volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[1],
@@ -1440,7 +2028,7 @@ function coordsFromSteps(steps) {
         "y": coordinates.x,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length / specimen.volume,
+        "intensity": direction.length / volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[0],
@@ -1451,7 +2039,7 @@ function coordsFromSteps(steps) {
         "y": coordinates.x,
         "dec": direction.dec,
         "inc": direction.inc,
-        "intensity": direction.length / specimen.volume,
+        "intensity": direction.length / volume,
         "step": step.step,
         "stepIndex": step.index,
         "title": title[1],
@@ -1461,13 +2049,17 @@ function coordsFromSteps(steps) {
     graphScale.push(Math.abs(coordinates.x), Math.abs(coordinates.y), Math.abs(coordinates.z));
   })
 
+  var title = titleToSpec(COORDINATES['pca'], PROJECTION);
+
   var output = {
     "hor": horizontal,
     "vert": vertical,
     "dirs": dirs,
-    "intensities": normalize(intensities),
+    "intensities": normalize(intensities, settings.pca.intensityHide),
     "scale": graphScale,
-    "selStepIndex": selectedStepIndex,
+    "hoverIndex": hoverIndex,
+    "titleHor": title[0],
+    "titleVert": title[1],
   }
 
   return output;
@@ -1518,4 +2110,8 @@ function booleanToCheck(bool) {
 
   return bool ? "Yes" : "No";
 
+}
+
+function isEmptyObject(obj) {
+    return !Object.keys(obj).length;
 }

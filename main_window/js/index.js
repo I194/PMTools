@@ -1,3 +1,46 @@
+;(function($) {
+    $.fn.textfill = function(options) {
+        var fontSize = options.maxFontPixels;
+        var ourText = $('span:visible:first', this);
+        var maxHeight = $(this).height();
+        var maxWidth = $(this).width();
+        var textHeight;
+        var textWidth;
+        do {
+            ourText.css('font-size', fontSize);
+            textHeight = ourText.height();
+            textWidth = ourText.width();
+            fontSize = fontSize - 1;
+        } while ((textHeight > maxHeight || textWidth > maxWidth) && fontSize > 3);
+        return this;
+    }
+})(jQuery);
+
+$(document).ready(function() {
+    $('.sitesSet-file-path').textfill({ maxFontPixels: 36 });
+});
+
+$(document).ready(function() {
+    var $chkboxes = $('.chkbox');
+    var lastChecked = null;
+
+    $chkboxes.click(function(e) {
+        if (!lastChecked) {
+            lastChecked = this;
+            return;
+        }
+
+        if (e.shiftKey) {
+            var start = $chkboxes.index(this);
+            var end = $chkboxes.index(lastChecked);
+
+            $chkboxes.slice(Math.min(start,end), Math.max(start,end)+ 1).prop('checked', lastChecked.checked);
+        }
+
+        lastChecked = this;
+    });
+});
+
 function addNotCollapsedStyle(clickedBtnId) {
 
   var clickedBtn = document.getElementById(clickedBtnId)
@@ -5,7 +48,19 @@ function addNotCollapsedStyle(clickedBtnId) {
     'pca-pca-btn',
     'pca-pca0-btn',
     'pca-gc-btn',
-    'pca-gcn-btn'
+    'pca-gcn-btn',
+    'pca-erase-btn',
+    'stat-f-btn',
+    'stat-gc-btn',
+    'stat-gcn-btn',
+    'stat-erase-btn',
+    'stat-reverse-btn',
+    'poles-f-btn',
+    'poles-m-btn',
+    'poles-gc-btn',
+    'poles-gcn-btn',
+    'poles-erase-btn',
+    'poles-reverse-btn',
   ]
 
   var remove = false
@@ -33,28 +88,83 @@ function registerEventHandlers() {
 
   // Simple listeners
   document.addEventListener("keydown", keyboardHandler);
-  document.getElementById("container-center").addEventListener('click', mainContClickHandler);
-  document.getElementById("stat-container-center").addEventListener('click', mainContClickHandler);
+  // document.getElementById("container-center").addEventListener('click', mainContClickHandler);
+  // document.getElementById("stat-container-center").addEventListener('click', mainContClickHandler);
   document.getElementById("interpretation-table-container").addEventListener("input", interpretationTableClickHandler);
+  document.getElementById("sites-table-container").addEventListener("input", sitesTableClickHandler);
   document.getElementById("specimen-select").addEventListener("change", (e) => resetFileHandler('specimen'))
   document.getElementById("collection-select").addEventListener("change", (e) => resetFileHandler('collection'));
-  document.getElementById("site-lat").addEventListener("input", (e) => formatVGPTable());
-  document.getElementById("site-lon").addEventListener("input", (e) => formatVGPTable());
+  document.getElementById("sitesSet-select").addEventListener("change", (e) => resetFileHandler('sitesSet'));
+  // document.getElementById("add-files").addEventListener('click', (e) => importFiles(false, true));
 
-  document.getElementById("nav-pca-tab").addEventListener("click", (e) => localStorage.setItem("currPage", 'nav-pca-tab'));
-  document.getElementById("nav-stat-tab").addEventListener("click", (e) => localStorage.setItem("currPage", 'nav-stat-tab'));
+  // poles containers context menu
+  document.getElementById("poles-container-left").addEventListener('click', (e) => {
+    document.getElementById("poles-container-left").classList.add('selected');
+    document.getElementById("poles-container-right").classList.remove('selected');
+  })
+  document.getElementById("poles-container-right").addEventListener('click', (e) => {
+    document.getElementById("poles-container-right").classList.add('selected');
+    document.getElementById("poles-container-left").classList.remove('selected');
+  })
 
-  // document.getElementById("stat-reversed").addEventListener('click', )
+  // document.getElementById("site-lat").addEventListener("input", (e) => formatVGPTable());
+  // document.getElementById("site-lon").addEventListener("input", (e) => formatVGPTable());
+  document.getElementById("append-input").addEventListener('click', (e) => {
+    settings.global.appendFiles = document.getElementById("append-input").checked;
+    localStorage.setItem("settings", JSON.stringify(settings));
+    ipcRenderer.send('reload-settWin');
+    ipcRenderer.send('reload-fileManager');
+  })
+
+  // charts exporting
+  document.getElementById('export-charts-pdf').addEventListener('click', (e) => {
+    redrawCharts();
+    Highcharts.exportCharts(
+      chartsToExport,
+      {
+        type: 'application/pdf',
+      },
+    );
+  })
+  document.getElementById('export-charts-jpeg').addEventListener('click', (e) => {
+    redrawCharts();
+    Highcharts.exportCharts(
+      chartsToExport,
+      {
+        type: 'image/jpeg',
+      },
+    );
+  })
+
+  // pages navigation
+  document.getElementById("nav-pca-tab").addEventListener("click", (e) => {
+    localStorage.setItem("currPage", 'nav-pca-tab');
+    chartsToExport = [zijdPCA, stereoPCA, intensPCA]
+  });
+  document.getElementById("nav-stat-tab").addEventListener("click", (e) => {
+    localStorage.setItem("currPage", 'nav-stat-tab');
+    chartsToExport = [stereoStat];
+  });
+  document.getElementById("nav-poles-tab").addEventListener("click", (e) => {
+    localStorage.setItem("currPage", 'nav-poles-tab');
+    chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
+  });
+
+  var collEraseCheckboxes = document.getElementsByClassName("chkbox1");
+  console.log(collEraseCheckboxes);
+
   window.addEventListener("resize", resizeTables);
 
-  var chartContainersPCA = [
+  var chartContainers = [
     document.getElementById('container-center'),
     document.getElementById('container-left'),
     document.getElementById('container-right'),
     document.getElementById('stat-container-center'),
+    document.getElementById('poles-container-left'),
+    document.getElementById('poles-container-right'),
   ]
-
-  chartContainersPCA.forEach((container, i) => {
+  // settings the context menu for all charts containers
+  chartContainers.forEach((container, i) => {
     container.addEventListener("contextmenu", (event) => {
 
       event.preventDefault();
@@ -75,7 +185,7 @@ function registerEventHandlers() {
       contextMenu.classList.add("active");
       container.classList.add('add-context');
 
-      chartContainersPCA.forEach((cont, i) => {
+      chartContainers.forEach((cont, i) => {
         if (cont.id != container.id) cont.classList.remove('add-context');
       });
 
@@ -86,97 +196,7 @@ function registerEventHandlers() {
   window.addEventListener("click", () => {
     document.getElementById("chart-context-menu").classList.remove("active");
   });
-  //document.getElementById("table-container").addEventListener("click", handleTableClick);
-  //document.getElementById("fitting-container-table-tbody").addEventListener("click", handleTableClickComponents);
-  //document.getElementById("save-location").addEventListener("click", handleLocationSave);
-  //document.getElementById("specimen-age-select").addEventListener("change", handleAgeSelection);
-  // Redraw when requested
-  // document.getElementById("normalize-intensities").addEventListener("change", plotIntensityDiagram.bind(null, false));
 
-  // Radio class listeners
-  // Upd. hide step table (and radio listeners of this table)
-  // Array.from(document.getElementsByClassName("demagnetization-type-radio")).forEach(function(x) {
-  //   x.addEventListener("click", function(event) {
-  //
-  //     let value = $(event.target).attr("value");
-  //
-  //     if(value === "null") {
-  //       value = null;
-  //     }
-  //
-  //     getSelectedFile('specimen').demagnetizationType = value;
-  //
-  //   });
-  // });
-
-  // Initialize controlled vocab
-  // addLithologyOptions();
-  // addGeologicalClassOptions();
-
-}
-
-function keyboardImitation(keyCode) {
-  var event = document.createEvent("Event");
-  switch (keyCode) {
-    case 49: {
-      event.initEvent("keydown", true, true);
-      event.view = document.defaultView;
-      event.altKey = false;
-      event.ctrlKey = false;
-      event.shiftKey = false;
-      event.metaKey = false;
-      event.key = "1";
-      event.code = "Digit1";
-      event.keyCode = 49;
-    }
-    case 49_0: {
-      event.initEvent("keydown", true, true);
-      event.view = document.defaultView;
-      event.altKey = false;
-      event.ctrlKey = true;
-      event.shiftKey = false;
-      event.metaKey = false;
-      event.key = "1";
-      event.code = "Digit1";
-      event.keyCode = 49;
-    }
-    case 52: {
-      event.initEvent("keydown", true, true);
-      event.view = document.defaultView;
-      event.altKey = false;
-      event.ctrlKey = false;
-      event.shiftKey = false;
-      event.metaKey = false;
-      event.key = "4";
-      event.code = "Digit4";
-      event.keyCode = 52;
-    }
-  }
-  // if (keyCode == 49) {
-  //   event.initEvent("keydown", true, true);
-  //   event.view = document.defaultView;
-  //   event.altKey = false;
-  //   event.ctrlKey = false;
-  //   event.shiftKey = false;
-  //   event.metaKey = false;
-  //   event.key = "1";
-  //   event.code = "Digit1";
-  //   event.keyCode = 49;
-  //   keyboardHandler(event);
-  // }
-  // if (keyCode == 49_0) {
-  //   event.initEvent("keydown", true, true);
-  //   event.view = document.defaultView;
-  //   event.altKey = false;
-  //   event.ctrlKey = true;
-  //   event.shiftKey = false;
-  //   event.metaKey = false;
-  //   event.key = "1";
-  //   event.code = "Digit1";
-  //   event.keyCode = 49;
-  //   keyboardHandler(event);
-  // }
-  keyboardHandler(event);
 }
 
 function keyboardHandler(event) {
@@ -186,15 +206,11 @@ function keyboardHandler(event) {
    * Handles keypresses on keyboard
    */
 
-  const CODES = new Object({
+  var CODES = new Object({
     "ARROW_RIGHT": 39,
     "ARROW_LEFT": 37,
     "ARROW_UP": 38,
     "ARROW_DOWN": 40,
-    "NUM_ARROW_UP": 104,
-    "NUM_ARROW_RIGHT": 102,
-    "NUM_ARROW_DOWN": 98,
-    "NUM_ARROW_LEFT": 100,
     // "W_KEY": 87,
     "D_KEY": 68,
     "N_KEY": 78,
@@ -202,8 +218,8 @@ function keyboardHandler(event) {
     "G_KEY": 71,
     "I_KEY": 73,
     "S_KEY": 83,
-    // "A_KEY": 65,
-    "C_KEY": 67,
+    "A_KEY": 65,
+    // "C_KEY": 67,
     "X_KEY": 88,
     "Y_KEY": 89,
     "Z_KEY": 90,
@@ -211,6 +227,7 @@ function keyboardHandler(event) {
     "E_KEY": 69,
     "R_KEY": 82,
     "F_KEY": 70,
+    "M_KEY": 77,
     "F5_KEY": 116,
     "MINUS_KEY": 189,
     "MINUS_KEY_NUM": 109,
@@ -226,12 +243,16 @@ function keyboardHandler(event) {
     "TAB_KEY": 9,
   });
 
+  var numArrowMode = true; // navigation by arrows from the NUM-block
+
   if (document.activeElement.id.slice(-10) === 'text-input') {
     var textInputCodes = new Object({
       "ENTER_KEY": 13,
-      "ENTER_NUMPAD_KEY": 98,
+      "ENTER_NUMPAD_KEY": 13,
       "ESCAPE_KEY": 27,
     });
+
+    numArrowMode = false;
 
     if(!Object.values(textInputCodes).includes(event.keyCode)) {
       return;
@@ -250,19 +271,78 @@ function keyboardHandler(event) {
     }
   }
 
-  // Block all key events when no specimens are loaded
-  // if(specimens.length === 0 && event.keyCode != CODES.O_KEY) {
-  //   return;
-  // }
+  if (document.activeElement.classList.contains('TableInput')) {
+    var codes = new Object({
+      "ARROW_RIGHT": 39,
+      "ARROW_LEFT": 37,
+      "ARROW_UP": 38,
+      "ARROW_DOWN": 40,
+      "NUM_ARROW_UP": 104,
+      "NUM_ARROW_RIGHT": 102,
+      "NUM_ARROW_DOWN": 98,
+      "NUM_ARROW_LEFT": 100,
+    });
 
-  // Override the default handlers
-  // console.log(Object, Object.values, Object.values(CODES));
+    numArrowMode = false;
+
+    if(!Object.values(codes).includes(event.keyCode)) {
+      return;
+    }
+
+    // event.preventDefault();
+
+    var cell = document.activeElement;
+    var rowIndex = cell.parentNode.rowIndex;
+    var colIndex = cell.cellIndex;
+    var range = window.getSelection().getRangeAt(0);
+    var selectedObj = window.getSelection();
+
+    switch(event.keyCode) {
+      // case textInputCodes.ENTER_NUMPAD_KEY:
+      // case textInputCodes.ENTER_KEY:
+      //   return document.getElementById(methodAbbr + '-confirm').click();
+      case codes.ARROW_RIGHT:
+      case codes.NUM_ARROW_RIGHT:
+        if (!cell.childNodes.length) {
+          event.preventDefault(); // stop caret moving
+          return cell.nextElementSibling.focus();
+        }
+        if ((colIndex != (cell.parentNode.children.length - 1)) && (range.startOffset == cell.childNodes[0].length)) {
+          event.preventDefault(); // stop caret moving
+          return cell.nextElementSibling.focus();
+        }
+        return;
+      case codes.ARROW_LEFT:
+      case codes.NUM_ARROW_LEFT:
+        if ((colIndex != 0) && (range.startOffset == 0)) {
+          event.preventDefault();
+          return cell.previousElementSibling.focus();
+        }
+        return;
+      case codes.ARROW_UP:
+      case codes.NUM_ARROW_UP:
+        if (rowIndex != 1) cell.parentNode.previousElementSibling.children[colIndex].focus();
+        return;
+      case codes.ARROW_DOWN:
+      case codes.NUM_ARROW_DOWN:
+        if (rowIndex != (cell.parentNode.children.length - 1)) cell.parentNode.nextElementSibling.children[colIndex].focus();
+        return;
+    }
+  }
 
   if(!Object.values(CODES).includes(event.keyCode)) {
     return;
   }
 
+  if (numArrowMode) {
+    CODES["NUM_ARROW_UP"] = 104;
+    CODES["NUM_ARROW_RIGHT"] = 102;
+    CODES["NUM_ARROW_DOWN"] = 98;
+    CODES["NUM_ARROW_LEFT"] = 100;
+  }
+
   event.preventDefault();
+
   var specimen = getSelectedFile('specimen');
 
   var pageID = getSelectedPage();
@@ -272,10 +352,17 @@ function keyboardHandler(event) {
 
   var elems = elemTypes[pageType][1];
 
-  var currPanPos = zoomContTypes[pageType].getPan();
+  var zoomContainer = zoomContTypes[pageType];
+  if (pageType == 'poles') {
+    if (document.getElementById("poles-container-right").classList.contains("selected")) {
+      zoomContainer = zoomContainer[1];
+    }
+    else zoomContainer = zoomContainer[0];
+  }
+
+  var currPanPos = zoomContainer.getPan();
 
   var file = getSelectedFile(elemTypes[pageType][0]);
-  // else if (pageType == 'poles') scrollerID = 'smth-select';
 
   // Delegate to the appropriate handler
   switch(event.keyCode) {
@@ -287,68 +374,37 @@ function keyboardHandler(event) {
       else if (event.ctrlKey) return handlePageScroll(1);
       else return handleFileScroll(1, scrollerID);
     case CODES.PLUS_KEY:
-      mainContPanZoomStat.zoomIn();
-      zoomContTypes[pageType].zoomIn( { animate: false } );
-      redrawCharts();
-      elemTypes[pageType][2].click();
+      zoomContainer.zoomIn( { animate: false } );
+      zoomContainer.click();
       return;
     case CODES.MINUS_KEY:
-      zoomContTypes[pageType].zoomOut( { animate: false } );
-      redrawCharts();
-      elemTypes[pageType][2].click();
+      zoomContainer.zoomOut( { animate: false } );
+      zoomContainer.click();
       return;
     case CODES.ESCAPE_KEY:
-      zoomContTypes[pageType].reset();
+      zoomContainer.reset();
       redrawCharts();
-      elemTypes[pageType][2].click();
+      zoomContainer.click();
       return;
     // -x - right side, -y - down side
     case CODES.ARROW_RIGHT:
     case CODES.NUM_ARROW_RIGHT:
-      return zoomContTypes[pageType].pan(currPanPos.x - 10, currPanPos.y)
+      return zoomContainer.pan(currPanPos.x - 10, currPanPos.y)
     case CODES.ARROW_LEFT:
     case CODES.NUM_ARROW_LEFT:
-      return zoomContTypes[pageType].pan(currPanPos.x + 10, currPanPos.y)
+      return zoomContainer.pan(currPanPos.x + 10, currPanPos.y)
     case CODES.ARROW_UP:
     case CODES.NUM_ARROW_UP:
-      return zoomContTypes[pageType].pan(currPanPos.x, currPanPos.y + 10)
+      return zoomContainer.pan(currPanPos.x, currPanPos.y + 10)
     case CODES.ARROW_DOWN:
     case CODES.NUM_ARROW_DOWN:
-      return zoomContTypes[pageType].pan(currPanPos.x, currPanPos.y - 10)
-    // case CODES.ARROW_DOWN:
-    // case CODES.S_KEY:
-    //   return dotSelector.handleStepScroll(1);
-    // case CODES .ARROW_UP:
-    // case CODES.W_KEY:
-    //   return dotSelector.handleStepScroll(-1);
-    // case CODES .MINUS_KEY:
-    // case CODES.MINUS_KEY_NUM:
-    // case CODES.Z_KEY:
-    //   return dotSelector.hideStep();
-    // case CODES.PLUS_KEY:
-    // case CODES.PLUS_KEY_NUM:
-    // case CODES.X_KEY:
-    //   return dotSelector.selectStep();
-    // case CODES.G_KEY:
-    //   return setActiveGroup();
-    // case CODES.I_KEY:
-    //   return $("#map-modal").modal("show");
-    // case CODES.Q_KEY:
-    //   return deleteCurrentSpecimen();
-
+      return zoomContainer.pan(currPanPos.x, currPanPos.y - 10)
     case CODES.S_KEY:
       if (event.ctrlKey) return saveProject();
       else return;
     case CODES.R_KEY:
       if (event.ctrlKey) return reloadFiles(undefined, elemTypes[pageType][0]);
       else return reloadFiles(getSelectedFile(elemTypes[pageType][0]), elemTypes[pageType][0]);
-    // case CODES.F5_KEY:
-    //   ipcRenderer.send('reload-mainWin');
-    //   ipcRenderer.send('reload-settWin');
-    //   ipcRenderer.send('reload-specDataWin');
-    //   ipcRenderer.send('reload-interpretDataWin');
-    //   ipcRenderer.send('reload-meansDataWin');
-    //   return;
     case CODES.O_KEY:
       if (event.ctrlKey) {
         if (event.shiftKey) return importProject();
@@ -364,13 +420,13 @@ function keyboardHandler(event) {
     case CODES.D_KEY:
       if ($('#pca-btn').is(":focus")) $('#pca-btn').blur();
       else $('#pca-btn').focus();
-      document.getElementById('pca-pca-btn').click();//makeInterpretation(specimen, "TAU1", false);//{"type": "TAU1", "anchored": false});
+      document.getElementById('pca-pca-btn').click();
       document.getElementById('pca-pca-text-input').focus();
       return;
     case CODES.G_KEY:
       if ($('#gc-btn').is(":focus")) $('#gc-btn').blur();
       else $('#gc-btn').focus();
-      document.getElementById(pageType + '-gc-btn').click();//makeInterpretation(specimen, "TAU1", false);//{"type": "TAU1", "anchored": false});
+      document.getElementById(pageType + '-gc-btn').click();
       document.getElementById(pageType + '-gc-text-input').focus();
       return;
     case CODES.I_KEY:
@@ -382,8 +438,14 @@ function keyboardHandler(event) {
     case CODES.F_KEY:
       if ($('#stat-f-btn').is(":focus")) $('#stat-f-btn').blur();
       else $('#stat-f-btn').focus();
-      document.getElementById('stat-f-btn').click();
-      document.getElementById('stat-f-text-input').focus();
+      document.getElementById(pageType + '-f-btn').click();
+      document.getElementById(pageType + '-f-text-input').focus();
+      return;
+    case CODES.M_KEY:
+      if ($('#stat-m-btn').is(":focus")) $('#stat-m-btn').blur();
+      else $('#stat-m-btn').focus();
+      document.getElementById(pageType + '-m-btn').click();
+      document.getElementById(pageType + '-m-text-input').focus();
       return;
     case CODES.E_KEY:
       if ($('#erase-btn').is(":focus")) $('#erase-btn').blur();
@@ -391,6 +453,13 @@ function keyboardHandler(event) {
       document.getElementById(pageType + '-erase-text-input').placeholder = "1,2,3 or 1-" + (file[elems][file[elems].length - 1].index + 1);
       document.getElementById(pageType + '-erase-btn').click();
       document.getElementById(pageType + '-erase-text-input').focus();
+      return;
+    case CODES.A_KEY:
+      if ($('#reverse-btn').is(":focus")) $('#reverse-btn').blur();
+      else $('#reverse-btn').focus();
+      document.getElementById(pageType + '-reverse-text-input').placeholder = "1,2,3 or 1-" + (file[elems][file[elems].length - 1].index + 1);
+      document.getElementById(pageType + '-reverse-btn').click();
+      document.getElementById(pageType + '-reverse-text-input').focus();
       return;
     case CODES.Z_KEY:
       if (pageType == 'pca') {
@@ -404,23 +473,9 @@ function keyboardHandler(event) {
       return switchProjection(false, 0);
     case CODES.X_KEY:
       return switchCoordinateReference(false, 0, pageType);
-    // case CODES.N_KEY:
-    //   return switchDirectionsMode(false, 0, pageType);
     case CODES.C_KEY:
       return switchToCenter(false, 0, pageType);
   }
-
-}
-
-function mainContClickHandler(event) {
-
-  var pageID = getSelectedPage();
-  var pageType = pageID.split('-')[1];
-
-  var currScale = zoomContTypes[pageType].getScale();
-
-  if ((currScale != 1) && settings.global.blockMouseOnZoom) return elemTypes[pageType][2].classList.add('disable-mouse');
-  else return elemTypes[pageType][2].classList.remove('disable-mouse');
 
 }
 
@@ -467,41 +522,6 @@ function swapChartsContainers(from_btn, checkZijd, checkStereo, checkIntensity, 
 
 }
 
-function formatVGPTable() {
-
-  var pole = getVGPData();
-
-  if (!pole) return document.getElementById('vgp-table-container').innerHTML = '';
-
-  var poleHeader = new Array(
-    "  <thead class='thead-light fixed-header'>",
-    "    <tr>",
-    "      <th>pole lat</th>",
-    "      <th>pole lon</th>",
-    "      <th>paleoLat</th>",
-    "      <th>dp</th>",
-    "      <th>dm</th>",
-    "    </tr>",
-    "  </thead>",
-    "  <tbody>",
-  ).join("\n");
-
-  var poleRow = [
-    "    <tr class='' title=''>",
-    "      <td>" + pole.lat.toFixed(2) + "</td>",
-    "      <td>" + pole.lng.toFixed(2) + "</td>",
-    "      <td>" + pole.pLat.toFixed(2) + "</td>",
-    "      <td>" + pole.dp.toFixed(2) + "</td>",
-    "      <td>" + pole.dm.toFixed(2) + "</td>",
-    "    </tr>",
-  ].join("\n");
-
-  var tableFooter = "</tbody>";
-
-  document.getElementById("vgp-table-container").innerHTML = poleHeader + poleRow + tableFooter;
-
-}
-
 function formatCollectionTable() {
 
   var collection = getSelectedFile('collection');
@@ -523,20 +543,23 @@ function formatCollectionTable() {
     iName = 'Istrat';
   }
 
-  document.getElementById("site-lat").value = collection.vgp.siteLat;
-  document.getElementById("site-lon").value = collection.vgp.siteLon;
-
-  formatVGPTable();
-
   var tableHeader = new Array(
-    "  <thead class='thead-light fixed-header'>",
+    "  <thead class='thead-light fixed-header' style='vertical-align: middle;'>",
     "    <tr>",
-    "      <th>E</th>",
+    "      <th>\
+           <button disabled class='btn' style='padding: 0; opacity: 1; font-size: inherit;'><i class='fas fa-yin-yang'></i></button>\
+           <button onclick='reversePolarity()' class='btn btn-link' style='padding: 0; font-size: inherit;'><i class='fal fa-sync-alt'></i></button>\
+           </th>",
+    "      <th>\
+           <button disabled class='btn' style='padding: 0; opacity: 1; font-size: inherit;'><i class='fad fa-eraser'></i></button>\
+           <button onclick='reverseVisibility()' class='btn btn-link' style='padding: 0; font-size: inherit;'><i class='fal fa-sync-alt'></i></button>\
+           </th>",
     "      <th>#</th>",
     "      <th>ID</th>",
     "      <th>" + dName + "</th>",
     "      <th>" + iName + "</th>",
     "      <th>MAD</th>",
+    "      <th>Comment</th>",
     "    </tr>",
     "  </thead>",
     "  <tbody>",
@@ -544,31 +567,50 @@ function formatCollectionTable() {
 
   var tableRows = collection.interpretations.map(function(interpretation, i) {
 
-    var rowClass = '';
+    var rowClassHidden = '', rowClassReversed = '', rowClass = '', rowTitle = '';
     var rowTitle = '';
     var num = interpretation.index + 1;
-    var dotVisibleTitle = '<span title="Erase step">';
-    var dotVisibleIcon = '<i class="fad fa-eraser"></i>'
+    var dotVisibleTitle = '<span title="Erase interpretation">';
+    var dotVisibleIcon = '<i class="fad fa-eraser"></i>';
+    var dorAntipodeTitle = '<span title="Reverse interpretation polarity">';
+    var dotAntipodeIcon = '<i class="fas fa-yin-yang"></i>';
+
+    if (interpretation.reversed) {
+      rowClassReversed = 'erase-row text-muted';
+      dotAntipodeIcon = '<i class="fas fa-yin-yang" style="transform: rotate(180deg);"></i>';
+    }
 
     if (!interpretation.visible) {
-      rowClass = 'erase-row text-muted';
+      rowClassHidden = 'erase-row text-muted';
       num = '-';
       dotVisibleTitle = '<span title="Redraw interpretation">';
       dotVisibleIcon = '<i class="fad fa-pencil"></i>';
       rowTitle = 'Interpretation erased';
     }
 
-    var dec = interpretation[dName][DIRECTION_MODE];
-    var inc = interpretation[iName][DIRECTION_MODE];
+    if (interpretation.hover) {
+      rowClass = 'hover-row';
+    }
 
+    var position = 'normal';
+    if (interpretation.reversed) position = 'reversed';
+    var dec = interpretation[COORDINATES.stat].dec[position].toFixed(ROUND_NUM);
+    var inc = interpretation[COORDINATES.stat].inc[position].toFixed(ROUND_NUM);
+    var mad = interpretation[COORDINATES.stat].mad.toFixed(ROUND_NUM);
+
+    if (inc < 0) inc = "<span class='text-danger'>" + inc + "</span>";
     return [
-      "    <tr class='" + rowClass + "' title='    " + rowTitle + "'>",
-      "      <td>" + dotVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotVisibleIcon + "</button></span></td>",
+      "    <tr class='" + rowClass + "' title='" + rowTitle + "'>",
+      "      <td class='" + rowClassReversed + "'>" + dorAntipodeTitle + "<button onclick='reverseDot(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotAntipodeIcon + "</button></span></td>",
+      // "      <td><input type='checkbox' id='" + interpretation.id + "' class='chkbox' value='1'/></td>",
+      // "      <td><input type='checkbox' class='chkbox1' value='" + i + "'/></td>",
+      "      <td class='" + rowClassHidden + "'>" + dotVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotVisibleIcon + "</button></span></td>",
       "      <td>" + num + "</td>",
       "      <td>" + interpretation.id + "</td>",
-      "      <td>" + dec.toFixed(2) + "</td>",
-      "      <td>" + inc.toFixed(2) + "</td>",
-      "      <td>" + interpretation.mad.toFixed(2) + "</td>",
+      "      <td>" + dec + "</td>",
+      "      <td>" + inc + "</td>",
+      "      <td>" + mad + "</td>",
+      "      <td>" + interpretation.comment + "</td>",
       "    </tr>",
     ].join("\n");
 
@@ -604,13 +646,17 @@ function formatSpecimenTable() {
   var tableHeader = new Array(
     "  <thead class='thead-light fixed-header'>",
     "    <tr>",
-    "      <th>E</th>",
+    "      <th>\
+           <button disabled class='btn' style='padding: 0; opacity: 1; font-size: inherit;'><i class='fad fa-eraser'></i></button>\
+           <button onclick='reverseVisibility()' class='btn btn-link' style='padding: 0; font-size: inherit;'><i class='fal fa-sync-alt'></i></button>\
+           </th>",
     "      <th>#</th>",
     "      <th>Step</th>",
     "      <th>" + dName + "</th>",
     "      <th>" + iName + "</th>",
     "      <th>MAG</th>",
     "      <th>a95</th>",
+    "      <th>Comment</th>",
     "    </tr>",
     "  </thead>",
     "  <tbody>",
@@ -618,13 +664,18 @@ function formatSpecimenTable() {
 
   var tableRows = specimen.steps.map(function(step, i) {
 
+    var volume = (specimen.volume) ? specimen.volume : 1;
+
     var direction = inReferenceCoordinates(COORDINATES.pca, specimen, new Coordinates(step.x, step.y, step.z)).toVector(Direction);
-    var intensity = (direction.length / specimen.volume).toFixed(0);
+    var intensity = (direction.length / volume).toFixed(0);
+    var dec = direction.dec.toFixed(ROUND_NUM);
+    var inc = direction.inc.toFixed(ROUND_NUM);
+    if (inc < 0) inc = "<span class='text-danger'>" + inc + "</span>";
     var rowClass = '';
     var rowTitle = '';
     var num = step.index + 1;
     var stepVisibleTitle = '<span title="Erase step">';
-    var stepVisibleIcon = '<i class="fad fa-eraser"></i>'
+    var stepVisibleIcon = '<i class="fad fa-eraser"></i>';
     if (!step.visible) {
       rowClass = 'erase-row text-muted';
       num = '-';
@@ -632,16 +683,20 @@ function formatSpecimenTable() {
       stepVisibleIcon = '<i class="fad fa-pencil"></i>';
       rowTitle = 'Step erased';
     }
+    if (step.hover) {
+      rowClass = 'hover-row';
+    }
 
     return [
       "    <tr class='" + rowClass + "' title='    " + rowTitle + "'>",
       "      <td>" + stepVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + stepVisibleIcon + "</button></span></td>",
       "      <td>" + num + "</td>",
       "      <td>" + step.step + "</td>",
-      "      <td>" + direction.dec.toFixed(2) + "</td>",
-      "      <td>" + direction.inc.toFixed(2) + "</td>",
+      "      <td>" + dec + "</td>",
+      "      <td>" + inc + "</td>",
       "      <td>" + intensity + "</td>",
-      "      <td>" + step.error.toFixed(2) + "</td>",
+      "      <td>" + step.error.toFixed(ROUND_NUM) + "</td>",
+      "      <td>" + step.comment + "</td>",
       "    </tr>",
     ].join("\n");
   });
@@ -649,6 +704,225 @@ function formatSpecimenTable() {
   var tableFooter = "</tbody>";
 
   document.getElementById("specimen-table-container").innerHTML = tableHeader + tableRows.join("\n") + tableFooter;
+
+}
+
+function formatSitesTable() {
+
+  var sitesSet = getSelectedFile('sitesSet');
+
+  if (!sitesSet) return document.getElementById('sites-table-container').innerHTML = '';
+
+  var tableHeader = new Array(
+    "  <thead class='thead-light fixed-header'>",
+    "    <tr>",
+    "      <th>\
+           <button disabled class='btn' style='padding: 0; opacity: 1; font-size: inherit;'><i class='fas fa-yin-yang'></i></button>\
+           <button onclick='reversePolarity()' class='btn btn-link' style='padding: 0; font-size: inherit;'><i class='fal fa-sync-alt'></i></button>\
+           </th>",
+    "      <th>\
+           <button disabled class='btn' style='padding: 0; opacity: 1; font-size: inherit;'><i class='fad fa-eraser'></i></button>\
+           <button onclick='reverseVisibility()' class='btn btn-link' style='padding: 0; font-size: inherit;'><i class='fal fa-sync-alt'></i></button>\
+           </th>",
+    "      <th>#</th>",
+    "      <th>ID</th>",
+    "      <th>N</th>",
+    "      <th>Dgeo</th>",
+    "      <th>Igeo</th>",
+    "      <th>kg</th>",
+    "      <th>a95g</th>",
+    "      <th>Dstrat</th>",
+    "      <th>Istrat</th>",
+    "      <th>ks</th>",
+    "      <th>a95s</th>",
+    "      <th>Code</th>",
+    "      <th>Steps</th>",
+    "      <th>Site Lon</th>",
+    "      <th>Site Lat</th>",
+    "      <th>Comment</th>",
+    "    </tr>",
+    "  </thead>",
+    "  <tbody>",
+  ).join("\n");
+
+  var tableRows = sitesSet.sites.map(function(site, i) {
+
+    var position = 'normal';
+    if (site.reversed) position = 'reversed';
+
+    var Dgeo = site.geographic.dec[position].toFixed(ROUND_NUM);
+    var Igeo = site.geographic.inc[position].toFixed(ROUND_NUM);
+    var Dstrat = site.tectonic.dec[position].toFixed(ROUND_NUM);
+    var Istrat = site.tectonic.inc[position].toFixed(ROUND_NUM);
+    if (Igeo < 0) Igeo = "<span class='text-danger'>" + Igeo + "</span>";
+    if (Istrat < 0) Istrat = "<span class='text-danger'>" + Istrat + "</span>";
+
+    var rowClassHidden = '', rowClassReversed = '', rowClass = '', rowTitle = '';
+    var rowTitle = '';
+    var num = site.index + 1;
+    var dotVisibleTitle = '<span title="Erase site">';
+    var dotVisibleIcon = '<i class="fad fa-eraser"></i>';
+    var dorAntipodeTitle = '<span title="Reverse site polarity">';
+    var dotAntipodeIcon = '<i class="fas fa-yin-yang"></i>';
+
+    if (site.reversed) {
+      rowClassReversed = 'erase-row text-muted';
+      dotAntipodeIcon = '<i class="fas fa-yin-yang" style="transform: rotate(180deg);"></i>';
+    }
+
+    if (!site.visible) {
+      rowClassHidden = 'erase-row text-muted';
+      num = '-';
+      dotVisibleTitle = '<span title="Redraw site">';
+      dotVisibleIcon = '<i class="fad fa-pencil"></i>';
+      rowTitle = 'Site erased';
+    }
+
+    if (site.hover) {
+      rowClass = 'hover-row';
+    }
+
+    return [
+      "    <tr class='" + rowClass + "' title='    " + rowTitle + "'>",
+      "      <td class='" + rowClassReversed + "'>" + dorAntipodeTitle + "<button onclick='reverseDot(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotAntipodeIcon + "</button></span></td>",
+      "      <td class='" + rowClassHidden + "'>" + dotVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotVisibleIcon + "</button></span></td>",
+      "      <td>" + num + "</td>",
+      "      <td>" + site.id + "</td>",
+      "      <td>" + site.n + "</td>",
+      "      <td>" + Dgeo + "</td>",
+      "      <td>" + Igeo + "</td>",
+      "      <td>" + site.geographic.k + "</td>",
+      "      <td>" + site.geographic.a95.toFixed(ROUND_NUM) + "</td>",
+      "      <td>" + Dstrat + "</td>",
+      "      <td>" + Istrat + "</td>",
+      "      <td>" + site.tectonic.k + "</td>",
+      "      <td>" + site.tectonic.a95.toFixed(ROUND_NUM) + "</td>",
+      "      <td>" + site.code + "</td>",
+      "      <td>" + site.stepRange + "</td>",
+      "      <td class='TableInput' contenteditable='true' style='cursor: pointer;' title='' id='" + (num - 1) + "-sLon'>" + site.sLon + "</td>",
+      "      <td class='TableInput' contenteditable='true' style='cursor: pointer;' title='' id='" + (num - 1) + "-sLat'>" + site.sLat + "</td>",
+      "      <td>" + site.comment + "</td>",
+      "    </tr>",
+    ].join("\n");
+  });
+
+  var tableFooter = "</tbody>";
+
+  document.getElementById("sites-table-container").innerHTML = tableHeader + tableRows.join("\n") + tableFooter;
+
+  formatVGPTable();
+
+}
+
+function sitesTableClickHandler(event) {
+
+  var sitesSet = getSelectedFile('sitesSet');
+  var siteNum = event.target.id.split('-')[0];
+  var siteElem = event.target.id.split('-')[1];
+
+  sitesSet.sites[siteNum][siteElem] = Number(document.getElementById(event.target.id).innerHTML);
+
+  // if ((sitesSet.sites[siteNum].sLat > 0) && (sitesSet.sites[siteNum].sLon > 0))
+  formatVGPTable();
+
+  saveLocalStorage();
+
+}
+
+function formatVGPTable() {
+
+  var VGPs = sitesSetToVGP();
+
+  if (!VGPs) return document.getElementById('vgp-table-container').innerHTML = '';
+
+  var tableHeader = new Array(
+    "  <thead class='thead-light fixed-header'>",
+    "    <tr>",
+    "      <th>\
+           <button disabled class='btn' style='padding: 0; opacity: 1; font-size: inherit;'><i class='fas fa-yin-yang'></i></button>\
+           <button onclick='reversePolarity()' class='btn btn-link' style='padding: 0; font-size: inherit;'><i class='fal fa-sync-alt'></i></button>\
+           </th>",
+    "      <th>\
+           <button disabled class='btn' style='padding: 0; opacity: 1; font-size: inherit;'><i class='fad fa-eraser'></i></button>\
+           <button onclick='reverseVisibility()' class='btn btn-link' style='padding: 0; font-size: inherit;'><i class='fal fa-sync-alt'></i></button>\
+           </th>",
+    "      <th>#</th>",
+    "      <th>pole lat</th>",
+    "      <th>pole lon</th>",
+    "      <th>paleoLat</th>",
+    "      <th>dp</th>",
+    "      <th>dm</th>",
+    "    </tr>",
+    "  </thead>",
+    "  <tbody>",
+  ).join("\n");
+
+  var tableRows = VGPs.map(function(vgp, i) {
+
+    if (!vgp) return;
+
+    var rowClassHidden = '', rowClassReversed = '', rowTitle = '';
+    var rowTitle = '';
+    var num = vgp.index + 1;
+    var dotVisibleTitle = '<span title="Erase site">';
+    var dotVisibleIcon = '<i class="fad fa-eraser"></i>';
+    var dorAntipodeTitle = '<span title="Reverse site polarity">';
+    var dotAntipodeIcon = '<i class="fas fa-yin-yang"></i>';
+
+    if (vgp.reversed) {
+      rowClassReversed = 'erase-row text-muted';
+      dotAntipodeIcon = '<i class="fas fa-yin-yang" style="transform: rotate(180deg);"></i>';
+    }
+
+    if (!vgp.visible) {
+      rowClassHidden = 'erase-row text-muted';
+      num = '-';
+      dotVisibleTitle = '<span title="Redraw site">';
+      dotVisibleIcon = '<i class="fad fa-pencil"></i>';
+      rowTitle = 'Site erased';
+    }
+
+    var system = 'geo';
+    if (COORDINATES.poles == 'tectonic') system = 'strat';
+
+    return [
+      "    <tr class='' title=''>",
+      "      <td class='" + rowClassReversed + "'>" + dorAntipodeTitle + "<button onclick='reverseDot(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotAntipodeIcon + "</button></span></td>",
+      "      <td class='" + rowClassHidden + "'>" + dotVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotVisibleIcon + "</button></span></td>",
+      "      <td>" + num + "</td>",
+      "      <td>" + vgp[system].lat.toFixed(2) + "</td>",
+      // "      <td>" + vgp.strat.lat.toFixed(2) + "</td>",
+      "      <td>" + vgp[system].lng.toFixed(2) + "</td>",
+      // "      <td>" + vgp.strat.lng.toFixed(2) + "</td>",
+      "      <td>" + vgp[system].pLat.toFixed(2) + "</td>",
+      // "      <td>" + vgp.strat.pLat.toFixed(2) + "</td>",
+      "      <td>" + vgp[system].dp.toFixed(2) + "</td>",
+      // "      <td>" + vgp.strat.dp.toFixed(2) + "</td>",
+      "      <td>" + vgp[system].dm.toFixed(2) + "</td>",
+      // "      <td>" + vgp.strat.dm.toFixed(2) + "</td>",
+      "    </tr>",
+    ].join("\n");
+  })
+
+  // var poleRow = [
+  //   "    <tr class='' title=''>",
+  //   "      <td class='" + rowClassReversed + "'>" + dorAntipodeTitle + "<button onclick='reverseDot(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotAntipodeIcon + "</button></span></td>",
+  //   "      <td class='" + rowClassHidden + "'>" + dotVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotVisibleIcon + "</button></span></td>",
+  //   "      <td>" + pole.lat.toFixed(2) + "</td>",
+  //   "      <td>" + pole.lng.toFixed(2) + "</td>",
+  //   "      <td>" + pole.pLat.toFixed(2) + "</td>",
+  //   "      <td>" + pole.dp.toFixed(2) + "</td>",
+  //   "      <td>" + pole.dm.toFixed(2) + "</td>",
+  //   "    </tr>",
+  // ].join("\n");
+
+  var tableFooter = "</tbody>";
+  if (tableRows[0] == undefined) document.getElementById("vgp-table-container").innerHTML = tableHeader + tableFooter;
+  else document.getElementById("vgp-table-container").innerHTML = tableHeader + tableRows.join("\n") + tableFooter;
+
+  var hover = false, update = true;
+  stereoPoles = polesPlotStereoDiagrams(hover, update);
+  chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
 
 }
 
@@ -666,6 +940,7 @@ function updateInterpretationTable(page) {
 
   var specimen = getSelectedFile('specimen');
   var collection = getSelectedFile('collection');
+  var sitesSet = getSelectedFile('sitesSet');
 
   // No interpretations to show
   if (page == 'pca') {
@@ -686,6 +961,15 @@ function updateInterpretationTable(page) {
       return;
     }
   }
+  else if (page == 'poles') {
+    if (!sitesSet) return document.getElementById('sitesMean-table-container').innerHTML = '';
+
+    if (sitesSet.means.length === 0) {
+      ipcRenderer.send('reload-meansDataWin');
+      document.getElementById("sitesMean-table-container").innerHTML = ERROR_NO_MEANS;
+      return;
+    }
+  }
 
   var tableHeaderPCA = new Array(
     "<table class='table text-center table-sm small-table-elem table-bordered w-100 small' style='margin: 0; max-height: 100%;'>",
@@ -694,6 +978,7 @@ function updateInterpretationTable(page) {
     "    <tr>",
     "      <th><button onclick='deleteAllResults(" + undefined + ',' + '"' + page + '"' +  ")' title='Delete all interpretations' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-trash-alt'></i></button></th>",
     "      <th>ID</th>",
+    "      <th>N</th>",
     "      <th>Dg</th>",
     "      <th>Ig</th>",
     "      <th>Ds</th>",
@@ -701,7 +986,6 @@ function updateInterpretationTable(page) {
     "      <th>MAD</th>",
     "      <th>Code</th>",
     "      <th>Steps</th>",
-    "      <th>N</th>",
     "    </tr>",
     "  </thead>",
   ).join("\n");
@@ -712,16 +996,18 @@ function updateInterpretationTable(page) {
     "  <thead class='thead-light'>",
     "    <tr>",
     "      <th><button onclick='deleteAllResults(" + undefined + ',' + '"' + page + '"' + ")' title='Delete all means' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-trash-alt'></i></button></th>",
-    "      <th>ID</th>",
+    // "      <th>ID</th>",
+    "      <th>N</th>",
     "      <th>Dg</th>",
     "      <th>Ig</th>",
+    "      <th>kg</th>",
+    "      <th>a95g</th>",
     "      <th>Ds</th>",
     "      <th>Is</th>",
-    "      <th>a95</th>",
-    "      <th>k</th>",
+    "      <th>ks</th>",
+    "      <th>a95s</th>",
     "      <th>Code</th>",
     "      <th>Steps</th>",
-    "      <th>N</th>",
     "    </tr>",
     "  </thead>",
   ).join("\n");
@@ -748,7 +1034,7 @@ function updateInterpretationTable(page) {
       var code = interpretation.code;
 
       // Mad angle (if forced this is unreliable)
-      var mad = interpretation.MAD.toFixed(2);
+      var mad = interpretation.MAD.toFixed(ROUND_NUM);
       if(interpretation.anchored) {
         mad = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + mad + "</span>";
         // code = "dir0PCA";
@@ -766,14 +1052,14 @@ function updateInterpretationTable(page) {
         "  </tr>",
         "    <td><button onclick='deleteAllResults(" + i + ',' + '"' + page + '"' + ")' title='Delete interpretation' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-minus-square'></i></button></td>",
         "    <td>" + specimen.name + "</td>",
-        "    <td>" + directionGeo.dec.toFixed(2) + "</td>",
-        "    <td>" + directionGeo.inc.toFixed(2) + "</td>",
-        "    <td>" + directionTect.dec.toFixed(2) + "</td>",
-        "    <td>" + directionTect.inc.toFixed(2) + "</td>",
+        "    <td>" + N + "</td>",
+        "    <td>" + directionGeo.dec.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + directionGeo.inc.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + directionTect.dec.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + directionTect.inc.toFixed(ROUND_NUM) + "</td>",
         "    <td>" + mad + "</td>",
         "    <td>" + code + "</td>",
         "    <td>" + interpretation.steps[0].step + '-' + interpretation.steps[N-1].step + "</td>",
-        "    <td>" + N + "</td>",
         "  </tr>"
       ].join("\n");
 
@@ -786,9 +1072,9 @@ function updateInterpretationTable(page) {
       var dirType = 'normal';
       if (DIRECTION_MODE == 'reversed') dirType = 'reversed';
 
-      var directionSpec = mean.specimen[dirType];
-      var directionGeo = mean.geographic[dirType];
-      var directionStrat = mean.tectonic[dirType];
+      var directionSpec = mean.specimen;
+      var directionGeo = mean.geographic;
+      var directionStrat = mean.tectonic;
 
       // Handle comments on mean
       if (mean.comment === null) comment = ChRM_COMMENT;
@@ -798,11 +1084,15 @@ function updateInterpretationTable(page) {
       var code = mean.code;
 
       // a95 angle (if forced this is unreliable)
-      var a95 = mean.a95[dirType].toFixed(2);
+      // var a95 = mean.a95.toFixed(ROUND_NUM);
+      var a95g = directionGeo.a95.toFixed(ROUND_NUM);
+      var a95s = directionStrat.a95.toFixed(ROUND_NUM);
       if((mean.code == 'GC') || (mean.code == 'GCn')) {
-        a95 = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95 + "</span>";
+        a95g = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95g + "</span>";
+        a95s = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95s + "</span>";
       }
-      var k = (mean.k[dirType]) ? mean.k[dirType].toFixed(2) : "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
+      var kg = (directionGeo.k) ? directionGeo.k.toFixed(ROUND_NUM): "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
+      var ks = (directionStrat.k) ? directionStrat.k.toFixed(ROUND_NUM): "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
 
       // Number of dots
       var N = mean.dots.length;
@@ -810,16 +1100,76 @@ function updateInterpretationTable(page) {
       return [
         "  </tr>",
         "    <td><button onclick='deleteAllResults(" + i + ',' + '"' + page + '"' + ")' title='Delete interpretation' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-minus-square'></i></button></td>",
-        "    <td>" + collection.name + "</td>",
-        "    <td>" + directionGeo.dec.toFixed(2) + "</td>",
-        "    <td>" + directionGeo.inc.toFixed(2) + "</td>",
-        "    <td>" + directionStrat.dec.toFixed(2) + "</td>",
-        "    <td>" + directionStrat.inc.toFixed(2) + "</td>",
-        "    <td>" + a95 + "</td>",
-        "    <td>" + k + "</td>",
+        // "    <td>" + collection.name + "</td>",
+        "    <td>" + N + "</td>",
+        "    <td>" + directionGeo.dec.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + directionGeo.inc.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + kg + "</td>",
+        "    <td>" + a95g + "</td>",
+        "    <td>" + directionStrat.dec.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + directionStrat.inc.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + ks + "</td>",
+        "    <td>" + a95s + "</td>",
+        // "    <td>" + k + "</td>",
+        // "    <td>" + a95 + "</td>",
         "    <td>" + code + "</td>",
         "    <td>" + '"' + 'site avg' + '"' + "</td>",
+        "  </tr>"
+      ].join("\n");
+
+    })
+  }
+  else if (page == 'poles') {
+    rows = sitesSet.means.map((mean, i) => {
+
+      // Get the mean in the right reference frame
+      var dirType = 'normal';
+      if (DIRECTION_MODE == 'reversed') dirType = 'reversed';
+
+      var directionGeo = mean.geographic;
+      var directionStrat = mean.tectonic;
+
+      // Handle comments on mean
+      if (mean.comment === null) comment = ChRM_COMMENT;
+      else comment = mean.comment;
+
+      // Full code of mean
+      var code = mean.code;
+
+      // a95 angle (if forced this is unreliable)
+      // var a95 = mean.a95.toFixed(ROUND_NUM);
+      // if((mean.code == 'GC') || (mean.code == 'GCn')) {
+      //   a95 = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95 + "</span>";
+      // }
+      // var k = (mean.k) ? mean.k.toFixed(ROUND_NUM) : "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
+
+      var a95g = directionGeo.a95.toFixed(ROUND_NUM);
+      var a95s = directionStrat.a95.toFixed(ROUND_NUM);
+      if((mean.code == 'GC') || (mean.code == 'GCn')) {
+        a95g = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95g + "</span>";
+        a95s = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + a95s + "</span>";
+      }
+      var kg = (directionGeo.k) ? directionGeo.k.toFixed(ROUND_NUM): "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
+      var ks = (directionStrat.k) ? directionStrat.k.toFixed(ROUND_NUM): "<span class='text-primary' title='The k for Bingham distribution is ambiguous'>" + '?' + "</span>";
+
+      // Number of dots
+      var N = mean.dots.length;
+
+      return [
+        "  </tr>",
+        "    <td><button onclick='deleteAllResults(" + i + ',' + '"' + page + '"' + ")' title='Delete interpretation' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-minus-square'></i></button></td>",
+        // "    <td>" + sitesSet.name + "</td>",
         "    <td>" + N + "</td>",
+        "    <td>" + directionGeo.dec.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + directionGeo.inc.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + kg + "</td>",
+        "    <td>" + a95g + "</td>",
+        "    <td>" + directionStrat.dec.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + directionStrat.inc.toFixed(ROUND_NUM) + "</td>",
+        "    <td>" + ks + "</td>",
+        "    <td>" + a95s + "</td>",
+        "    <td>" + code + "</td>",
+        "    <td>" + '"' + 'avg' + '"' + "</td>",
         "  </tr>"
       ].join("\n");
 
@@ -837,6 +1187,10 @@ function updateInterpretationTable(page) {
   ipcRenderer.send('reload-meansDataWin');
     document.getElementById("mean-table-container").innerHTML = tableHeaderStat + rows.join("\n") + tableFooter;
   }
+  else if (page == 'poles') {
+  ipcRenderer.send('reload-meansDataWin');
+    document.getElementById("sitesMean-table-container").innerHTML = tableHeaderStat + rows.join("\n") + tableFooter;
+  }
 
 }
 
@@ -849,6 +1203,7 @@ function deleteAllResults(index, page) {
 
   var specimen = getSelectedFile('specimen');
   var collection = getSelectedFile('collection');
+  var sitesSet = getSelectedFile('sitesSet');
 
   if (page == 'pca') {
     if (index === undefined) specimen.interpretations = new Array();
@@ -857,6 +1212,10 @@ function deleteAllResults(index, page) {
   else if (page == 'stat') {
     if (index === undefined) collection.means = new Array();
     else collection.means.splice(index, 1);
+  }
+  else if (page == 'poles') {
+    if (index === undefined) sitesSet.means = new Array();
+    else sitesSet.means.splice(index, 1);
   }
 
   saveLocalStorage();
@@ -917,6 +1276,9 @@ function saveLocalStorage() {
   localStorage.setItem("collections", JSON.stringify(collections));
   if (collections.length > 0) localStorage.setItem("selectedCollection", JSON.stringify(getSelectedFile('collection')));
 
+  localStorage.setItem("sitesSets", JSON.stringify(sitesSets));
+  if (sitesSets.length > 0) localStorage.setItem("selectedSitesSet", JSON.stringify(getSelectedFile('sitesSet')));
+
 }
 
 function clearLocalStorage() {
@@ -926,11 +1288,19 @@ function clearLocalStorage() {
   localStorage.removeItem('selectedSpecimen');
   localStorage.removeItem('collections');
   localStorage.removeItem('selectedCollection');
+  localStorage.removeItem('sitesSets');
+  localStorage.removeItem('selectedSitesSet');
   localStorage.removeItem('settings');
-
+  localStorage.removeItem('coordinates');
+  localStorage.removeItem('dirMode');
+  localStorage.removeItem('dataMode');
+  localStorage.removeItem('projection');
+  localStorage.removeItem('centered');
+  localStorage.removeItem('currPage');
 }
 
 function updateLocalStorage() {
+  settings = JSON.parse(localStorage.getItem("settings"));
   specimens = JSON.parse(localStorage.getItem("specimens"));
   collections = JSON.parse(localStorage.getItem("collections"));
 }
@@ -941,10 +1311,16 @@ function reloadFiles(file, type) {
     collection: 'interpretations',
   }
 
+  var page = {
+    specimen: 'pca',
+    collection: 'stat',
+  }
+
   var elems = allElems[type];
   if (file) {
     file[elems].forEach((elem, i) => {
       elem.visible = true;
+      elem.reversed = false;
       elem.selected = false;
       elem.index = i;
     });
@@ -965,32 +1341,43 @@ function reloadFiles(file, type) {
       collections.forEach((collection, i) => {
         collection.interpretations.forEach((interpretation, j) => {
           interpretation.visible = true;
+          interpretation.reversed = false;
           interpretation.selected = false;
           interpretation.index = j;
         });
       });
     }
   }
-
+  deleteAllResults(undefined, page[type]);
   mainContPanZoomPCA.reset();
   mainContPanZoomStat.reset();
   saveLocalStorage();
   if (type == "specimen") updateInterpretationTable("pca");
   if (type == 'collection') updateInterpretationTable("stat");
+  if (type == 'sitesSet') updateInterpretationTable("poles");
   redrawCharts();
 }
 
 function redrawCharts(hover, context) {
+  var time = performance.now();
   /*
   * Function redrawCharts
   * Redraws all the charts for the active specimen
   */
-
+  if (!INITIALIZED) return;
   // Save the current scroll position for later, otherwise the scroll position will
   // jump to the top when a Highcharts chart is drawn
   // var tempScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
   var zijdOnMain = document.getElementById('zijd-on-main').checked
   var stereoOnMain = document.getElementById('stereo-on-main').checked
+
+  formatSpecimenTable();
+  formatCollectionTable();
+  formatSitesTable();
+
+  time1 = performance.now() - time;
+  console.log('Время выполнения (redraw charts (format tables)) = ', time1);
+
   if (context) {
 
     var chartContainers = [
@@ -1015,16 +1402,26 @@ function redrawCharts(hover, context) {
     else if (chart == 'stat-plot') statPlotStereoDiagram();
   }
   else {
-    plotZijderveldDiagram(hover, zijdOnMain);
-    plotStereoDiagram(hover, stereoOnMain);
-    plotIntensityDiagram();
-    updateInterpretationTable('pca');
-    statPlotStereoDiagram();
-    updateInterpretationTable('stat');
-  }
+    zijdPCA = plotZijderveldDiagram(hover);
+    timeZ = performance.now() - time;
+    console.log('Время выполнения (redraw charts (zijd chart)) = ', timeZ);
+    stereoPCA = plotStereoDiagram(hover);
+    timeS = performance.now() - time;
+    console.log('Время выполнения (redraw charts (stereo chart)) = ', timeS);
+    intensPCA = plotIntensityDiagram(hover);
+    timeI = performance.now() - time;
+    console.log('Время выполнения (redraw charts (intensity chart)) = ', timeI);
 
-  formatSpecimenTable();
-  formatCollectionTable();
+    time2 = performance.now() - time;
+    console.log('Время выполнения (redraw charts (pca charts)) = ', time2);
+    updateInterpretationTable('pca');
+    stereoStat = statPlotStereoDiagram();
+    updateInterpretationTable('stat');
+    stereoPoles = polesPlotStereoDiagrams();
+    updateInterpretationTable('poles');
+  }
+  time3 = performance.now() - time;
+  console.log('Время выполнения (redraw charts (charts and visible tables)) = ', time3);
 
   ipcRenderer.send('redraw-collDataWin');
   ipcRenderer.send('redraw-specDataWin');
@@ -1032,9 +1429,33 @@ function redrawCharts(hover, context) {
   ipcRenderer.send('redraw-interpretDataWin');
   ipcRenderer.send('redraw-vgpDataWin');
 
+  time4 = performance.now() - time;
+  console.log('Время выполнения (redraw charts (hidden tables)) = ', time4);
+
+  if (TO_CENTER) {
+    var collection = getSelectedFile('collection');
+    if (collection.means.length == 0) document.getElementById('calculate-f').innerHTML = 'Calculate Fisher mean first'
+  }
+  else {
+    document.getElementById('calculate-f').innerHTML = '';
+  }
+
+  var pageID = getSelectedPage();
+  var pageType = pageID.split('-')[1];
+
+  if (pageType == 'pca') chartsToExport = [zijdPCA, stereoPCA, intensPCA];
+  if (pageType == 'stat') chartsToExport = [stereoStat];
+  if (pageType == 'poles') chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
+
+  saveLocalStorage();
+
+  time6 = performance.now() - time;
+  console.log('Время выполнения (redraw charts (all)) = ', time6);
 }
 
 function makeChartContextMenu(chart) {
+
+  if ((chart == 'sites-plot') || (chart == 'vgps-plot')) chart = 'poles-plot';
 
   var chartType = chart.split('-')[0];
 
@@ -1056,32 +1477,41 @@ function makeChartContextMenu(chart) {
   var ticksCheck = falseSymbol;
   if (settings[pageType][chartType + 'Ticks']) ticksCheck = trueSymbol;
 
-  var hoverCheck = falseSymbol;
+  var highlightCheck = falseSymbol;
   if (settings[pageType][chartType + 'Highlight']) highlightCheck = trueSymbol;
 
-  var highlightCheck = falseSymbol;
+  var hideCheck = falseSymbol;
+  if (settings[pageType][chartType + 'Hide']) hideCheck = trueSymbol;
+
+  var hoverCheck = falseSymbol;
   if (settings[pageType][chartType + 'Hover']) hoverCheck = trueSymbol;
 
   var errorCheck = falseSymbol;
   if (settings[pageType][chartType + 'Error']) errorCheck = trueSymbol;
 
   var numberCheck = falseSymbol;
-  if (settings[pageType].numberMode) numberCheck = trueSymbol;
+  if (settings[pageType][pageType + 'NumberMode']) numberCheck = trueSymbol;
 
   var stepCheck = falseSymbol;
-  if (settings[pageType].stepMode) stepCheck = trueSymbol;
+  if (settings[pageType][pageType + 'StepMode']) stepCheck = trueSymbol;
 
   var overlapCheck = falseSymbol;
-  if (settings[pageType].allowOverlap) overlapCheck = trueSymbol;
+  if (settings[pageType][pageType + 'AllowOverlap']) overlapCheck = trueSymbol;
 
   var outlineCheck = falseSymbol;
-  if (settings[pageType].addTextOutline) outlineCheck = trueSymbol;
+  if (settings[pageType][pageType + 'AddTextOutline']) outlineCheck = trueSymbol;
 
   var blockMouseOnZoomCheck = falseSymbol;
   if (settings.global.blockMouseOnZoom) blockMouseOnZoomCheck = trueSymbol;
 
   var dashedLinesCheck = falseSymbol;
   if (settings.global.dashedLines) dashedLinesCheck = trueSymbol;
+
+  var dirCheck = falseSymbol;
+  if (settings.stat.statDir) dirCheck = trueSymbol;
+
+  var gcCheck = falseSymbol;
+  if (settings.stat.statGC) gcCheck = trueSymbol;
 
   var currChartOpts = new Array(
     "  <div class='item mt-1' onclick='toggleContextChartOption(" + '"' +  (chartType + 'Tooltips') + '"' + ',' + false + ',' + typeStrPage + ")'>",
@@ -1100,14 +1530,19 @@ function makeChartContextMenu(chart) {
     highlightCheck,
     "    Highlight selected",
     "  </div>",
+    "  <div class='item' onclick='toggleContextChartOption(" + '"' +  (chartType + 'Hide') + '"' + ',' + false + ',' + typeStrPage + ")'>",
+    hideCheck,
+    "    Hide unselected",
+    "  </div>",
     "  <div class='item' onclick='toggleContextChartOption(" + '"' +  (chartType + 'Hover') + '"' + ',' + false + ',' + typeStrPage + ")'>",
     hoverCheck,
     "    Highlight on hover",
     "  </div>",
   ).join("\n");
 
-  if ((chartType == 'stereo') || (chartType == 'stat')) {
-    var showError = new Array(
+  if ((chartType == 'stereo') || (chartType == 'stat') || (chartType == 'poles')) {
+    var stereoSettings = new Array(
+      "<hr>",
       "  <div class='item' onclick='toggleContextChartOption(" + '"' +  (chartType + 'Error') + '"' + ',' + false + ',' + typeStrPage + ")'>",
       errorCheck,
       "    Error circles",
@@ -1118,24 +1553,40 @@ function makeChartContextMenu(chart) {
       "  </div>",
     ).join("\n");
 
-    currChartOpts += showError;
+    currChartOpts += stereoSettings;
+  }
+
+  if (chartType == 'stat' || chartType == 'poles') {
+    var statSettings = new Array(
+      "<hr>",
+      "  <div class='item' onclick='toggleContextChartOption(" + '"' +  ('statDir') + '"' + ',' + false + ',' + typeStrPage + ")'>",
+      dirCheck,
+      "    Show GC dirs",
+      "  </div>",
+      "  <div class='item' onclick='toggleContextChartOption(" + '"' + 'statGC' + '"' + ',' + false + ',' + typeStrPage + ")'>",
+      gcCheck,
+      "    Show GC",
+      "  </div>",
+    ).join("\n");
+
+    currChartOpts += statSettings;
   }
 
   var allChartsOpts = new Array(
     "  <hr>",
-    "  <div class='item' onclick='toggleContextChartOption(" + '"' +  'numberMode' + '"' + ',' + true + ',' + typeStrPage + ")'>",
+    "  <div class='item' onclick='toggleContextChartOption(" + '"' + pageType +  'NumberMode' + '"' + ',' + true + ',' + typeStrPage + ")'>",
     numberCheck,
     "    Number mode",
     "  </div>",
-    "  <div class='item' onclick='toggleContextChartOption(" + '"' +  'stepMode' + '"' + ',' + true + ',' + typeStrPage + ")'>",
+    "  <div class='item' onclick='toggleContextChartOption(" + '"' + pageType + 'StepMode' + '"' + ',' + true + ',' + typeStrPage + ")'>",
     stepCheck,
     "    Step mode",
     "  </div>",
-    "  <div class='item' onclick='toggleContextChartOption(" + '"' +  'allowOverlap' + '"' + ',' + true + ',' + typeStrPage + ")'>",
+    "  <div class='item' onclick='toggleContextChartOption(" + '"' + pageType + 'AllowOverlap' + '"' + ',' + true + ',' + typeStrPage + ")'>",
     overlapCheck,
     "    Overlap",
     "  </div>",
-    "  <div class='item' onclick='toggleContextChartOption(" + '"' +  'addTextOutline' + '"' + ',' + true + ',' + typeStrPage + ")'>",
+    "  <div class='item' onclick='toggleContextChartOption(" + '"' + pageType + 'AddTextOutline' + '"' + ',' + true + ',' + typeStrPage + ")'>",
     outlineCheck,
     "    Outline",
     "  </div>",
@@ -1143,10 +1594,10 @@ function makeChartContextMenu(chart) {
 
   var globalOpts = new Array(
     "  <hr>",
-    "  <div class='item' onclick='toggleContextChartOption(" + '"' +  'blockMouseOnZoom' + '"' + ',' + true + ',' + typeStrGlobal + ")'>",
-    blockMouseOnZoomCheck,
-    "    Block mouse",
-    "  </div>",
+    // "  <div class='item' onclick='toggleContextChartOption(" + '"' +  'blockMouseOnZoom' + '"' + ',' + true + ',' + typeStrGlobal + ")'>",
+    // blockMouseOnZoomCheck,
+    // "    Block mouse",
+    // "  </div>",
     "  <div class='item mb-1' onclick='redrawCharts(undefined, true)'>",
     "    <i class='far fa-sync'></i> Redraw",
     "  </div>",
@@ -1166,6 +1617,8 @@ function toggleContextChartOption(option, redrawAll, type) {
 
   if (redrawAll) return redrawCharts(undefined, false);
   redrawCharts(undefined, true);
+
+  ipcRenderer.send('reload-settWin');
 
 }
 
@@ -1198,15 +1651,8 @@ function __init__() {
 
   /*
    * Function __init__
-   * Initializes the Paleomagnetism 2.0.0 interpretation portal
+   * Initializes the PMTools
    */
-
-  // Check local storage
-  // if(!window.localStorage) {
-  //   return notify("warning", "Local storage is not supported by your browser. Save your work manually by exporting your data.");
-  // }
-  //
-  // localStorage.clear();
 
   // load current page from localStorage
   var selectedPageID = (localStorage.getItem("currPage")) ? localStorage.getItem("currPage") : 'nav-pca-tab';
@@ -1217,43 +1663,55 @@ function __init__() {
   lastSavePath = localStorage.getItem("lastSavePath");
 
   var direction = JSON.parse(localStorage.getItem("direction"));
-  var centered = JSON.parse(localStorage.getItem("centered"));
+  var centered = JSON.parse(localStorage.getItem("dataMode"));
   var coordinates = JSON.parse(localStorage.getItem("coordinates"));
   var projection = JSON.parse(localStorage.getItem("projection"));
 
   DIRECTION_MODE = (direction) ? direction.data : "normal";
-  document.getElementById('stat-' + DIRECTION_MODE).click();
+  // document.getElementById('stat-' + DIRECTION_MODE).click();
   MODES_COUNTER = (direction) ? direction.counter : 0;
-  CENTERED_MODE = (centered) ? centered.data : "standard";
-  document.getElementById('stat-' + CENTERED_MODE).click();
-  CENTERED_COUNTER = (centered) ? centered.counter : 0;
-  COORDINATES = (coordinates) ? coordinates.data : {pca: 'specimen', stat: 'geographic'}
+  DATA_MODE = (centered) ? centered.data : "directions";
+  // document.getElementById('stat-' + DATA_MODE).click();
+  DATA_MODES_COUNTER = (centered) ? centered.counter : 0;
+  COORDINATES = (coordinates) ? coordinates.data : {pca: 'geographic', stat: 'geographic', poles: 'geographic'};
   document.getElementById('pca-' + COORDINATES['pca']).click();
   document.getElementById('stat-' + COORDINATES['stat']).click();
-  COORDINATES_COUNTER = (coordinates) ? coordinates.data : { pca: 0, stat: 0}
+  COORDINATES_COUNTER = (coordinates) ? coordinates.counter : { pca: 0, stat: 0}
   PROJECTION = (projection) ? projection.data : "upwest";
   document.getElementById('input-' + PROJECTION).click();
   PROJECTIONS_COUNTER = (projection) ? projection.counter : 0;
 
+  // allow to redraw charts
+  INITIALIZED = true;
+
   // Load specimens from local storage
   specimens = JSON.parse(localStorage.getItem("specimens"));
   collections = JSON.parse(localStorage.getItem("collections"));
+  sitesSets = JSON.parse(localStorage.getItem("sitesSets"));
 
+  // var disableOpenPrev = false;
+  // // if there is no previous project then this button in OpenFiles window will be disabled
+  // if ((specimens === null) && (collections === null) && (sitesSets === null)) {
+  //   disableOpenPrev = true;
+  // }
 
-  if ((specimens === null) && (collections === null)) {
+  if ((specimens === null) && (collections === null) && (sitesSets === null)) {
     return ipcRenderer.send('open-openFilesModal');
   }
   else ipcRenderer.send('hide-openFilesModal');
 
   if (specimens === null) specimens = new Array();
   if (collections === null) collections = new Array();
+  if (sitesSets === null) sitesSets = new Array();
   if (lastOpenPath === null) lastOpenPath = app.getPath('documents');
   if (lastSavePath === null) lastSavePath = app.getPath('documents');
+
   __unlock__();
 
   if ((specimens.length > 0) || (collections.length > 0)) {
     redrawCharts();
   }
+
 }
 
 // unlock pages
@@ -1264,33 +1722,15 @@ function __unlock__() {
    * Application has initialized and handlers can be registered
    */
 
-  // if(window.location.search) {
-  //   json.forEach(function(sample, i) {
-  //     sample.reference = window.location.search.slice(1) + "." + i;
-  //   });
-  // }
-
-  // if(json.length) {
-  //
-  //   if(window.location.search) {
-  //     notify("success", "Succesfully forked <b>" + json.length + "</b> specimen(s). Changes to this session will not be saved (<a href='#' onclick='persistFork()'><i class='fas fa-code-branch'></i><b> Persist Fork</b></a>).");
-  //   } else {
-  //     notify("success", "Welcome back! Succesfully loaded <b>" + json.length + "</b> specimen(s).");
-  //   }
-  //
-  //   // enableInterpretationTabs();
-  //
-  // } else {
-  //   notify("success", "Welcome to <b>PMTools</b>! Add data below to get started with your analysis.");
-  // }
-
   registerEventHandlers();
   if (specimens.length > 0) updateFileSelect('specimen');
   if (collections.length > 0) updateFileSelect('collection');
+  if (sitesSets.length > 0) updateFileSelect('sitesSet');
 
   // load current specimen and collection
-  var selectedSpecimen = JSON.parse(localStorage.getItem('selectedSpecimen'));
+  var selectedSpecimen = localStorage.getItem('selectedSpecimen');
   var specimenSelector = document.getElementById('specimen-select');
+  if (selectedSpecimen && (selectedSpecimen != 'undefined')) selectedSpecimen = JSON.parse(selectedSpecimen);
   if ((specimens.length > 0) && selectedSpecimen) {
     for (let i = 0; i < specimens.length; i++) {
       if (specimens[i].name == selectedSpecimen.name) {
@@ -1300,8 +1740,9 @@ function __unlock__() {
     }
   }
 
-  var selectedCollection = JSON.parse(localStorage.getItem('selectedCollection'));
+  var selectedCollection = localStorage.getItem('selectedCollection');
   var collectionSelector = document.getElementById('collection-select');
+  if (selectedCollection && (selectedCollection != 'undefined')) selectedCollection = JSON.parse(selectedCollection);
   if ((collections.length > 0) && selectedCollection) {
     for (let i = 0; i < collections.length; i++) {
       if (collections[i].name == selectedCollection.name) {
@@ -1312,29 +1753,32 @@ function __unlock__() {
   }
 
   dotSelector.reset();
-
-  // addMap();
-
 }
 // localStorage.clear();
 // Some globals
-var leafletMarker;
-var map;
+var numSpec = 0, numColls = 0, numSiteSets = 0;
+
 var ChartContainersPCA = ['container-left', 'container-center', 'container-right']
 var COORDINATES_COUNTER = {
   pca: 0,
   stat: 0,
+  poles: 0,
 }
+
 var COORDINATES = {
   pca: 'specimen',
   stat: 'geographic',
+  poles: 'geographic',
 }
+
 var DIRECTION_MODE = "normal";
 var MODES_COUNTER = 0;
-var CENTERED_MODE = "standard";
-var CENTERED_COUNTER = 0;
+var DATA_MODE = "directions";
+var DATA_MODES_COUNTER = 0;
+var TO_CENTER = false;
 var PROJECTIONS_COUNTER = 0;
 var PROJECTION = "upwest";
+var ROUND_NUM = 1;
 
 var zijdOnMain = document.getElementById('zijd-on-main');
 var stereoOnMain = document.getElementById('stereo-on-main');
@@ -1346,14 +1790,20 @@ var GROUP = "ChRM";
 var UPWEST = true;
 var specimens = new Array();
 var collections = new Array();
+var sitesSets = new Array();
 var lastOpenPath = app.getPath('documents');
 var lastSavePath = app.getPath('documents');
 var project_json;
+
+var stereoPCA, zijdPCA, intensPCA, stereoStat, stereoPoles;
+var chartsToExport = [];
 
 var dotSelector = new DotSelector();
 
 const mainContainerPCA = document.getElementById('container-center');
 const mainContainerStat = document.getElementById('stat-container-center');
+const leftContainerPoles = document.getElementById('poles-container-left');
+const rightContainerPoles = document.getElementById('poles-container-right');
 
 var panzoomSettings = {
   contain: 'outside',
@@ -1362,33 +1812,67 @@ var panzoomSettings = {
   rangeStep: 0.05,
   increment: 0.3,
   animate: false,
+  zoomSpeed: 0.065,
   panOnlyWhenZoomed: true,
-  beforeMouseDown: function(e) {
-    // allow mouse-down panning only if altKey is down. Otherwise - ignore
-    var shouldIgnore = !e.altKey;
-    return shouldIgnore;
-  },
-  beforeWheel: false,
+  beforeMouseDown: false,
+  mouseWheelZoomEnabled: true,
   cursor: 'default',
-  disablePan: false,
-  handleStartEvent: () => {}
 }
 
 const mainContPanZoomPCA = Panzoom(mainContainerPCA, panzoomSettings);
 const mainContPanZoomStat = Panzoom(mainContainerStat, panzoomSettings);
-
-// mainContPanZoomStat.zoom(2, { animate: true });
-// console.log(mainContPanZoomStat.getScale());
+const leftContPanZoomPoles = Panzoom(leftContainerPoles, panzoomSettings);
+const rightContPanZoomPoles = Panzoom(rightContainerPoles, panzoomSettings);
 
 const elemTypes = {
   pca: ['specimen', 'steps', mainContainerPCA],
-  stat: ['collection', 'interpretations', mainContainerStat]
+  stat: ['collection', 'interpretations', mainContainerStat],
+  poles: ['sitesSet', 'sites', leftContainerPoles, rightContainerPoles],
 }
 
 const zoomContTypes = {
   pca: mainContPanZoomPCA,
   stat: mainContPanZoomStat,
+  poles: [leftContPanZoomPoles, rightContPanZoomPoles],
 }
+
+function panzoom_mousewheel() {
+
+  var pageID = getSelectedPage();
+  var pageType = pageID.split('-')[1];
+
+  var delta = event.delta || event.wheelDelta;
+  var zoomOut = delta ? delta < 0 : event.originalEvent.deltaY > 0;
+
+  var zoomContainer = zoomContTypes[pageType];
+  if (pageType == 'poles') {
+    if (document.getElementById("poles-container-right").classList.contains("selected")) {
+      zoomContainer = zoomContainer[1];
+    }
+    else zoomContainer = zoomContainer[0];
+  }
+
+  var scale = zoomContainer.getScale();
+  if (zoomOut) {
+    scale -= 0.1;
+    if (scale < 1) scale = 1;
+  }
+  else {
+    scale += 0.1;
+    if (scale > 10) scale = 10;
+  }
+
+  zoomContainer.zoomToPoint(scale, { clientX: event.clientX, clientY: event.clientY });
+
+}
+
+document.getElementById('container-center').addEventListener('wheel', panzoom_mousewheel);
+// $('#container-center').on('mousewheel', panzoom_mousewheel);
+$('#stat-container-center').on('mousewheel', panzoom_mousewheel);
+$('#poles-container-left').on('mousewheel', panzoom_mousewheel);
+$('#poles-container-right').on('mousewheel', panzoom_mousewheel);
+
+document.getElementById("append-input").checked = settings.global.appendFiles;
 
 // Renderer opertaions
 
@@ -1396,7 +1880,9 @@ ipcRenderer.on('give-selected-specimen', (event) => {
   ipcRenderer.send('hold-selected-specimen', getSelectedFile('specimen'))
 })
 
-ipcRenderer.on('init', () => {
+var INITIALIZED = false;
+
+ipcRenderer.on('init', (event, formats) => {
   __init__();
 
   var keyboardEvent = document.createEvent("KeyboardEvent");
@@ -1415,10 +1901,38 @@ ipcRenderer.on('init', () => {
     // 0          // charCode: unsigned long - the Unicode character associated with the depressed key, else 0
   );
   document.dispatchEvent(keyboardEvent);
+
+  openCorresponindgPage(formats);
 })
 
 ipcRenderer.on('clear-storage', () => {
   clearLocalStorage();
+})
+
+ipcRenderer.on('import-files', () => {
+  importFiles();
+})
+
+ipcRenderer.on('import-project', () => {
+  importProject();
+})
+
+ipcRenderer.on('reload-appendFiles', () => {
+  updateLocalStorage();
+  document.getElementById("append-input").checked = settings.global.appendFiles;
+})
+
+ipcRenderer.on('open-in-next-tab', (event, savePath) => {
+  ipcRenderer.send('hide-interpretData');
+  ipcRenderer.send('hide-meansData');
+
+  var files = [{
+    name: savePath.replace(/^.*[\\\/]/, ''),
+    path: savePath,
+    data: fs.readFileSync(savePath, "utf8"),
+  }];
+
+  loadCollectionFileCallback(files, false);
 })
 
 __init__();

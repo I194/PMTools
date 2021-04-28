@@ -30,87 +30,118 @@ closeWinBtn.addEventListener('click', (event) => {
   remote.getCurrentWindow().hide();
 })
 
+ipcRenderer.on('reload-win', (e) => {
+  init();
+})
+
 // Inner scripts
 
 function reloadWins() {
   ipcRenderer.send('reload-specDataWin');
   ipcRenderer.send('reload-mainWin');
   ipcRenderer.send('reload-interpretDataWin');
+  ipcRenderer.send('reload-fileManager');
   init();
 }
 
 function saveSettings() {
-
   // Global
-  var blockMouseOnZoom = document.getElementById('block-mouse-on-zoom').checked;
-  var autoSave = document.getElementById('auto-save').checked;
-  var dashedLines = document.getElementById('dashed-lines').checked;
+  // var blockMouseOnZoom = document.getElementById('blockMouseOnZoom').checked;
+  var autoSave = document.getElementById('autoSave').checked;
+  var appendFiles = document.getElementById('appendFiles').checked;
+  var dashedLines = document.getElementById('dashedLines').checked;
+  var themeLight = document.getElementById('themeLight').checked;
+  var themeLightP = document.getElementById('themeLightP').checked;
+  var themeDark = document.getElementById('themeDark').checked;
+  var themeDarkP = document.getElementById('themeDarkP').checked;
   // PCA Annotations
-  var zijdAnnotations = document.getElementById('zijd-annotations').checked;
-  var stereoAnnotations = document.getElementById('stereo-annotations').checked;
-  var intensityAnnotations = document.getElementById('intensity-annotations').checked;
-  var pcaNumberMode = document.getElementById('pca-number-mode').checked;
-  var pcaStepMode = document.getElementById('pca-step-mode').checked;
-  var pcaAllowOverlap = document.getElementById('pca-allow-overlap').checked;
-  var pcaAddTextOutline = document.getElementById('pca-add-text-outline').checked;
+  var zijdAnnotations = document.getElementById('zijdAnnotations').checked;
+  var stereoAnnotations = document.getElementById('stereoAnnotations').checked;
+  var intensityAnnotations = document.getElementById('intensityAnnotations').checked;
+  var pcaNumberMode = document.getElementById('pcaNumberMode').checked;
+  var pcaStepMode = document.getElementById('pcaStepMode').checked;
+  var pcaAllowOverlap = document.getElementById('pcaAllowOverlap').checked;
+  var pcaAddTextOutline = document.getElementById('pcaAddTextOutline').checked;
   // PCA Highlight
-  var zijdHighlight = document.getElementById('zijd-hover').checked;
-  var stereoHighlight = document.getElementById('stereo-hover').checked;
-  var intensityHighlight = document.getElementById('intensity-hover').checked;
+  var zijdHighlight = document.getElementById('zijdHighlight').checked;
+  var stereoHighlight = document.getElementById('stereoHighlight').checked;
+  var intensityHighlight = document.getElementById('intensityHighlight').checked;
   // PCA hover
-  var zijdHover = document.getElementById('zijd-highlight').checked;
-  var stereoHover = document.getElementById('stereo-highlight').checked;
-  var intensityHover = document.getElementById('intensity-highlight').checked;
+  var zijdHover = document.getElementById('zijdHover').checked;
+  var stereoHover = document.getElementById('stereoHover').checked;
+  var intensityHover = document.getElementById('intensityHover').checked;
   // PCA Hide
-  var zijdHide = document.getElementById('zijd-hide').checked;
-  var stereoHide = document.getElementById('stereo-hide').checked;
-  var intensityHide = document.getElementById('intensity-hide').checked;
+  var zijdHide = document.getElementById('zijdHide').checked;
+  var stereoHide = document.getElementById('stereoHide').checked;
+  var intensityHide = document.getElementById('intensityHide').checked;
   // PCA Show ticks
-  var zijdTicks = document.getElementById('zijd-ticks').checked;
-  var stereoTicks = document.getElementById('stereo-ticks').checked;
-  var intensityTicks = document.getElementById('intensity-ticks').checked;
+  var zijdTicks = document.getElementById('zijdTicks').checked;
+  var stereoTicks = document.getElementById('stereoTicks').checked;
+  var intensityTicks = document.getElementById('intensityTicks').checked;
   // PCA tooltips
-  var zijdTooltips = document.getElementById('zijd-tooltips').checked;
-  var stereoTooltips = document.getElementById('stereo-tooltips').checked;
-  var intensityTooltips = document.getElementById('intensity-tooltips').checked;
+  var zijdTooltips = document.getElementById('zijdTooltips').checked;
+  var stereoTooltips = document.getElementById('stereoTooltips').checked;
+  var intensityTooltips = document.getElementById('intensityTooltips').checked;
   // PCA error
-  var stereoError = document.getElementById('stereo-evid-ellipse').checked;
+  var stereoError = document.getElementById('stereoError').checked;
   // PCA tools selet type
-  var pcaToolsText = document.getElementById('pca-tools-text').checked;
-  var pcaToolsSelect = document.getElementById('pca-tools-select').checked;
-
+  var pcaToolsText = document.getElementById('pcaToolsText').checked;
+  var pcaToolsSelect = document.getElementById('pcaToolsSelect').checked;
 
   // Stat chart
-  var statError = document.getElementById('stat-evid-ellipse').checked;
-  var statAnnotations = document.getElementById('stat-annotations').checked;
-  var statHighlight = document.getElementById('stat-highlight').checked;
-  var statHover = document.getElementById('stat-highlight').checked;
-  var statHide = document.getElementById('stat-hide').checked;
-  var statTicks = document.getElementById('stat-ticks').checked;
-  var statTooltips = document.getElementById('stat-tooltips').checked;
-  var statNumberMode = document.getElementById('stat-number-mode').checked;
-  var statStepMode = document.getElementById('stat-step-mode').checked;
-  var statAllowOverlap = document.getElementById('stat-allow-overlap').checked;
-  var statAddTextOutline = document.getElementById('stat-add-text-outline').checked;
+  var statError = document.getElementById('statError').checked;
+  var statAnnotations = document.getElementById('statAnnotations').checked;
+  var statHighlight = document.getElementById('statHighlight').checked;
+  var statHover = document.getElementById('statHover').checked;
+  var statHide = document.getElementById('statHide').checked;
+  var statTicks = document.getElementById('statTicks').checked;
+  var statTooltips = document.getElementById('statTooltips').checked;
+  var statNumberMode = document.getElementById('statNumberMode').checked;
+  var statStepMode = document.getElementById('statStepMode').checked;
+  var statAllowOverlap = document.getElementById('statAllowOverlap').checked;
+  var statAddTextOutline = document.getElementById('statAddTextOutline').checked;
+  var statDir = document.getElementById('statDir').checked;
+  var statGC = document.getElementById('statGC').checked;
   // Stat tools selet type
-  var statToolsText = document.getElementById('stat-tools-text').checked;
-  var statToolsSelect = document.getElementById('stat-tools-select').checked;
+  var statToolsText = document.getElementById('statToolsText').checked;
+  var statToolsSelect = document.getElementById('statToolsSelect').checked;
+
+  // Poles chart
+  var polesError = document.getElementById('polesError').checked;
+  var polesAnnotations = document.getElementById('polesAnnotations').checked;
+  var polesHighlight = document.getElementById('polesHighlight').checked;
+  var polesHover = document.getElementById('polesHover').checked;
+  var polesHide = document.getElementById('polesHide').checked;
+  var polesTicks = document.getElementById('polesTicks').checked;
+  var polesTooltips = document.getElementById('polesTooltips').checked;
+  var polesNumberMode = document.getElementById('polesNumberMode').checked;
+  var polesStepMode = document.getElementById('polesStepMode').checked;
+  var polesAllowOverlap = document.getElementById('polesAllowOverlap').checked;
+  var polesAddTextOutline = document.getElementById('polesAddTextOutline').checked;
+  // Poles tools selet type
+  var polesToolsText = document.getElementById('polesToolsText').checked;
+  var polesToolsSelect = document.getElementById('polesToolsSelect').checked;
 
   var settings = {
     global: {
-      blockMouseOnZoom: blockMouseOnZoom,
+      // blockMouseOnZoom: blockMouseOnZoom,
       autoSave: autoSave,
+      appendFiles: appendFiles,
       dashedLines: dashedLines,
+      themeLight: themeLight,
+      themeLightP: themeLightP,
+      themeDark: themeDark,
+      themeDarkP: themeDarkP,
     },
     pca: {
       // PCA Annotations
       zijdAnnotations: zijdAnnotations,
       stereoAnnotations: stereoAnnotations,
       intensityAnnotations: intensityAnnotations,
-      numberMode: pcaNumberMode,
-      stepMode: pcaStepMode,
-      allowOverlap: pcaAllowOverlap,
-      addTextOutline: pcaAddTextOutline,
+      pcaNumberMode: pcaNumberMode,
+      pcaStepMode: pcaStepMode,
+      pcaAllowOverlap: pcaAllowOverlap,
+      pcaAddTextOutline: pcaAddTextOutline,
       // PCA Highlight
       zijdHighlight: zijdHighlight,
       stereoHighlight: stereoHighlight,
@@ -134,8 +165,8 @@ function saveSettings() {
       // PCA Error
       stereoError: stereoError,
       // PCA tools select type
-      toolsText: pcaToolsText,
-      toolsSelect: pcaToolsSelect,
+      pcaToolsText: pcaToolsText,
+      pcaToolsSelect: pcaToolsSelect,
     },
     stat: {
       // Stat chart
@@ -146,122 +177,52 @@ function saveSettings() {
       statHide: statHide,
       statTicks: statTicks,
       statTooltips: statTooltips,
-      numberMode: statNumberMode,
-      stepMode: statStepMode,
-      allowOverlap: statAllowOverlap,
-      addTextOutline: statAddTextOutline,
+      statNumberMode: statNumberMode,
+      statStepMode: statStepMode,
+      statAllowOverlap: statAllowOverlap,
+      statAddTextOutline: statAddTextOutline,
+      statDir: statDir,
+      statGC: statGC,
       // Stat tools select type
-      toolsText: statToolsText,
-      toolsSelect: statToolsSelect,
+      statToolsText: statToolsText,
+      statToolsSelect: statToolsSelect,
+    },
+    poles: {
+      // Stat chart
+      polesError: polesError,
+      polesAnnotations: polesAnnotations,
+      polesHighlight: polesHighlight,
+      polesHover: polesHover,
+      polesHide: polesHide,
+      polesTicks: polesTicks,
+      polesTooltips: polesTooltips,
+      polesNumberMode: polesNumberMode,
+      polesStepMode: polesStepMode,
+      polesAllowOverlap: polesAllowOverlap,
+      polesAddTextOutline: polesAddTextOutline,
+      // Stat tools select type
+      polesToolsText: polesToolsText,
+      polesToolsSelect: polesToolsSelect,
     }
   };
-  console.log(settings);
+
   localStorage.setItem("settings", JSON.stringify(settings));
 
 }
 
 function init() {
 
-  // Global
-  var blockMouseOnZoom = document.getElementById('block-mouse-on-zoom');
-  var autoSave = document.getElementById('auto-save');
-  var dashedLines = document.getElementById('dashed-lines');
-  // PCA Annotations
-  var zijdAnnotations = document.getElementById('zijd-annotations');
-  var stereoAnnotations = document.getElementById('stereo-annotations');
-  var intensityAnnotations = document.getElementById('intensity-annotations');
-  var pcaNumberMode = document.getElementById('pca-number-mode');
-  var pcaStepMode = document.getElementById('pca-step-mode');
-  var pcaAllowOverlap = document.getElementById('pca-allow-overlap');
-  var pcaAddTextOutline = document.getElementById('pca-add-text-outline');
-  // PCA Highlight
-  var zijdHighlight = document.getElementById('zijd-highlight');
-  var stereoHighlight = document.getElementById('stereo-highlight');
-  var intensityHighlight = document.getElementById('intensity-highlight');
-  // PCA Hover
-  var zijdHover = document.getElementById('zijd-hover');
-  var stereoHover = document.getElementById('stereo-hover');
-  var intensityHover = document.getElementById('intensity-hover');
-  // PCA Hide
-  var zijdHide = document.getElementById('zijd-hide');
-  var stereoHide = document.getElementById('stereo-hide');
-  var intensityHide = document.getElementById('intensity-hide');
-  // PCA Show ticks
-  var zijdTicks = document.getElementById('zijd-ticks');
-  var stereoTicks = document.getElementById('stereo-ticks');
-  var intensityTicks = document.getElementById('intensity-ticks');
-  // PCA tooltips
-  var zijdTooltips = document.getElementById('zijd-tooltips');
-  var stereoTooltips = document.getElementById('stereo-tooltips');
-  var intensityTooltips = document.getElementById('intensity-tooltips');
-  // PCA error
-  var stereoError = document.getElementById('stereo-evid-ellipse');
-  // PCA tools selet type
-  var pcaToolsText = document.getElementById('pca-tools-text');
-  var pcaToolsSelect = document.getElementById('pca-tools-select');
-
-  // Stat error
-  var statError = document.getElementById('stat-evid-ellipse');
-  var statAnnotations = document.getElementById('stat-annotations');
-  var statHighlight = document.getElementById('stat-highlight');
-  var statHide = document.getElementById('stat-hide');
-  var statTicks = document.getElementById('stat-ticks');
-  var statTooltips = document.getElementById('stat-tooltips');
-  var statNumberMode = document.getElementById('stat-number-mode');
-  var statStepMode = document.getElementById('stat-step-mode');
-  var statAllowOverlap = document.getElementById('stat-allow-overlap');
-  var statAddTextOutline = document.getElementById('stat-add-text-outline');
-  // Stat tools selet type
-  var statToolsText = document.getElementById('stat-tools-text');
-  var statToolsSelect = document.getElementById('stat-tools-select');
-
   if (localStorage.settings != null) {
     var settings = JSON.parse(localStorage.getItem("settings"));
 
-    var globalSettings = [
-      blockMouseOnZoom, autoSave, dashedLines
-    ];
+    Object.keys(settings).forEach((type, i) => {
+      Object.entries(settings[type]).forEach(([key, value]) => {
+        document.getElementById(key).checked = value;
+      });
+    });
 
-    var pcaSettings = [
-      zijdAnnotations, stereoAnnotations, intensityAnnotations,
-      pcaNumberMode, pcaStepMode, pcaAllowOverlap, pcaAddTextOutline,
-      zijdHighlight, stereoHighlight, intensityHighlight,
-      zijdHover, stereoHover, intensityHover,
-      zijdHide, stereoHide, intensityHide,
-      zijdTicks, stereoTicks, intensityTicks,
-      zijdTooltips, stereoTooltips, intensityTooltips,
-      stereoError,
-      pcaToolsText, pcaToolsSelect,
-    ];
-
-    var statSettings = [
-      statError, statAnnotations, statHighlight,
-      statHover, statHide, statTicks, statTooltips,
-      statNumberMode, statStepMode, statAllowOverlap,statAddTextOutline,
-      statToolsText, statToolsSelect,
-    ];
-
-    var i = 0;
-    for (option in settings.global) {
-      globalSettings[i].checked = settings.global[option];
-      i++;
-    };
-
-    var i = 0;
-    for (option in settings.pca) {
-      pcaSettings[i].checked = settings.pca[option];
-      i++;
-    };
-
-    var i = 0;
-    for (option in settings.stat) {
-      statSettings[i].checked = settings.stat[option];
-      i++;
-    };
-    console.log(settings);
   }
   else saveSettings();
 }
 
 init();
-// saveSettings();

@@ -81,18 +81,16 @@ function formatCollectionTable() {
     "    <tr>",
     "      <th>E</th>",
     "      <th>#</th>",
-    "      <th>ID</th>",
-    "      <th>Code</th>",
-    "      <th>StepRange</th>",
-    "      <th>N</th>",
-    "      <th>Dspec</th>",
-    "      <th>Ispec</th>",
-    "      <th>Dgeo</th>",
-    "      <th>Igeo</th>",
-    "      <th>Dstrat</th>",
-    "      <th>Istrat</th>",
-    "      <th>MAD</th>",
-    "      <th>Comment</th>",
+    "      <th class='pb-0'>ID" + putCopyColBtn(".id") + "</th>",
+    "      <th class='pb-0'>Code" + putCopyColBtn(".code") + "</th>",
+    "      <th class='pb-0'>StepRange" + putCopyColBtn(".steprange") + "</th>",
+    "      <th class='pb-0'>N" + putCopyColBtn(".n") + "</th>",
+    "      <th class='pb-0'>Dgeo" + putCopyColBtn(".dgeo") + "</th>",
+    "      <th class='pb-0'>Igeo" + putCopyColBtn(".igeo") + "</th>",
+    "      <th class='pb-0'>Dstrat" + putCopyColBtn(".dstrat") + "</th>",
+    "      <th class='pb-0'>Istrat" + putCopyColBtn(".istrat") + "</th>",
+    "      <th class='pb-0'>MAD" + putCopyColBtn(".mad") + "</th>",
+    "      <th class='pb-0'>Comment" + putCopyColBtn(".comment") + "</th>",
     "    </tr>",
     "  </thead>",
     "  <tbody>",
@@ -113,29 +111,30 @@ function formatCollectionTable() {
       rowTitle = 'Interpretation erased';
     }
 
-    var dSpec = interpretation.Dspec[dirMode] ? interpretation.Dspec[dirMode].toFixed(2) : " ";
-    var iSpec = interpretation.Ispec[dirMode] ? information.Ispec[dirMode].toFixed(2) : " ";
-    var dGeo = interpretation.Dgeo[dirMode];
-    var iGeo = interpretation.Igeo[dirMode];
-    var dStrat = interpretation.Dstrat[dirMode];
-    var iStrat = interpretation.Istrat[dirMode];
-    console.log(interpretation.comment);
+    // var dSpec = interpretation.Dspec[dirMode] ? interpretation.Dspec[dirMode].toFixed(1) : " ";
+    // var iSpec = interpretation.Ispec[dirMode] ? information.Ispec[dirMode].toFixed(1) : " ";
+    // if (iSpec < 0) iSpec = "<span class='text-danger'>" + iSpec + "</span>";
+    // var dGeo = interpretation.Dgeo[dirMode].toFixed(1);
+    // var iGeo = interpretation.Igeo[dirMode].toFixed(1);
+    // if (iGeo < 0) iGeo = "<span class='text-danger'>" + iGeo + "</span>";
+    // var dStrat = interpretation.Dstrat[dirMode].toFixed(1);
+    // var iStrat = interpretation.Istrat[dirMode].toFixed(1);
+    // if (iStrat < 0) iStrat = "<span class='text-danger'>" + iStrat + "</span>";
+
     return [
       "    <tr class='" + rowClass + "' title='    " + rowTitle + "'>",
       "      <td>" + dotVisibleTitle + "<button onclick='eraseDot(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + dotVisibleIcon + "</button></span></td>",
       "      <td>" + num + "</td>",
-      "      <td>" + interpretation.id + "</td>",
-      "      <td>" + interpretation.code + "</td>",
-      "      <td>" + interpretation.stepRange + "</td>",
-      "      <td>" + interpretation.n + "</td>",
-      "      <td>" + dSpec + "</td>",
-      "      <td>" + iSpec + "</td>",
-      "      <td>" + dGeo.toFixed(2) + "</td>",
-      "      <td>" + iGeo.toFixed(2) + "</td>",
-      "      <td>" + dStrat.toFixed(2) + "</td>",
-      "      <td>" + iStrat.toFixed(2) + "</td>",
-      "      <td>" + interpretation.mad.toFixed(2) + "</td>",
-      "      <td>" + interpretation.comment + "</td>",
+      "      <td class='id'>" + interpretation.id + "</td>",
+      "      <td class='code'>" + interpretation.code + "</td>",
+      "      <td class='steprange'>" + interpretation.stepRange + "</td>",
+      "      <td class='n'>" + interpretation.n + "</td>",
+      "      <td class='dgeo'>" + interpretation.geographic.dec[dirMode].toFixed(1) + "</td>",
+      "      <td class='igeo'>" + interpretation.geographic.inc[dirMode].toFixed(1) + "</td>",
+      "      <td class='dstrat'>" + interpretation.tectonic.dec[dirMode].toFixed(1) + "</td>",
+      "      <td class='istrat'>" + interpretation.tectonic.inc[dirMode].toFixed(1) + "</td>",
+      "      <td class='mad'>" + interpretation.geographic.mad.toFixed(1) + "</td>",
+      "      <td class='comment'>" + interpretation.comment + "</td>",
       "    </tr>",
     ].join("\n");
   });
@@ -207,45 +206,45 @@ function downloadСollectionsCSV() {
    * Downloads all interpreted components to a CSV
    */
 
-  var collections = JSON.parse(localStorage.getItem("collections"));
+  var collection = JSON.parse(localStorage.getItem("selectedCollection"));
   var dirMode = localStorage.getItem('dirMode');
 
   const FILENAME = "Collection";
 
   const CSV_HEADER = new Array(
-    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+    "ID", "Code", "StepRange", "N", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
   );
 
   var rows = new Array(CSV_HEADER.join(","));
 
   // Export the interpreted components as CSV
-  collections.forEach(function(collection) {
-    collection.interpretations.forEach(function(interpretation) {
+  collection.interpretations.forEach(function(interpretation) {
 
-      // check if specimen is not defined
-      var dSpec = interpretation.Dspec[dirMode] ? interpretation.Dspec[dirMode].toFixed(2) : " ";
-      var iSpec = interpretation.Ispec[dirMode] ? information.Ispec[dirMode].toFixed(2) : " ";
-      var dGeo = interpretation.Dgeo[dirMode];
-      var iGeo = interpretation.Igeo[dirMode];
-      var dStrat = interpretation.Dstrat[dirMode];
-      var iStrat = interpretation.Istrat[dirMode];
+    // check if specimen is not defined
+    // var dSpec = interpretation.Dspec[dirMode] ? interpretation.Dspec[dirMode].toFixed(1) : " ";
+    // var iSpec = interpretation.Ispec[dirMode] ? information.Ispec[dirMode].toFixed(1) : " ";
+    // var dGeo = interpretation.Dgeo[dirMode];
+    // var iGeo = interpretation.Igeo[dirMode];
+    // var dStrat = interpretation.Dstrat[dirMode];
+    // var iStrat = interpretation.Istrat[dirMode];
+    if (!interpretation.visible) return;
 
-      rows.push(new Array(
-        interpretation.id,
-        interpretation.code,
-        interpretation.stepRange,
-        interpretation.n,
-        dSpec,
-        iSpec,
-        dGeo.toFixed(2),
-        iGeo.toFixed(2),
-        dStrat.toFixed(2),
-        iStrat.toFixed(2),
-        interpretation.mad,
-        interpretation.comment,
-      ).join(ITEM_DELIMITER));
+    rows.push(new Array(
+      interpretation.id,
+      interpretation.code,
+      interpretation.stepRange,
+      interpretation.n,
+      // dSpec,
+      // iSpec,
+      interpretation.geographic.dec[dirMode].toFixed(1),
+      interpretation.geographic.inc[dirMode].toFixed(1),
+      // interpretation.geographic.mad.toFixed(1),
+      interpretation.tectonic.dec[dirMode].toFixed(1),
+      interpretation.tectonic.inc[dirMode].toFixed(1),
+      interpretation.geographic.mad.toFixed(1),
+      interpretation.comment,
+    ).join(ITEM_DELIMITER));
 
-    });
   });
 
   outputCollections = rows.join(LINE_DELIMITER);
@@ -257,44 +256,45 @@ function downloadСollectionsCSV() {
 // Downloads all interpreted components to a CSV (export data)
 function downloadCollectionsXLSX() {
 
-  var collections = JSON.parse(localStorage.getItem("collections"));
+  var collection = JSON.parse(localStorage.getItem("selectedCollection"));
   var dirMode = localStorage.getItem('dirMode');
 
   const FILENAME = "Collection";
 
   const XLSX_HEADER = new Array(
-    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+    "ID", "Code", "StepRange", "N", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
   );
 
   var rows = [XLSX_HEADER];
 
-  collections.forEach(function(collection) {
-    collection.interpretations.forEach(function(interpretation) {
+  collection.interpretations.forEach(function(interpretation) {
 
-      // check if specimen is not defined
-      var dSpec = interpretation.Dspec[dirMode] ? interpretation.Dspec[dirMode].toFixed(2) : " ";
-      var iSpec = interpretation.Ispec[dirMode] ? information.Ispec[dirMode].toFixed(2) : " ";
-      var dGeo = interpretation.Dgeo[dirMode];
-      var iGeo = interpretation.Igeo[dirMode];
-      var dStrat = interpretation.Dstrat[dirMode];
-      var iStrat = interpretation.Istrat[dirMode];
+    // check if specimen is not defined
+    // var dSpec = interpretation.Dspec[dirMode] ? interpretation.Dspec[dirMode].toFixed(1) : " ";
+    // var iSpec = interpretation.Ispec[dirMode] ? information.Ispec[dirMode].toFixed(1) : " ";
+    // var dGeo = interpretation.Dgeo[dirMode];
+    // var iGeo = interpretation.Igeo[dirMode];
+    // var dStrat = interpretation.Dstrat[dirMode];
+    // var iStrat = interpretation.Istrat[dirMode];
 
-      rows.push([
-        interpretation.id,
-        interpretation.code,
-        interpretation.stepRange,
-        interpretation.n,
-        dSpec,
-        iSpec,
-        dGeo.toFixed(2),
-        iGeo.toFixed(2),
-        dStrat.toFixed(2),
-        iStrat.toFixed(2),
-        interpretation.mad,
-        interpretation.comment,
-      ]);
+    if (!interpretation.visible) return;
 
-    });
+    rows.push([
+      interpretation.id,
+      interpretation.code,
+      interpretation.stepRange,
+      interpretation.n,
+      // dSpec,
+      // iSpec,
+      interpretation.geographic.dec[dirMode].toFixed(1),
+      interpretation.geographic.inc[dirMode].toFixed(1),
+      // interpretation.geographic.mad.toFixed(1),
+      interpretation.tectonic.dec[dirMode].toFixed(1),
+      interpretation.tectonic.inc[dirMode].toFixed(1),
+      interpretation.geographic.mad.toFixed(1),
+      interpretation.comment,
+    ]);
+
   });
 
   outputCollections = xlsx.build([{name: FILENAME, data: rows}]); // Returns a buffer

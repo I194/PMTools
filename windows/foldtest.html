@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width = device-width, initial-scale = 1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Highcharts -->
+    <script type="text/javascript">
+      var Highcharts = require('highcharts');
+
+      require('highcharts/modules/exporting')(Highcharts);
+      require('highcharts/highcharts-more')(Highcharts);
+      require('highcharts/modules/accessibility')(Highcharts);
+      require('highcharts/modules/offline-exporting')(Highcharts);
+    </script>
+    <!-- Bootstrap css -->
+    <link rel="stylesheet" href="../lib/style/bootstrap4/css/bootstrap.min.css">
+    <!-- Awesome css -->
+    <link rel="stylesheet" href="../lib/style/fontawesome-free-5.13.0-web/css/all.css">
+    <link rel="stylesheet" href="../lib/style/fontawesome-pro-5.13.0-web/css/all.css">
+    <!-- Custom style -->
+    <link rel="stylesheet" href="../lib/style/custom_style.css">
+    <!-- Titilebar style -->
+    <link rel="stylesheet" href="../lib/style/titlebar.css">
+    <!-- Title -->
+    <title>Foldtest</title>
+  </head>
+  <body style="overflow-y: hidden; line-height: 0;">
+    <!-- App titlebar, save data button -->
+    <div id="static-elements">
+      <!-- App titlebar -->
+      <div class="d-flex justify-content-center container-fluid">
+        <div class="row no-gutters justify-content-center container-fluid">
+          <div class="title-bar">
+            <div class="menu-button-container">
+              <button type="button" class="icon-button custom-btn no-hover" id="icon-button"><img src="../img/pm-tools-app-icon-dark.svg" height="16" width="auto" alt=""></button></div>
+            <div class="app-name-container">
+              Foldtest
+            </div>
+            <div class="window-controls-container">
+              <button type="button" class="minimize-button custom-btn" id="minimize-button"><i class="far fa-window-minimize"></i></button>
+              <button type="button" class="min-max-button custom-btn" id="min-max-button"><i class="fal fa-window-restore"></i></button>
+              <button type="button" class="close-button custom-btn" id="close-button"><i class="fal fa-times"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Info about test -->
+    <div class="container text-center" style="line-height: 1.5;">
+      <!-- <h5 class="text-center"> Foldtest </h5> -->
+      This module allows the user to do a <b>foldtest</b> (Tauxe &amp; Watson, 1994) on selected collection. <br>
+      If confidence interval enclose 100% of unfolding, the data "pass" the fold test and magnetization was acquired prior to folding.
+    </div>
+    <div class="container text-center mb-2 mt-2">
+        <button onclick="bootstrapFoldtest()" type="button" class="btn btn-sm btn-primary"><i class="fas fa-play"></i>
+          <b>Initialize</b>
+        </button>
+    </div>
+    <!-- Progress -->
+    <div class="progress">
+      <div id="foldtest-progress" class="progress-bar progress-bar-striped progress-bar-animated" style="width: 0%; transition: none 0s ease 0s;"></div>
+    </div>
+    <div class="text-primary text-center">
+      <h6 id="current-file"></h6>
+    </div>
+    <!-- Charts container -->
+    <div class="container">
+      <!-- Polar charts -->
+      <div class="row">
+        <!-- Geographic -->
+        <div class="col-lg-6">
+          <div class="" style="overflow: hidden;" id="foldtest-geographic-container"></div>
+        </div>
+        <!-- Tectonic -->
+        <div class="col-lg-6">
+          <div class="" style="overflow: hidden;" id="foldtest-tectonic-container"></div>
+        </div>
+      </div>
+      <!-- Foldtest itself -->
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="" style="overflow: hidden;" id="foldtest-full-container"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Test result window -->
+    <!-- Interpretattions Information Table -->
+    <!-- <div id="mean-table-container" class="table-responsive" style="overflow-y: auto; height: 84vh; line-height: 1.5;"></div> -->
+  </body>
+  <!-- Bootstrap.js, Popper.js, and jQuery -->
+  <script src="../lib/jquery/jquery.min.js"></script>
+  <script src="../lib/popper/popper.min.js"></script>
+  <script src="../lib/style/bootstrap4/js/bootstrap.min.js"></script>
+  <!-- <script src="lib/jquery-3.3.1.slim.min.js"></script> -->
+  <!-- SHA256 & numeric lib for PCA -->
+  <script src="../lib/math/sha.js"></script>
+  <script src="../lib/math/numeric.js"></script>
+  <script src='../lib/math/turf.min.js'></script>
+  <script src='../lib/math/math.min.js'></script>
+  <!-- Inner scripts -->
+  <script type="text/javascript" src="../extra_modules/importing.js"></script>
+  <script type="text/javascript" src="../extra_modules/Coordinates.js"></script>
+  <script type="text/javascript" src="../extra_modules/Location.js"></script>
+  <script type="text/javascript" src="../extra_modules/Direction.js"></script>
+  <script type="text/javascript" src="../extra_modules/setVersion.js"></script>
+
+  <script type="text/javascript" src="../utils/data_utils.js"></script>
+  <script type="text/javascript" src="../utils/graph_utils.js"></script>
+  <script type="text/javascript" src="../utils/charts_utils.js"></script>
+  
+  <script type="text/javascript" src="../utils/foldtest_bootstrap.js"></script>
+
+  <script type="text/javascript" src="../main_window/js/fileDialogs.js"></script>
+  <script type="text/javascript" src="../main_window/js/fileHandler.js"></script>
+  <script type="text/javascript">
+    var xlsx = require('node-xlsx');
+  </script>
+  <!-- render process -->
+  <script type="text/javascript" src="../renderers/foldtestRenderer.js"></script>
+
+</html>

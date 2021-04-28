@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width = device-width, initial-scale = 1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<!DOCTYPE html>
+<html>
+  <head>
+    <!-- Highcharts -->
+    <script type="text/javascript">
+      var Highcharts = require('highcharts');
+
+      require('highcharts/modules/exporting')(Highcharts);
+      require('highcharts/highcharts-more')(Highcharts);
+      require('highcharts/modules/accessibility')(Highcharts);
+      require('highcharts/modules/offline-exporting')(Highcharts);
+    </script>
+    <!-- Bootstrap css -->
+    <link rel="stylesheet" href="../lib/style/bootstrap4/css/bootstrap.min.css">
+    <!-- Awesome css -->
+    <link rel="stylesheet" href="../lib/style/fontawesome-free-5.13.0-web/css/all.css">
+    <link rel="stylesheet" href="../lib/style/fontawesome-pro-5.13.0-web/css/all.css">
+    <!-- Custom style -->
+    <link rel="stylesheet" href="../lib/style/custom_style.css">
+    <!-- Titilebar style -->
+    <link rel="stylesheet" href="../lib/style/titlebar.css">
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/css/bootstrap-select.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.13.1/js/bootstrap-select.min.js"></script>
+    <!-- Title -->
+    <title>Common mean test</title>
+  </head>
+  <body style="overflow-y: hidden; line-height: 1.5;">
+    <!-- App titlebar, save data button -->
+    <div id="static-elements">
+      <!-- App titlebar -->
+      <div class="d-flex justify-content-center container-fluid" style="line-height: 0;">
+        <div class="row no-gutters justify-content-center container-fluid">
+          <div class="title-bar">
+            <div class="menu-button-container">
+              <button type="button" class="icon-button custom-btn no-hover" id="icon-button"><img src="../img/pm-tools-app-icon-dark.svg" height="16" width="auto" alt=""></button></div>
+            <div class="app-name-container">
+              Export as MagIC
+            </div>
+            <div class="window-controls-container">
+              <button type="button" class="minimize-button custom-btn" id="minimize-button"><i class="far fa-window-minimize"></i></button>
+              <button type="button" class="min-max-button custom-btn" id="min-max-button"><i class="fal fa-window-restore"></i></button>
+              <button type="button" class="close-button custom-btn" id="close-button"><i class="fal fa-times"></i></button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="" style="overflow-y: auto; height: 97vh;">
+      <!-- Export menu -->
+      <form class="">
+        <div class="form-group">
+          <label for="output-filename">Contribution file name: </label>
+          <input type="text" class="form-control" id="output-filename" placeholder="Contribution">
+        </div>
+      </form>
+      <hr class="short">
+      <div class="text-center">
+        Measurements
+        <select class="selectpicker" multiple data-live-search="true" id="measurements-select" style="margin: 0;">
+        
+        </select>
+        <!-- <div class="input-group input-group-sm justify-content-center text-center"> -->
+          <!-- <select class="custom-select custom-select-sm text-center" multiple id="measurements-select" style="margin: 0;"></select> -->
+
+        <!-- </div> -->
+        Specimens
+        <div class="input-group input-group-sm justify-content-center text-center">
+          <select class="custom-select custom-select-sm text-center" multiple id="specimens-select" style="margin: 0;"></select>
+        </div>
+        Samples
+        <div class="input-group input-group-sm justify-content-center text-center">
+          <select class="custom-select custom-select-sm text-center" multiple id="samples-select" style="margin: 0;"></select>
+        </div>
+        Sites
+        <div class="input-group input-group-sm justify-content-center text-center">
+          <select class="custom-select custom-select-sm text-center" multiple id="sites-select" style="margin: 0;"></select>
+        </div>
+        <!-- Sites coordinates -->
+        Locations
+        <div class="input-group input-group-sm justify-content-center text-center">
+          <select class="custom-select custom-select-sm text-center" multiple id="locations-select" style="margin: 0;"></select>
+        </div>
+        <hr class="short">
+        <h6>Additional data</h6>
+        <hr class="short">
+        <!-- Sampling codes -->
+        <div class="ml-1 mr-1">
+          Sampling Particulars (select all that apply):
+          <div class="row text-left no-gutters" style="font-size: 85%; line-height: 1;">
+            <div class="col-6">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sampling-code-1">
+                <label class="form-check-label" for="sampling-code-1">
+                  FS-FD: field sampling done with a drill
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sampling-code-2">
+                <label class="form-check-label" for="sampling-code-2">
+                  FS-H: field sampling done with hand samples
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sampling-code-3">
+                <label class="form-check-label" for="sampling-code-3">
+                  FS-LOC-GPS: field location done with GPS
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sampling-code-4">
+                <label class="form-check-label" for="sampling-code-4">
+                  FS-LOC-MAP: field location done with map
+                </label>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sampling-code-5">
+                <label class="form-check-label" for="sampling-code-5">
+                  SO-POM: a Pomeroy orientation device was used
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sampling-code-6">
+                <label class="form-check-label" for="sampling-code-6">
+                  SO-ASC: an ASC orientation device was used
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sampling-code-7">
+                <label class="form-check-label" for="sampling-code-7">
+                  SO-MAG: magnetic compass used for all orientations
+                </label>
+              </div>
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" value="" id="sampling-code-8">
+                <label class="form-check-label" for="sampling-code-8">
+                  SO-SUN: sun compass used for all orientations
+                </label>
+              </div>
+            </div>
+          </div>
+          Apply to samples (select):
+          <div class="input-group">
+            <select class="custom-select" id="samples-list"></select>
+            <div class="input-group-append">
+              <button class="btn btn-outline-secondary" type="button">Apply</button>
+            </div>
+          </div>
+        </div>
+        <hr class="short">
+        <!-- Accept btn (for reload pages) -->
+        <div class="w-100 aling-center mt-0 pt-0 mb-1">
+          <button type="button" class="btn btn-primary btn-smbtn-block w-25 m-0" onclick="exportMagicContrib();">Export</button>
+        </div>
+      </div>
+    </div>
+  </body>
+  <!-- Bootstrap.js, Popper.js, and jQuery -->
+  <script src="../lib/jquery/jquery.min.js"></script>
+  <script src="../lib/popper/popper.min.js"></script>
+  <script src="../lib/style/bootstrap4/js/bootstrap.min.js"></script>
+  <!-- <script src="lib/jquery-3.3.1.slim.min.js"></script> -->
+  <!-- SHA256 & numeric lib for PCA -->
+  <script src="../lib/math/sha.js"></script>
+  <script src="../lib/math/numeric.js"></script>
+  <script src='../lib/math/turf.min.js'></script>
+  <script src='../lib/math/math.min.js'></script>
+  <!-- Inner scripts -->
+  <script type="text/javascript" src="../extra_modules/importing.js"></script>
+  <script type="text/javascript" src="../extra_modules/Coordinates.js"></script>
+  <script type="text/javascript" src="../extra_modules/Location.js"></script>
+  <script type="text/javascript" src="../extra_modules/Direction.js"></script>
+  <script type="text/javascript" src="../extra_modules/setVersion.js"></script>
+
+  <script type="text/javascript" src="../main_window/js/fileDialogs.js"></script>
+  <script type="text/javascript" src="../main_window/js/fileHandler.js"></script>
+
+  <script type="text/javascript" src="../utils/data_utils.js"></script>
+  <script type="text/javascript" src="../utils/graph_utils.js"></script>
+  <script type="text/javascript" src="../utils/charts_utils.js"></script>
+
+  <script type="text/javascript" src="../utils/foldtest_bootstrap.js"></script>
+  <script type="text/javascript" src="../utils/revtest_bootstrap.js"></script>
+
+  <script type="text/javascript">
+    var xlsx = require('node-xlsx');
+  </script>
+  <!-- render process -->
+  <script type="text/javascript" src="../renderers/magicExportRenderer.js"></script>
+
+</html>

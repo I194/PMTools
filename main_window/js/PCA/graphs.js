@@ -1,4 +1,4 @@
-function plotZijderveldDiagram(hover, onMain) {
+async function plotZijderveldDiagram(hover) {
 
   var proj_type = 'upwest';
 
@@ -6,18 +6,34 @@ function plotZijderveldDiagram(hover, onMain) {
 
   if (!specimen) return document.getElementById('container-center').innerHTML = '';
 
-  //Specimen metadata (core and bedding orientations)
+  // Specimen metadata (core and bedding orientations)
   var coreBedding = specimen.coreAzimuth;
   var coreDip = specimen.coreDip;
   var beddingStrike = specimen.beddingStrike;
   var beddingDip = specimen.beddingDip;
 
-  // Data bucket for inclination/declination lines and scale
-  // var horizontal = new Array();
-  // var vertical = new Array();
-  // var graphScale = new Array();
+  // Chart settings
+  var enableLabels = settings.pca.zijdAnnotations;
+  var enableTooltips = settings.pca.zijdTooltips;
+  var allowOverlap = settings.pca.pcaAllowOverlap;
+  var addTextOutline = settings.pca.pcaAddTextOutline;
 
   var steps = specimen.steps;
+
+  // if (hover) {
+  //   var hoverIndex;
+  //
+  //   // getting the hover dot index
+  //   for (let i = 0; i < steps.length; i++) {
+  //     if (step.hover) {
+  //       hoverIndex = step.index;
+  //       break;
+  //     }
+  //   }
+  //
+  //
+  // }
+
 
   if (settings.pca.zijdHide) {
     if (specimen.interpretations.length > 0) {
@@ -25,18 +41,18 @@ function plotZijderveldDiagram(hover, onMain) {
     }
   }
 
-  var dataBucket = coordsFromSteps(steps);
+  var dataBucket = coordsFromSteps(steps); // hor and vert data
 
-  var selectedStepIndex = dataBucket['selStepIndex'];
+  var hoverIndex = dataBucket.hoverIndex;
 
   // If the step is not visible hide the hover point or otherwise highlight selected step
-  if (selectedStepIndex === null) {
-    vSelectedDot = {"x": null, "y": null};
-    hSelectedDot = {"x": null, "y": null};
+  if (!hoverIndex && (hoverIndex != 0)) {
+    vHoverDot = {"x": null, "y": null};
+    hHoverDot = {"x": null, "y": null};
   }
   else {
-    vSelectedDot = dataBucket['vert'][selectedStepIndex];
-    hSelectedDot = dataBucket['hor'][selectedStepIndex];
+    vHoverDot = dataBucket['vert'][hoverIndex];
+    hHoverDot = dataBucket['hor'][hoverIndex];
   }
 
   var chartContainer = ChartContainersPCA[1];
@@ -44,31 +60,15 @@ function plotZijderveldDiagram(hover, onMain) {
     radius: 2.5,
     lineWidth: 0.6,
   }
-  // if (!onMain) {
-  //   chartContainer = 'container-left';
-  //   markerSize.radius = 2;
-  //   markerSize.lineWidth = 0.5;
-  // }
 
+  // chart container
   var container = document.querySelector('#'+chartContainer),
     chartIndex = container.getAttribute('data-highcharts-chart'),
     chart = Highcharts.charts[chartIndex];
 
-  if(chart && hover) {
-    chart.series[0].data[0].update(hSelectedDot);
-    chart.series[1].data[0].update(vSelectedDot);
-    return;
-  }
-
+  // chart size and scale
   var graphScale = Math.max.apply(Math, dataBucket['scale']);//graphScale);
   var tickFlag = false;
-  // var graphScale = [];
-  // graphScale = border_dot + 1;
-
-  var enableLabels = settings.pca.zijdAnnotations;
-  var enableTooltips = settings.pca.zijdTooltips;
-  var allowOverlap = settings.pca.allowOverlap;
-  var addTextOutline = settings.pca.addTextOutline;
 
   var element_width = document.getElementById(chartContainer).clientWidth;
   var element_height = document.getElementById(chartContainer).clientHeight;
@@ -76,34 +76,41 @@ function plotZijderveldDiagram(hover, onMain) {
   element_height -= element_height % 10;
   var chart_size = Math.min(element_width, element_height);
 
-  var selectedSeriesHorizontal = {
+  // Hover
+  if (chart && hover) {
+    chart.series[0].data[0].update(hHoverDot);
+    chart.series[1].data[0].update(vHoverDot);
+    return;
+  }
+
+  var hoverSeriesHorizontal = {
      "type": "scatter",
-     "data": [hSelectedDot],
+     "data": [hHoverDot],
      "linkedTo": "horizontal",
      "zIndex": 10,
      "marker": {
        "lineWidth": 1,
-       "symbol": "square",
-       "radius": 3,
+       "symbol": "circle",
+       "radius": 4,
        "lineColor": 'black',
        "fillColor": 'black'
      }
    }
-
-  var selectedSeriesVertical = {
+  var hoverSeriesVertical = {
      "type": "scatter",
-     "data": [vSelectedDot],
+     "data": [vHoverDot],
      "linkedTo": "vertical",
      "zIndex": 10,
      "marker": {
-       "symbol": "square",
+       "symbol": "circle",
        "lineWidth": 1,
-       "radius": 3,
+       "radius": 4,
        "lineColor": 'black',
        "fillColor": 'white',
      }
    }
 
+  // Charts ticks
   var ticksX = new Array();
   var ticksY = new Array();
   for (let tick = -graphScale; tick.toFixed(1) <= graphScale; tick += graphScale/5) {
@@ -123,7 +130,7 @@ function plotZijderveldDiagram(hover, onMain) {
       symbol: "VlineZ",
       lineColor: "black",
     }
-  }]
+  }];
   var tickSeriesY = [{
     type: "scatter",
     enableMouseTracking: false,
@@ -135,13 +142,15 @@ function plotZijderveldDiagram(hover, onMain) {
       symbol: "HlineZ",
       lineColor: "black",
     }
-  }]
+  }];
 
   var tickSeries = [];
   if (settings.pca.zijdTicks) tickSeries = tickSeriesX.concat(tickSeriesY);
+
+  // Chart's basic series
   var basicSeries = [
-    // selectedSeriesHorizontal,
-    // selectedSeriesVertical,
+    hoverSeriesHorizontal,
+    hoverSeriesVertical,
     {
       type: "line",
       linkedTo: "horizontal",
@@ -222,8 +231,6 @@ function plotZijderveldDiagram(hover, onMain) {
 
   var zoomType = 'xy';
 
-  // if (mainContPanZoom.getScale() != 1) zoomType = 'none';
-
   var options = {
 
     chart: {
@@ -232,7 +239,7 @@ function plotZijderveldDiagram(hover, onMain) {
       animation: false,
       // height: chart_size,
       // width: chart_size,
-      zoomType: zoomType,
+      // zoomType: zoomType,
       // panning: {
       //     enabled: true,
       //     type: 'xy'
@@ -248,8 +255,25 @@ function plotZijderveldDiagram(hover, onMain) {
       // }
     },
 
+    boost: {
+      useGPUTranslations: true,
+      usePreallocated: true,
+    },
+
     title: {
-      text: ''
+      text: 'PCA | ' + COORDINATES['pca'],
+      align: 'left',
+      margin: -25
+    },
+
+    // subtitle: {
+    //   text: 'System: ' + COORDINATES['poles'],
+    //   align: 'left',
+    //   margin: -50
+    // },
+
+    credits: {
+      text: 'PMTools v' + getVersion(),
     },
 
     tooltip: {
@@ -261,18 +285,17 @@ function plotZijderveldDiagram(hover, onMain) {
       filename: "zijderveld-diagram",
       sourceWidth: 500,
       sourceHeight: 500,
-      type: "application/pdf",
       resources: JSON.stringify({"css": ".highcharts-xaxis .highcharts-tick {transform: translateY(-1.05%); stroke: black;}"}),
       menuItemDefinitions: {
         // Custom definition
         downloadJPEG: {
           text: 'Save as JPEG'
         },
-        downloadPDF: {
-          text: "Save as PDF"
+        downloadPNG: {
+          text: 'Save as PNG'
         },
         downloadSVG: {
-          text: "Save as SVG"
+          text: 'Save as SVG'
         },
         // separator: {
         //   style: {"margin-top": 0.5rem;
@@ -284,36 +307,26 @@ function plotZijderveldDiagram(hover, onMain) {
           symbolStroke: "#119DFF",
           align: "right",
           symbol: 'download',
-          menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
-          // menuItems: [
-          //   {
-          //   	textKey: 'downloadPNG',
-          //   	onclick: function () { this.exportChart(); }
-          //   }, {
-          //   	textKey: 'downloadJPEG',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'image/jpeg'
-          //   		});
-          //   	}
-          //   },
-          //   { separator: true },
-          //   {
-          //   	textKey: 'downloadPDF',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'application/pdf'
-          //   		});
-          //   	}
-          //   }, {
-          //   	textKey: 'downloadSVG',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'image/svg+xml'
-          //   		});
-          //   	}
-          //   },
-          // ],
+          // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
+          menuItems: [
+            'downloadPNG',
+            'downloadJPEG',
+            {
+            	text: 'Save as PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'application/pdf',
+                    filename: "zijderveld-diagram",
+                  },
+                  undefined,
+                  'zijd'
+                );
+            	}
+            },
+            'downloadSVG',
+          ],
         },
       },
       chartOptions: {
@@ -345,15 +358,10 @@ function plotZijderveldDiagram(hover, onMain) {
           background: 'none'
       },
       menuItemHoverStyle: {
-          // fontWeight: 'bold',
           background: '#119DFF',
           color: 'white'
       }
     },
-
-    // mapNavigation: {
-    //     enableMouseWheelZoom: true
-    // },
 
     xAxis: {
       zoomEnabled: true,
@@ -370,12 +378,9 @@ function plotZijderveldDiagram(hover, onMain) {
       tickInterval: graphScale/5,
       lineWidth: 1,
       opposite: true,
-      // offset: -(chart_size - 100) / 2,
-      // width: chart_size - 100,
       title: {
         align: 'high',
-        // offset: 0,
-        text: dataBucket['hor'][0].title,
+        text: dataBucket.titleHor,
         rotation: 0,
         x: 30,
         y: 11,
@@ -391,7 +396,6 @@ function plotZijderveldDiagram(hover, onMain) {
     },
 
     yAxis: {
-      //reversed: true,
       zoomEnabled: true,
       crossing: 0,
       min: -graphScale,
@@ -405,12 +409,9 @@ function plotZijderveldDiagram(hover, onMain) {
       tickInterval: graphScale/5,
       lineWidth: 1,
       lineColor: "black",
-      // offset: -(chart_size - 100) / 2,
-      // width: chart_size - 100,
       title: {
         align: 'high',
-        // offset: 0,
-        text: dataBucket['vert'][0].title,
+        text: dataBucket.titleVert,
         rotation: 0,
         y: -6,
         x: 25,
@@ -429,15 +430,20 @@ function plotZijderveldDiagram(hover, onMain) {
       series: {
         cursor: "pointer",
         point: {
-          // events: {
-          //   click: function () {
-          //     dotSelector.setActiveStep(this.stepIndex);
-          //   }
-          // }
+          events: {
+            click: function () {
+              dotSelector.hoverDot(this.stepIndex, 'specimen');
+            },
+            mouseOut: function() {
+              // dotSelector.unhoverDot(this.stepIndex, 'specimen');
+            }
+          }
         },
         resources: {
           css: ".highcharts-xaxis .highcharts-tick {transform: translateY(-1.05%);}"
         },
+
+        // stickyTracking: false,
         animation: false,
         accessibility: {
           enabled: false,
@@ -445,6 +451,7 @@ function plotZijderveldDiagram(hover, onMain) {
             enabled: false,
           }
         },
+
         states: {
           hover: {
             enabled: settings.pca.zijdHover,
@@ -459,12 +466,6 @@ function plotZijderveldDiagram(hover, onMain) {
       }
     },
 
-    credits: {
-      enabled: false,
-      text: "PMTools.com (Zijderveld Diagram)",
-      href: ""
-    },
-
     series: basicSeries.concat(formatInterpretationSeries(graphScale, specimen.interpretations))
 
   }
@@ -473,7 +474,7 @@ function plotZijderveldDiagram(hover, onMain) {
 
   setZijderveldRatio(chart);
 
-  //console.log([chart.axes[0].width, chart.axes[1].height, chart.axes[0].width / chart.axes[1].height])
+  return chart;
 
 }
 
@@ -506,9 +507,6 @@ function generateZijderveldTooltip() {
    * Generates the Zijderveld chart tooltip
    */
 
-  // if(!document.getElementById("zijderveld-tooltip").checked) {
-  //   return false;
-  // }
   return [
     "<b>" + this.series.name + "</b>",
     "<b>#: </b>" + (this.point.stepIndex + 1),
@@ -520,11 +518,18 @@ function generateZijderveldTooltip() {
 
 }
 
-function plotStereoDiagram(hover, onMain) {
+async function plotStereoDiagram(hover) {
+
+  var time = performance.now();
 
   var specimen = getSelectedFile('specimen');
 
   if (!specimen) return document.getElementById('container-left').innerHTML = '';
+
+  var chartContainer = ChartContainersPCA[0];
+  var container = document.querySelector('#'+chartContainer),
+    chartIndex = container.getAttribute('data-highcharts-chart'),
+    chart = Highcharts.charts[chartIndex];
 
   //Get the bedding and core parameters from the sample object
   var coreAzi = specimen.coreAzimuth;
@@ -532,17 +537,12 @@ function plotStereoDiagram(hover, onMain) {
   var beddingStrike = specimen.beddingStrike;
   var beddingDip = specimen.beddingDip;
 
-  // Get the Boolean flags for the graph
+  // Get the chart settings
   var enableLabels = settings.pca.stereoAnnotations;
   var enableTooltips = settings.pca.stereoTooltips;
-  var allowOverlap = settings.pca.allowOverlap;
-  var addTextOutline = settings.pca.addTextOutline;
+  var allowOverlap = settings.pca.pcaAllowOverlap;
+  var addTextOutline = settings.pca.pcaAddTextOutline;
   var showError = settings.pca.stereoError;
-
-  // Format a Highcharts data bucket for samples that are visible
-  var dataPos = new Array(), dataNeg = new Array(), dataAll = new Array();
-  var dataSeries = new Array(), dataErrors = new Array();
-  var selectedStepIndex = null;
 
   var steps = specimen.steps;
 
@@ -552,15 +552,14 @@ function plotStereoDiagram(hover, onMain) {
     }
   }
 
+  var dataPos = new Array(), dataNeg = new Array(), dataAll = new Array();
+  var dataSeries = new Array(), dataErrors = new Array();
+  var hoverIndex;
+
   steps.forEach(function(step, i) {
 
-    if(!step.visible) {
-      return;
-    }
-
-    if(dotSelector._selectedStep === i) {
-      selectedStepIndex = dataSeries.length;
-    }
+    if (!step.visible) return;
+    if (step.hover) hoverIndex = step.index;
 
     var direction = inReferenceCoordinates(COORDINATES['pca'], specimen, new Coordinates(step.x, step.y, step.z)).toVector(Direction);
     var step_data = {
@@ -570,13 +569,14 @@ function plotStereoDiagram(hover, onMain) {
       step: step.step,
       stepIndex: step.index,
     }
+
     dataSeries.push({
       x: direction.dec,
       y: Math.abs(direction.inc),
       inc: direction.inc,
       step: step.step,
       stepIndex: step.index,
-      innerColor: (direction.inc < 0 ? 'white' : 'black'),
+      innerColor: (direction.inc < 0) ? 'white' : 'black',
     });
 
     if (showError) {
@@ -604,52 +604,42 @@ function plotStereoDiagram(hover, onMain) {
 
   });
 
-  var selectedDot;
-  if (selectedStepIndex === null) selectedDot = {"x": null, "y": null};
-  else selectedDot = dataSeries[selectedStepIndex];
-
-  var chartContainer = ChartContainersPCA[0];
   var markerSize = {
     radius: 2.5,
     lineWidth: 0.6,
   }
 
-  // if (!onMain) {
-  //   chartContainer = 'container-left';
-  //   markerSize.radius = 2;
-  //   markerSize.lineWidth = 0.5;
-  // }
-
-  var container = document.querySelector('#'+chartContainer),
-    chartIndex = container.getAttribute('data-highcharts-chart'),
-    chart = Highcharts.charts[chartIndex];
+  var hoverDot;
+  if (!hoverIndex && (hoverIndex != 0)) hoverDot = {"x": null, "y": null};
+  else hoverDot = dataSeries[hoverIndex];
 
   // Only redraw the hover series (series: 0, data: 0)
   if (chart && hover) {
-    // chart.series[0].data[0].update(selectedDot);
-    chart.series[0].update({
-      type: "scatter",
-      linkedTo: "Directions",
-      zIndex: 10,
-      data: [selectedDot], // [{x: selectedDot.x, y:selectedDot.y}],
-      marker: {
-        lineWidth: 1,
-        symbol: "square",
-        radius: 3,
-        lineColor: 'black',
-        fillColor: selectedDot['innerColor'],
-      }
-    });
+    chart.series[0].data[0].update(hoverDot);
     return;
+  }
+
+  var hoverSeries = {
+    type: "scatter",
+    linkedTo: "Down",
+    zIndex: 10,
+    data: [hoverDot],
+    marker: {
+      lineWidth: 1,
+      symbol: "circle",
+      radius: 4,
+      lineColor: 'black',
+      fillColor: hoverDot['innerColor'],
+    }
   }
 
   // Initialize stereo basic series
   var basicSeries = [
-    // selectedSeries,
+    hoverSeries,
     {
       type: "scatter",
-      name: 'Up',
-      id: 'Up',
+      name: 'Down',
+      id: 'Direcions',
       data: dataPos,//plot_directions.pos,
       zIndex: 5,
       marker: {
@@ -676,8 +666,8 @@ function plotStereoDiagram(hover, onMain) {
     },
     {
       type: "scatter",
-      name: 'Down',
-      id: 'Down',
+      name: 'Up',
+      id: 'Direcions',
       data: dataNeg,
       zIndex: 5,
       marker: {
@@ -715,29 +705,14 @@ function plotStereoDiagram(hover, onMain) {
     },
   ];
 
-  var selectedSeries = {
-    type: "scatter",
-    linkedTo: "Directions",
-    zIndex: 10,
-    data: [selectedDot], // [{x: selectedDot.x, y:selectedDot.y}],
-    marker: {
-      lineWidth: 1,
-      symbol: "square",
-      radius: 3,
-      lineColor: 'black',
-      fillColor: selectedDot['innerColor'],
-    }
-  }
   // Get сonnection lines for dots
   var bcPath = (settings.global.dashedLines) ? getGCPath(dataAll, true) : getGCPath(dataAll, false);
 
   var element_width = document.getElementById(chartContainer).offsetWidth;
   element_width -= element_width % 10;
 
-  var ticksN = new Array();
-  var ticksE = new Array();
-  var ticksS = new Array();
-  var ticksW = new Array();
+  // Chart ticks
+  var ticksN = new Array(), ticksE = new Array(), ticksS = new Array(), ticksW = new Array();
   for (let tick = 0; tick <= 90; tick += 10) {
     ticksN.push({x: 0, y: tick});
     ticksE.push({x: 90, y: tick});
@@ -751,13 +726,13 @@ function plotStereoDiagram(hover, onMain) {
     enableMouseTracking: false,
     data: ticksX,
     zIndex: 5,
-    color: "black",
+    color: COLORS.mainColorText[currentTheme],//"black",
     showInLegend: false,
     marker: {
       radius: 2,
       lineWidth: 1,
       symbol: "VlineS",
-      lineColor: "black",
+      lineColor: COLORS.mainColorText[currentTheme],//"black",
     }
   };
   var tickSeriesTop = {
@@ -765,13 +740,13 @@ function plotStereoDiagram(hover, onMain) {
     enableMouseTracking: false,
     data: ticksN,
     zIndex: 5,
-    color: "black",
+    color: COLORS.mainColorText[currentTheme],//"black",
     showInLegend: false,
     marker: {
       radius: 2,
       lineWidth: 1,
       symbol: "HlineSTop",
-      lineColor: "black",
+      lineColor: COLORS.mainColorText[currentTheme],//"black",
     }
   };
   var tickSeriesBot = {
@@ -779,13 +754,13 @@ function plotStereoDiagram(hover, onMain) {
     enableMouseTracking: false,
     data: ticksS,
     zIndex: 5,
-    color: "black",
+    color: COLORS.mainColorText[currentTheme],//"black",
     showInLegend: false,
     marker: {
       radius: 2,
       lineWidth: 1,
       symbol: "HlineSBot",
-      lineColor: "black",
+      lineColor: COLORS.mainColorText[currentTheme],//"black",
     }
   };
 
@@ -828,8 +803,8 @@ function plotStereoDiagram(hover, onMain) {
       var pos = {
         enableMouseTracking: false,
         type: "line",
-        name: "Up",
-        linkedTo: "Up",
+        name: "Down",
+        linkedTo: "Down",
         lineWidth: 0.5,
         data: bcPath.pos[i],
         connectEnds: false,
@@ -840,8 +815,8 @@ function plotStereoDiagram(hover, onMain) {
       var neg = {
         enableMouseTracking: false,
         type: "line",
-        name: "Down",
-        linkedTo: "Down",
+        name: "Up",
+        linkedTo: "Up",
         lineWidth: 0.5,
         data: bcPath.neg[i],
         dashStyle: "LongDash",
@@ -877,8 +852,8 @@ function plotStereoDiagram(hover, onMain) {
     var path = {
       enableMouseTracking: false,
       type: "line",
-      name: "Up",
-      linkedTo: "Up",
+      name: "Down",
+      linkedTo: "Down",
       lineWidth: 0.5,
       data: bcPath,
       connectEnds: false,
@@ -890,11 +865,10 @@ function plotStereoDiagram(hover, onMain) {
     basicSeries.push(path);
   }
 
-
   var options = {
 
     chart: {
-      // styledMode: true,
+      backgroundColor: COLORS.mainColor[currentTheme],
       polar: true,
       className: "stereo-plot",
       animation: false,
@@ -903,13 +877,31 @@ function plotStereoDiagram(hover, onMain) {
       // },
     },
 
+    boost: {
+      useGPUTranslations: true,
+      usePreallocated: true,
+    },
+
     tooltip: {
       enabled: enableTooltips,
-      formatter: generateStereoTooltip,
+      formatter: generateStereoTooltipPCA,
     },
 
     title: {
-      text: ''
+        text: 'PCA | ' + COORDINATES['pca'],
+        align: 'left',
+        margin: -25
+        // x: 70
+    },
+
+    // subtitle: {
+    //   text: 'System: ' + COORDINATES['poles'],
+    //   align: 'left',
+    //   margin: -50
+    // },
+
+    credits: {
+      text: 'PMTools v' + getVersion(),
     },
 
     // legend: {
@@ -936,11 +928,11 @@ function plotStereoDiagram(hover, onMain) {
         downloadJPEG: {
           text: 'Save as JPEG'
         },
-        downloadPDF: {
-          text: "Save as PDF"
+        downloadPNG: {
+          text: 'Save as PNG'
         },
         downloadSVG: {
-          text: "Save as SVG"
+          text: 'Save as SVG'
         },
         // separator: {
         //   style: {"margin-top": 0.5rem;
@@ -952,36 +944,26 @@ function plotStereoDiagram(hover, onMain) {
           symbolStroke: "#119DFF",
           align: "right",
           symbol: 'download',
-          menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
-          // menuItems: [
-          //   {
-          //   	textKey: 'downloadPNG',
-          //   	onclick: function () { this.exportChart(); }
-          //   }, {
-          //   	textKey: 'downloadJPEG',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'image/jpeg'
-          //   		});
-          //   	}
-          //   },
-          //   { separator: true },
-          //   {
-          //   	textKey: 'downloadPDF',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'application/pdf'
-          //   		});
-          //   	}
-          //   }, {
-          //   	textKey: 'downloadSVG',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'image/svg+xml'
-          //   		});
-          //   	}
-          //   },
-          // ],
+          // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
+          menuItems: [
+            'downloadPNG',
+            'downloadJPEG',
+            {
+            	text: 'Save as PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'application/pdf',
+                    filename: "stereo_chart",
+                  },
+                  undefined,
+                  'stereo-pca'
+                );
+            	}
+            },
+            'downloadSVG',
+          ],
         },
       },
       chartOptions: {
@@ -1018,34 +1000,21 @@ function plotStereoDiagram(hover, onMain) {
           background: 'none'
       },
       menuItemHoverStyle: {
-          // fontWeight: 'bold',
-          background: '#119DFF',
+          background: COLORS.primaryColor1[currentTheme],//'#119DFF',
           color: 'white'
       }
     },
 
-    // mapNavigation: {
-    //     enableMouseWheelZoom: true
-    // },
-
-    credits: {
-      enabled: false,
-      text: "PMTools v1.0 (Zijderveld Diagram)",
-      href: ""
-    },
-
     xAxis: {
       minorTickPosition: "outside",
-      lineColor: "black",
-      // gridLineDashStyle: "Dot",
-      // gridLineColor: "black",
+      lineColor: COLORS.mainColorText[currentTheme],//"black",
       gridLineWidth: 0,
       minorGridLineWidth: 0,
       type: "linear",
       min: 0,
       max: 360,
       tickPositions: [0, 90, 180, 270, 360],
-      minorTickColor: "black",
+      minorTickColor: COLORS.mainColorText[currentTheme],//"black",
       minorTickInterval: 90,
       minorTickLength: 5,
       minorTickWidth: 1,
@@ -1059,13 +1028,14 @@ function plotStereoDiagram(hover, onMain) {
           if (this.value == 270) return 'W';
         },
         style: {
-          color: "black",
+          color: COLORS.mainColorText[currentTheme],//"black",
         }
       },
     },
 
     yAxis: {
       type: "linear",
+      lineColor: COLORS.mainColorText[currentTheme],//"black",
       gridLineWidth: 0,
       minorGridLineWidth: 0,
       visible: false,
@@ -1081,7 +1051,7 @@ function plotStereoDiagram(hover, onMain) {
     plotOptions: {
       line: {
         lineWidth: 1,
-        color: "black",
+        color: COLORS.mainColorText[currentTheme],//"black",
         connectEnds: false,
         // enableMouseTracking: false,
       },
@@ -1089,6 +1059,14 @@ function plotStereoDiagram(hover, onMain) {
         animation: false,
         cursor: "pointer",
         turboThreshold: 10000,
+        stickyTracking: false,
+        point: {
+          events: {
+            click: function () {
+              dotSelector.hoverDot(this.stepIndex, 'specimen');
+            },
+          }
+        },
         states: {
           hover: {
             enabled: settings.pca.stereoHover,
@@ -1103,18 +1081,27 @@ function plotStereoDiagram(hover, onMain) {
     series: basicSeries.concat(formatInterpretationSeriesArea(specimen.interpretations)),
   }
 
+  time6 = performance.now() - time;
+  console.log('Время выполнения (stereo data preparing) = ', time6);
+
   var chart = Highcharts.chart(chartContainer, options)
+
+
+  time7 = performance.now() - time;
+  console.log('Время выполнения (stereo chart draw) = ', time7);
+
+  return chart;
 
 }
 
-function generateStereoTooltip() {
+function generateStereoTooltipPCA() {
 
   /*
    * Function generateHemisphereTooltip
    * Generates the Hemisphere chart tooltip
    */
 
-  if(this.series.name === "Directions") {
+  if ((this.series.name === "Down") || (this.series.name === "Up")) {
     return [
       "<b>#: </b>" + (this.point.stepIndex + 1),
       "<b>Step: </b>" + this.point.step,
@@ -1125,65 +1112,132 @@ function generateStereoTooltip() {
     return [
       "<b>Interpretation</b>",
       "<b>Dec: </b>" + this.x.toFixed(2),
-      "<b>Inc: </b>" + this.point.inc.toFixed(2)
+      "<b>Inc: </b>" + this.point.inc.toFixed(2),
+      "<b>MAD: </b>" + this.point.mad.toFixed(2)
     ].join("<br>");
   }
 
 }
 
-function plotIntensityDiagram() {
+async function plotIntensityDiagram(hover) {
 
   var specimen = getSelectedFile('specimen');
 
   if (!specimen) return document.getElementById('container-right').innerHTML = '';
 
+  var enableLabels = settings.pca.intensityAnnotations;
+  var enableTooltips = settings.pca.intensityTooltips;
+  var allowOverlap = settings.pca.pcaAllowOverlap;
+  var addTextOutline = settings.pca.pcaAddTextOutline;
+
   var intensities = new Array();
   var categories = new Array();
 
   var steps = specimen.steps;
+  var hiddenSteps = [];
+  var hoverIndex;
 
   if (settings.pca.intensityHide) {
     if (specimen.interpretations.length > 0) {
+      specimen.interpretations[specimen.interpretations.length - 1].steps.forEach((step, i) => {
+        hiddenSteps.push(step.step);
+      });
       steps = specimen.interpretations[specimen.interpretations.length - 1].steps;
     }
   }
 
   steps.forEach(function(step, i) {
 
-    // On show steps that are visible
-    //Remove mT, μT, C or whatever from step - just take a number
-    if(!step.visible) {
-      return;
-    }
+    if (!step.visible) return;
+    if (step.hover) hoverIndex = step.index;
 
     // Use categories to stop mixing AF / TH
     categories.push(parseInt(step.step.match(/\d+/)));
 
+    var volume = (specimen.volume) ? specimen.volume : 1;
+
     intensities.push({
       "x": (step.step === 'NRM') ? 0: parseInt(step.step.match(/\d+/)),
-      "y": (new Coordinates(step.x, step.y, step.z).length)/specimen.volume,
+      "y": (new Coordinates(step.x, step.y, step.z).length) / volume,
       "stepIndex": step.index,
       "step": step.step,
     });
 
   });
 
+  var chartContainer = ChartContainersPCA[2];
+  var container = document.querySelector('#'+chartContainer),
+    chartIndex = container.getAttribute('data-highcharts-chart'),
+    chart = Highcharts.charts[chartIndex];
+
   var titleX = "?";
 
   if (specimen.demagnetizationType == "thermal") titleX = '\u1d52C';
   else if (specimen.demagnetizationType == "alternating") titleX = "nT";
+  else if (!specimen.demagnetizationType) titleX = "?";
 
-  var normalizedIntensities = normalize(intensities);
+  var normalizedIntensities = normalize(intensities, settings.pca.intensityHide);
+
+  var hoverDot;
+  if (!hoverIndex && (hoverIndex != 0)) hoverDot = {"x": null, "y": null};
+  else hoverDot = normalizedIntensities[hoverIndex];
+
+  if (chart && hover) {
+    chart.series[0].data[0].update(hoverDot);
+    return;
+  }
 
   var element_width = document.getElementById('container-right').offsetWidth;
   element_width -= element_width % 10;
 
-  var maxIntensity = normalizedIntensities[0].maxIntensity;
+  var hoverSeries = {
+    type: "scatter",
+    linkedTo: "Resultant Intensity",
+    zIndex: 10,
+    data: [hoverDot],
+    marker: {
+      lineWidth: 1,
+      symbol: "circle",
+      radius: 4,
+      lineColor: 'black',
+      fillColor: 'black',
+    }
+  }
 
-  var enableLabels = settings.pca.intensityAnnotations;
-  var enableTooltips = settings.pca.intensityTooltips;
-  var allowOverlap = settings.pca.allowOverlap;
-  var addTextOutline = settings.pca.addTextOutline;
+  // Initialize stereo basic series
+  var basicSeries = [
+    hoverSeries,
+    {
+      type: "scatter",
+      name: "Resultant Intensity",
+      data: normalizedIntensities,
+      color: "black",
+      lineWidth: 1,
+      zIndex: 1,
+      marker: {
+        radius: 2,
+        lineWidth: 0.5,
+        symbol: "circle",
+        lineColor: "black",
+        fillColor: "black"
+      },
+      dataLabels: {
+        color: "grey",
+        enabled: enableLabels,
+        allowOverlap: allowOverlap,
+        padding: 0,
+        style: {
+          fontSize: "10px",
+          textOutline: (addTextOutline) ? "1px contrast" : "0px",
+        },
+        formatter: function() {
+          return makeDataLabel(this.point);
+        }
+      }
+    }
+  ];
+
+  var maxIntensity = (normalizedIntensities.length > 0) ? normalizedIntensities[0].maxIntensity : 0;
 
   var options = {
 
@@ -1205,9 +1259,38 @@ function plotIntensityDiagram() {
       // }
     },
 
+    boost: {
+      useGPUTranslations: true,
+      usePreallocated: true,
+    },
+
     tooltip: {
       enabled: enableTooltips,
       formatter: generateIntensityTooltip,
+    },
+
+    title: {
+      text: 'PCA | ' + COORDINATES['pca'],
+      align: 'left',
+      // y: 0,
+      // margin: -25
+    },
+    // title: {
+    //   text: ""
+    // },
+
+    // subtitle: {
+    //   text: ' Mmax = ' + maxIntensity.toExponential(2)+' μA/m',
+    //   y: 23.5,
+    //   x: 0,
+    //   style: {
+    //     color: "black",
+    //     fontWeight: 'bold'
+    //   }
+    // },
+
+    credits: {
+      text: 'PMTools v' + getVersion(),
     },
 
     exporting: {
@@ -1220,11 +1303,11 @@ function plotIntensityDiagram() {
         downloadJPEG: {
           text: 'Save as JPEG'
         },
-        downloadPDF: {
-          text: "Save as PDF"
+        downloadPNG: {
+          text: 'Save as PNG'
         },
         downloadSVG: {
-          text: "Save as SVG"
+          text: 'Save as SVG'
         },
         // separator: {
         //   style: {"margin-top": 0.5rem;
@@ -1236,36 +1319,26 @@ function plotIntensityDiagram() {
           symbolStroke: "#119DFF",
           align: "right",
           symbol: 'download',
-          menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
-          // menuItems: [
-          //   {
-          //   	textKey: 'downloadPNG',
-          //   	onclick: function () { this.exportChart(); }
-          //   }, {
-          //   	textKey: 'downloadJPEG',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'image/jpeg'
-          //   		});
-          //   	}
-          //   },
-          //   { separator: true },
-          //   {
-          //   	textKey: 'downloadPDF',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'application/pdf'
-          //   		});
-          //   	}
-          //   }, {
-          //   	textKey: 'downloadSVG',
-          //   	onclick: function () {
-          //   		this.exportChart({
-          //   			type: 'image/svg+xml'
-          //   		});
-          //   	}
-          //   },
-          // ],
+          // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
+          menuItems: [
+            'downloadPNG',
+            'downloadJPEG',
+            {
+            	text: 'Save as PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'application/pdf',
+                    filename: "intensity_chart",
+                  },
+                  undefined,
+                  'intensity'
+                );
+            	}
+            },
+            'downloadSVG',
+          ],
         },
       },
       chartOptions: {
@@ -1293,10 +1366,6 @@ function plotIntensityDiagram() {
       }
     },
 
-    title: {
-      text: "",
-    },
-
     legend: {
       enabled: false,
       align: 'right',
@@ -1304,22 +1373,6 @@ function plotIntensityDiagram() {
       layout: 'vertical',
       x: 0,
       y: 50
-    },
-
-    subtitle: {
-      text: ' Mmax = ' + maxIntensity.toExponential(2)+' μA/m',
-      y: 23.5,
-      x: 0,
-      style: {
-        color: "black",
-        fontWeight: 'bold'
-      }
-    },
-
-    credits: {
-      enabled: false,
-      text: "PMTools.com (Intensity Diagram)",
-      href: ""
     },
 
     xAxis: {
@@ -1377,29 +1430,27 @@ function plotIntensityDiagram() {
         align: 'high',
         rotation: 0,
         style: {color: 'black'},
-        // offset: 0,
-        x: 80,
+        offset: 0,
+        // margin: 5,
+        x: 190,
         y: -10,
-        text: 'M/Mmax'//+' Mmax = '+data[0].mag.toExponential(2)+' A/m'
+        text: 'M/Mmax ' + '<b>Mmax = ' + maxIntensity.toExponential(2) + ' A/m</b>'
       }
       // title: {
       //   text: document.getElementById("normalize-intensities").checked ? "Fraction" : "Intensity (μA/m)"
       // }
     },
-    // tooltip: {
-    //   formatter: intensityTooltip
-    // },
 
     plotOptions: {
       series : {
         animation: false,
         cursor: "pointer",
         point: {
-          // events: {
-          //   click: function () {
-          //     dotSelector.setActiveStep(this.stepIndex);
-          //   }
-          // }
+          events: {
+            click: function () {
+              dotSelector.hoverDot(this.stepIndex, 'specimen');
+            },
+          }
         },
         states: {
           hover: {
@@ -1412,37 +1463,12 @@ function plotIntensityDiagram() {
       }
     },
 
-    series: [{
-      type: "scatter",
-      name: "Resultant Intensity",
-      data: normalizedIntensities,
-      color: "black",
-      lineWidth: 1,
-      zIndex: 1,
-      marker: {
-        radius: 2,
-        lineWidth: 0.5,
-        symbol: "circle",
-        lineColor: "black",
-        fillColor: "black"
-      },
-      dataLabels: {
-        color: "grey",
-        enabled: enableLabels,
-        allowOverlap: allowOverlap,
-        padding: 0,
-        style: {
-          fontSize: "10px",
-          textOutline: (addTextOutline) ? "1px contrast" : "0px",
-        },
-        formatter: function() {
-          return makeDataLabel(this.point);
-        }
-      }
-    }].concat(formatInterpretationSeriesIntensity(specimen.interpretations))
+    series: basicSeries.concat(formatInterpretationSeriesIntensity(specimen.interpretations))
   }
 
   var chart = Highcharts.chart(ChartContainersPCA[2], options);
+
+  return chart;
 
 }
 
@@ -1454,56 +1480,10 @@ function generateIntensityTooltip() {
    */
 
   return [
+    "<b>Intensity</b>",
     "<b>#: </b>" + (this.point.stepIndex + 1),
     "<b>Step: </b>" + this.point.step,
     "<b>Intensity </b>" + this.y.toFixed(2) + " (" + Math.round(this.point.intensity) + "μA/m" + ")"
   ].join("<br>");
 
 }
-
-(function (H) {
-
-  const EXPORT_BUTTON_TEXT = "Download CSV";
-
-  // Crossing at 0, 0
-  H.wrap(H.Axis.prototype, "render", function(proceed) {
-
-    var chart = this.chart, otherAxis;
-
-    if(typeof this.options.crossing === "number") {
-      otherAxis = chart[this.isXAxis ? "yAxis" : "xAxis"][0];
-      this.offset = otherAxis.toPixels(this.options.crossing, true);
-      chart.axisOffset[this.side] = 10;
-    }
-
-    proceed.call(this);
-
-  });
-
-  // // Add data download button
-  // H.Chart.prototype.generateCSV = function() {
-  //
-  //   switch(this.renderTo.id) {
-  //     case "zijderveld-container":
-  //       return downloadAsCSV("zijderveld.csv", getZijderveldCSV(this.series));
-  //     case "intensity-container":
-  //       return downloadAsCSV("intensity.csv", getIntensityCSV(this.series));
-  //     case "hemisphere-container":
-  //       return downloadAsCSV("hemisphere.csv", getHemisphereCSV(this.series));
-  //     case "fitting-container":
-  //       return downloadAsCSV("components.csv", getFittedCSV(this.series));
-  //     default:
-  //       notify("danger", new Exception("Data export for this chart has not been implemented."));
-  //   }
-  //
-  // }
-  //
-  // // Add the button to the exporting menu
-  // H.getOptions().exporting.buttons.contextButton.menuItems.push({
-  //   "text": EXPORT_BUTTON_TEXT,
-  //   "onclick": function() {
-  //     this.generateCSV()
-  //   }
-  // });
-
-}(Highcharts));

@@ -13,6 +13,14 @@ const aboutWin = allWindows[2];
 const helpWin = allWindows[3];
 const specDataWin = allWindows[4];
 
+const shell = require('electron').shell;
+
+// assuming $ is jQuery
+$(document).on('click', 'a[href^="http"]', function(event) {
+    event.preventDefault();
+    shell.openExternal(this.href);
+});
+
 // Describe custom title bar functionality
 
 const minimizeWinBtn = document.getElementById('minimize-button');
@@ -28,10 +36,25 @@ closeWinBtn.addEventListener('click', (event) => {
   remote.app.quit();
 })
 
+// Inner buttons
+
 const formatBtn = document.getElementById('formats-button');
 
 formatBtn.addEventListener('click', (event) => {
   ipcRenderer.send('toggle-formats');
 })
+
+ipcRenderer.on('disable-openPrev', () => {
+  document.getElementById('open-prev').disabled = true;
+})
+
+
+// Some globals
+
+var COORDINATES = {
+  pca: 'specimen',
+  stat: 'geographic',
+  poles: 'geographic',
+}
 
 // Inner scripts

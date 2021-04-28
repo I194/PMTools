@@ -50,10 +50,17 @@
             <!-- App icon -->
             <div class="text-center mt-4">
               <img src="../img/pm-tools-app-icon-dark.svg" class="img-fluid" style="max-width: 50%" alt="">
-              <h5 class="font-weight-normal"> PMTools beta </h5>
-              <h6 class="text-muted font-weight-light"> Version 0.9.2 </h6>
+              <h5 class="font-weight-normal"> PMTools </h5>
+              <h6 class="text-muted font-weight-light pmtools-version"> v0.9.8 </h6>
             </div>
             <!-- Open buttons -->
+            <!-- Open previous project -->
+            <!-- <div class="input-group mt-3">
+              <div class="input-group-prepend no-hover">
+                <span class="input-group-text"><i class="far fa-file-import" style="margin-right: .125rem;"></i></span>
+              </div>
+              <input id="open-prev" type="button" value="Open files" class="form-control form-control-sm" tabindex="-1" onclick="openPreviousProject;" />
+            </div> -->
             <!-- Open files -->
             <div class="input-group mt-3">
               <div class="input-group-prepend no-hover">
@@ -73,7 +80,10 @@
         </div>
         <div class="button-group btn-group-sm  mx-auto">
           <button type="button" class="btn astext align-text-bottom" style="font-size:14px" id="formats-button"> Supported formats </button>
-          <button type="button" class="btn astext align-text-bottom" style="font-size:14px" id="documentation-button"> Documentation </button>
+
+            <button type="button" class="btn astext align-text-bottom" style="font-size:14px" id="documentation-button">
+              <a href="https://github.com/I194/PMTools/blob/main/PMTools%20manual.pdf"> Documentation </a>
+            </button>
           <button type="button" class="btn astext align-text-bottom" style="font-size:14px" id="references-button"> References </button>
         </div>
       </div>
@@ -91,14 +101,15 @@
   <!-- render process -->
   <script type="text/javascript" src="../renderers/openFilesRenderer.js"></script>
   <!-- Inner scripts -->
-  <script type="text/javascript" src="../pmorg/importing.js"></script>
-  <script type="text/javascript" src="../pmorg/Coordinates.js"></script>
-  <script type="text/javascript" src="../pmorg/Location.js"></script>
-  <script type="text/javascript" src="../pmorg/Direction.js"></script>
-  <script type="text/javascript" src="../pmorg/Site.js"></script>
-  <script type="text/javascript" src="../pmorg/Pole.js"></script>
-  <script type="text/javascript" src="../pmorg/Distribution.js"></script>
-  <script type="text/javascript" src="../pmorg/EulerPole.js"></script>
+  <script type="text/javascript" src="../extra_modules/importing.js"></script>
+  <script type="text/javascript" src="../extra_modules/Coordinates.js"></script>
+  <script type="text/javascript" src="../extra_modules/Location.js"></script>
+  <script type="text/javascript" src="../extra_modules/Direction.js"></script>
+  <script type="text/javascript" src="../extra_modules/Site.js"></script>
+  <script type="text/javascript" src="../extra_modules/Pole.js"></script>
+  <script type="text/javascript" src="../extra_modules/Distribution.js"></script>
+  <script type="text/javascript" src="../extra_modules/EulerPole.js"></script>
+  <script type="text/javascript" src="../extra_modules/setVersion.js"></script>
 
   <script type="text/javascript" src="../utils/data_utils.js"></script>
   <script type="text/javascript" src="../utils/graph_utils.js"></script>

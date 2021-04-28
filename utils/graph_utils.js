@@ -6,6 +6,28 @@ Math.degrees = function(radians) {
   return radians * 180 / Math.PI;
 };
 
+const transpose = matrix => matrix[0].map((col, i) => matrix.map(row => row[i]));
+
+function dir2cart(di_block) {
+
+  var cart = [];
+
+  for (let k = 0; k < di_block.length; k++) {
+    var d = Math.radians(di_block[k][0]);
+    var i = Math.radians(di_block[k][1]);
+    var r = (di_block[k].length == 3) ? di_block[k][2] : 1;
+
+    var x = r * Math.cos(i) * Math.cos(d);
+    var y = r * Math.cos(i) * Math.sin(d);
+    var z = r * Math.sin(i);
+
+    cart.push([x, y, z]);
+  }
+
+  return cart;
+
+}
+
 function dir_to_xyz(d, i, r) {
   d = Math.radians(d);
   i = Math.radians(i);
@@ -177,24 +199,19 @@ function getSmallCircle(dec_mean, inc_mean, radius, split) {
   var tmp_small_circ = [];
   var posneg = {pos: [], neg: []};
 
-  for (let i = 0; i < 361; i++) { // обратный перевод в сферические координаты
+  for (let i = 0; i < 361; i+=4) { // обратный перевод в сферические координаты
 
     let x = small_circ[i][0];
     let y = small_circ[i][1];
     let z = small_circ[i][2];
     let decinc = xyz_to_dir(x, y, z);
-    /* не надо тут так преобразовывать, у меня своя функция
-    для этого есть; p.s. Это взято из библиотека RFOC для R)
-    let eq_area_x = scaleX(r * Math.sin(Math.radians(decinc.inc / 2)) *
-     Math.sqrt(2) * Math.sin(Math.radians(decinc.dec)));
-    let eq_area_y = scaleY(r * Math.sin(Math.radians(decinc.inc / 2)) *
-     Math.sqrt(2) * Math.cos(Math.radians(decinc.dec)));
-    tmp_small_circ.push({x: eq_area_x, y: eq_area_y});*/
     if (decinc.inc >= 0) posneg.pos.push({x: decinc.dec, y: decinc.inc});
     else posneg.neg.push({x: decinc.dec, y: Math.abs(decinc.inc)});
 
     tmp_small_circ.push({x: decinc.dec, y: Math.abs(decinc.inc)});
   }
+
+  if (!split) return tmp_small_circ;
   // Делим массив с отриц. числами на два и затем "сортируем"
   // sorting
   posneg.neg.sort((a, b) => {
@@ -215,8 +232,7 @@ function getSmallCircle(dec_mean, inc_mean, radius, split) {
     posneg.neg = neg1.concat(neg2);
   }
   // output
-  if (split) return posneg;
-  return tmp_small_circ;
+  return posneg;
 
 }
 
@@ -257,7 +273,7 @@ function getGCPath(data, split) {
 
     var start = turf.point([start_dec, start_inc - 0.001]);
     var end = turf.point([end_dec, end_inc]);
-    var bc_path_tmp = turf.greatCircle(start, end);
+    var bc_path_tmp = turf.greatCircle(start, end, options={npoints: 150});
     bc_path_tmp = bc_path_tmp.geometry.coordinates;
     var posneg_tmp = {pos: [], neg: []};
 
@@ -491,9 +507,18 @@ function switchCoordinateReference(fromRadio, system, type) {
      "tectonic"
    );
 
-  if ((type == 'stat') && !getSelectedFile('collection').interpretations[0].Dspec) {
-    document.getElementById('stat-specimen').getElementsByTagName('input')[0].disabled = true;
-    document.getElementById('stat-specimen').classList.add('no-hover');
+  if ((type == 'stat') && getSelectedFile('collection')) {
+    if (!getSelectedFile('collection').interpretations[0].Dspec) {
+      // document.getElementById('stat-specimen').getElementsByTagName('input')[0].disabled = true;
+      // document.getElementById('stat-specimen').classList.add('no-hover');
+      AVAILABLE_COORDINATES = new Array(
+        "geographic",
+        "tectonic"
+      );
+    }
+  }
+
+  if (type == 'poles') {
     AVAILABLE_COORDINATES = new Array(
       "geographic",
       "tectonic"
@@ -508,7 +533,6 @@ function switchCoordinateReference(fromRadio, system, type) {
     }
   }
   else COORDINATES_COUNTER[type]++;
-
   COORDINATES_COUNTER[type] %= AVAILABLE_COORDINATES.length;
   COORDINATES[type] = AVAILABLE_COORDINATES[COORDINATES_COUNTER[type]];
 
@@ -573,62 +597,62 @@ function switchProjection(fromRadio, projection) {
 
 }
 
-function switchDirectionsMode(fromRadio, mode, type) {
-
-  var AVAILABLE_MODES = new Array(
-    "normal",
-    "reversed",
-  );
-
-  document.getElementById(type + '-' + DIRECTION_MODE).classList.remove('active', 'focus');//.style.background = '#B0C4DE';
-  // Increment the counter
-  if (fromRadio) {
-    for (let i = 0; i < AVAILABLE_MODES.length ; i++) {
-      if (mode == AVAILABLE_MODES[i]) MODES_COUNTER = i;
-    }
-  }
-  else MODES_COUNTER++;
-
-  MODES_COUNTER %= AVAILABLE_MODES.length;
-  DIRECTION_MODE = AVAILABLE_MODES[MODES_COUNTER];
-
-  if (DIRECTION_MODE == 'reversed') document.getElementById('reverse-selector').disabled = false;
-  else document.getElementById('reverse-selector').disabled = true;
-  document.getElementById(type + '-' + DIRECTION_MODE).classList.add('active');//.style.background = '#4682B4';
-  localStorage.setItem("dirMode", DIRECTION_MODE);
-  ipcRenderer.send('redraw-meansDataWin');
-  ipcRenderer.send('redraw-collDataWin');
-
-  redrawCharts();
-
-  localStorage.setItem("direction", JSON.stringify({data: DIRECTION_MODE, counter: MODES_COUNTER}));
-
-}
+// function switchDirectionsMode(fromRadio, mode, type) {
+//
+//   var AVAILABLE_MODES = new Array(
+//     "normal",
+//     "reversed",
+//   );
+//
+//   document.getElementById(type + '-' + DIRECTION_MODE).classList.remove('active', 'focus');//.style.background = '#B0C4DE';
+//   // Increment the counter
+//   if (fromRadio) {
+//     for (let i = 0; i < AVAILABLE_MODES.length ; i++) {
+//       if (mode == AVAILABLE_MODES[i]) MODES_COUNTER = i;
+//     }
+//   }
+//   else MODES_COUNTER++;
+//
+//   MODES_COUNTER %= AVAILABLE_MODES.length;
+//   DIRECTION_MODE = AVAILABLE_MODES[MODES_COUNTER];
+//
+//   if (DIRECTION_MODE == 'reversed') document.getElementById('reverse-selector').disabled = false;
+//   else document.getElementById('reverse-selector').disabled = true;
+//   document.getElementById(type + '-' + DIRECTION_MODE).classList.add('active');//.style.background = '#4682B4';
+//   localStorage.setItem("dirMode", DIRECTION_MODE);
+//   ipcRenderer.send('redraw-meansDataWin');
+//   ipcRenderer.send('redraw-collDataWin');
+//
+//   redrawCharts();
+//
+//   localStorage.setItem("direction", JSON.stringify({data: DIRECTION_MODE, counter: MODES_COUNTER}));
+//
+// }
 
 function switchToCenter(fromRadio, mode, type) {
 
   var AVAILABLE_MODES = new Array(
-    "standard",
-    "centered",
+    "directions",
+    "vgp",
   );
 
-  document.getElementById(type + '-' + CENTERED_MODE).classList.remove('active', 'focus');//.style.background = '#B0C4DE';
+  document.getElementById(type + '-' + DATA_MODE).classList.remove('active', 'focus');//.style.background = '#B0C4DE';
   // Increment the counter
   if (fromRadio) {
-    for (let i = 0; i < CENTERED_MODE.length; i++) {
-      if (mode == AVAILABLE_MODES[i]) CENTERED_COUNTER = i;
+    for (let i = 0; i < DATA_MODE.length; i++) {
+      if (mode == AVAILABLE_MODES[i]) DATA_MODES_COUNTER = i;
     }
   }
-  else CENTERED_COUNTER++;
+  else DATA_MODES_COUNTER++;
 
-  CENTERED_COUNTER %= AVAILABLE_MODES.length;
-  CENTERED_MODE = AVAILABLE_MODES[CENTERED_COUNTER];
+  DATA_MODES_COUNTER %= AVAILABLE_MODES.length;
+  DATA_MODE = AVAILABLE_MODES[DATA_MODES_COUNTER];
 
-  document.getElementById(type + '-' + CENTERED_MODE).classList.add('active');//.style.background = '#4682B4';
+  document.getElementById(type + '-' + DATA_MODE).classList.add('active');//.style.background = '#4682B4';
 
   redrawCharts();
 
-  localStorage.setItem("centered", JSON.stringify({data: CENTERED_MODE, counter: CENTERED_COUNTER}));
+  localStorage.setItem("dataMode", JSON.stringify({data: DATA_MODE, counter: DATA_MODES_COUNTER}));
 
 }
 
@@ -827,8 +851,8 @@ function formatInterpretationSeries(intensity, interpretations) {
   if (interpretations.length > 0) {
     if (interpretations[interpretations.length - 1].type === "TAU3") return [];
   }
-  if (series.length > 4) {
-    return series.slice(series.length - 4);
+  if (series.length > 6) {
+    return series.slice(series.length - 6);
   }
   return series;
 
@@ -836,6 +860,7 @@ function formatInterpretationSeries(intensity, interpretations) {
 
 function formatInterpretationSeriesArea(interpretations) {
 
+  var time = performance.now();
   /*
    * Function formatInterpretationSeriesArea
    * Description
@@ -876,6 +901,7 @@ function formatInterpretationSeriesArea(interpretations) {
             x: direction.dec,
             y: Math.abs(direction.inc), // projectInclination(direction.inc),
             inc: direction.inc,
+            mad: interpretation.MAD,
           }]
         },
         {
@@ -983,6 +1009,7 @@ function formatInterpretationSeriesArea(interpretations) {
           x: direction.dec,
           y: Math.abs(direction.inc), // projectInclination(direction.inc),
           inc: direction.inc,
+          mad: interpretation.MAD,
         }]
       },
       {
@@ -1051,10 +1078,12 @@ function formatInterpretationSeriesArea(interpretations) {
   // Cut previous interpretations
   var sliceCoef = series.length;
   if (interpretations.length > 1) {
-    if (interpretations[interpretations.length - 1].type === "TAU3") sliceCoef = 6;
-    else sliceCoef = 4;
+    if (interpretations[interpretations.length - 1].type === "TAU3") sliceCoef = 7;
+    else sliceCoef = 5;
   }
 
+  time = performance.now() - time;
+  console.log('Время выполнения (format interpretations) = ', time);
   if (series.length > sliceCoef) {
     return series.slice(series.length - sliceCoef);
   }
@@ -1102,51 +1131,71 @@ function formatInterpretationSeriesIntensity(interpretations) {
     }
   });
 
-  if (series.length > 1) {
-    return series.slice(series.length-1);
+  if (series.length > 2) {
+    return series.slice(series.length - 2);
   }
+
   return series;
 
 }
 
-function formatMeansSeries(means, type) {
+function formatMeansSeries(mean, type) {
 
-  var series = [];
-  // means.forEach(function(mSeries, i) {
-  //   series = mSeries[COORDINATES[type]];
-  //   if (DIRECTION_MODE == 'reversed') series = series.reversed;
-  //   else series = series.normal;
+  var series;
+
+  if (!mean) return [];
+
+  var meanDIR = JSON.parse(JSON.stringify(mean[COORDINATES[type]]));
+
+  if (TO_CENTER) {
+    meanDIR.dec = 0;
+    meanDIR.inc = 90;
+  }
+
+  var evidEllipse = getSmallCircle(meanDIR.dec, meanDIR.inc, meanDIR.a95, settings.global.dashedLines);
+  if (mean.code == 'Fisher' || mean.code == 'FisherS' || mean.code == 'FisherP'
+   || mean.code == 'McFadden' || mean.code == 'McFaddenS' || mean.code == 'McFaddenP') {
+    series = makeFisherSeries(meanDIR, evidEllipse, settings.global.dashedLines);
+  }
+  else if ((mean.code == 'GC') || (mean.code == 'GCn')
+        || (mean.code == 'GCS') || (mean.code == 'GCP')
+        || (mean.code == 'GCnS') || (mean.code == 'GCnP')) {
+    series = makeGCSeries(meanDIR, evidEllipse, settings.global.dashedLines)
+  }
+
+  // var series = [];
+  //
+  // means.forEach((mean, i) => {
+  //   var meanDIR = JSON.parse(JSON.stringify(mean[COORDINATES.stat]));
+  //
+  //   if (TO_CENTER) {
+  //     meanDIR.dec = 0;
+  //     meanDIR.inc = 90;
+  //   }
+  //
+  //   var evidEllipse = getSmallCircle(meanDIR.dec, meanDIR.inc, meanDIR.a95, settings.global.dashedLines);
+  //   if (mean.code == 'Fisher' || mean.code == 'FisherS' || mean.code == 'FisherP') {
+  //     var mSeries = makeFisherSeries(meanDIR, evidEllipse, settings.global.dashedLines);
+  //   }
+  //   else if ((mean.code == 'GC') || (mean.code == 'GCn')) {
+  //     var mSeries = makeGCSeries(meanDIR, evidEllipse, settings.global.dashedLines)
+  //   }
+  //   mSeries.forEach((s, i) => {
+  //     series.push(s);
+  //   });
   // });
 
-  means.forEach((mean, i) => {
-    var meanDIR = mean[COORDINATES.stat][DIRECTION_MODE];
-    var evidEllipse = getSmallCircle(meanDIR.dec, meanDIR.inc, meanDIR.a95, settings.global.dashedLines);
-    if (mean.code == 'Fisher') {
-      var mSeries = makeFisherSeries(meanDIR, evidEllipse, settings.global.dashedLines);
-    }
-    else if ((mean.code == 'GC') || (mean.code == 'GCn')) {
-      console.log(meanDIR);
-      var mSeries = makeGCSeries(meanDIR, evidEllipse, settings.global.dashedLines)
-    }
-    mSeries.forEach((s, i) => {
-      series.push(s);
-    });
-  });
-  console.log(series);
-
   // Cut previous interpretations
-  var sliceCoef = series.length;
-  if (means.length > 1) {
-    var lastCode = means[means.length - 1].code;
-    if ((lastCode === "GC") || (lastCode === "GCn")) sliceCoef = 4;
-    else sliceCoef = 2;
-  }
-  if (settings.global.dashedLines) sliceCoef += 1;
-  if (series.length > sliceCoef) {
-    console.log(series.slice(series.length - sliceCoef));
-    return series.slice(series.length - sliceCoef);
-  }
-  console.log(series);
+  // var sliceCoef = series.length;
+  // if (means.length > 1) {
+  //   var lastCode = means[means.length - 1].code;
+  //   if ((lastCode === "GC") || (lastCode === "GCn")) sliceCoef = 4;
+  //   else sliceCoef = 2;
+  // }
+  // if (settings.global.dashedLines) sliceCoef += 1;
+  // if (series.length > sliceCoef) {
+  //   return series.slice(series.length - sliceCoef);
+  // }
   return series;
 
 }
@@ -1405,12 +1454,12 @@ function PCA(data, origin, anchor) {
 
 function makeDataLabel(point) {
   var dataLabel;
-  pointStep = (point.step === 'NRM') ? point.step : point.step.match(/\d/g).join("");
-  if (settings.pca.numberMode & settings.pca.stepMode) {
+  pointStep = (point.step.includes('NRM')) ? point.step : point.step.match(/\d/g).join("");
+  if (settings.pca.pcaNumberMode & settings.pca.pcaStepMode) {
     dataLabel = (point.stepIndex + 1) + ": " + pointStep;
   }
-  else if (settings.pca.numberMode) dataLabel = (point.stepIndex + 1);
-  else if (settings.pca.stepMode) dataLabel = pointStep;
+  else if (settings.pca.pcaNumberMode) dataLabel = (point.stepIndex + 1);
+  else if (settings.pca.pcaStepMode) dataLabel = pointStep;
   else dataLabel = '';
 
   return dataLabel;
@@ -1419,14 +1468,28 @@ function makeDataLabel(point) {
 function makeDataLabelStat(point) {
 
   var dataLabel;
-  if (settings.stat.numberMode & settings.stat.stepMode) {
+  if (settings.stat.statNumberMode & settings.stat.statStepMode) {
     dataLabel = (point.dotIndex + 1) + ": " + point.id;
   }
-  else if (settings.stat.numberMode) dataLabel = (point.dotIndex + 1);
-  else if (settings.stat.stepMode) dataLabel = point.id;
+  else if (settings.stat.statNumberMode) dataLabel = (point.dotIndex + 1);
+  else if (settings.stat.statStepMode) dataLabel = point.id;
   else dataLabel = '';
 
   return dataLabel;
+}
+
+function makeDataLabelPoles(point) {
+
+  var dataLabel;
+  if (settings.poles.polesNumberMode & settings.poles.polesStepMode) {
+    dataLabel = (point.dotIndex + 1) + ": " + point.id;
+  }
+  else if (settings.poles.polesNumberMode) dataLabel = (point.dotIndex + 1);
+  else if (settings.poles.polesStepMode) dataLabel = point.id;
+  else dataLabel = '';
+
+  return dataLabel;
+
 }
 
 function flipPlane(inclination, ellipse) {
@@ -1447,7 +1510,7 @@ function flipPlane(inclination, ellipse) {
       (pointSign < 0 ? negative : positive).push(null);
     }
 
-    (point.inc < 0 ? positive : negative).push(point);
+    ((point.inc < 0) ? positive : negative).push(point);
 
     // Sign for next iteration
     sign = pointSign;

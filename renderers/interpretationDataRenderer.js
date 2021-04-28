@@ -31,6 +31,14 @@ ipcRenderer.on('redraw-table', (event) => {
   updateInterpretationTable();
 })
 
+ipcRenderer.on('export-interpretation-xlsx', (event) => {
+  downloadInterpretationsXLSX();
+})
+
+ipcRenderer.on('export-interpretation-csv', (event) => {
+  downloadInterpretationsCSV();
+})
+
 // Inner scripts
 
 // CSV delimiters
@@ -84,11 +92,17 @@ function updateInterpretationTable() {
 
   var saveBtns = new Array(
     "<div class='btn-group btn-block btn-group-sm btn-group-justified d-flex mx-auto'>",
+    "  <button onclick='ipcRenderer.send(" + '"' + 'open-magic-export' + '"' + ")' type='button' title='Save interpretations data as MagIC' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    Export as MagIC <i class='fal fa-file-txt'></i>",
+    "  </button>",
     "  <button onclick='downloadInterpretationsCSV()' type='button' title='Save interpretations data as .csv' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
-    "    <i class='fal fa-file-csv'></i>",
+    "    Export as .csv <i class='fal fa-file-csv'></i>",
     "  </button>",
     "  <button onclick='downloadInterpretationsXLSX()' type='button' title='Save interpretations data as .xlsx' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
-    "    <i class='fal fa-file-excel'></i>",
+    "    Export as .xlsx <i class='fal fa-file-excel'></i>",
+    "  </button>",
+    "  <button onclick='downloadInterpretationsCSV(" + '"true"' + ")' type='button' title='' class='btn btn-secondary btn btn-block' style='margin: 0; padding: 0; border: 0;'>",
+    "    Open in Directional Statistics <i class='fas fa-arrow-square-right'></i>",
     "  </button>",
     "</div>"
   ).join("\n");
@@ -98,18 +112,16 @@ function updateInterpretationTable() {
     "  <thead class='thead-light'>",
     "    <tr>",
     "    <th><span title='Delete all interpretations'><button onclick='deleteAllInterpretations()' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-trash-alt'></i></button></span></th>",
-    "      <th>ID</th>",
-    "      <th>Dspec</th>",
-    "      <th>Ispec</th>",
-    "      <th>Dgeo</th>",
-    "      <th>Igeo</th>",
-    "      <th>Dstrat</th>",
-    "      <th>Istrat</th>",
-    "      <th>MAD</th>",
-    "      <th>Code</th>",
-    "      <th>Steps</th>",
-    "      <th>N</th>",
-    "      <th>Comment</th>",
+    "      <th class='pb-0'>ID" + putCopyColBtn(".id") + "</th>",
+    "      <th class='pb-0'>Code" + putCopyColBtn(".code") + "</th>",
+    "      <th class='pb-0'>StepRange" + putCopyColBtn(".steprange") + "</th>",
+    "      <th class='pb-0'>N" + putCopyColBtn(".n") + "</th>",
+    "      <th class='pb-0'>Dgeo" + putCopyColBtn(".dgeo") + "</th>",
+    "      <th class='pb-0'>Igeo" + putCopyColBtn(".igeo") + "</th>",
+    "      <th class='pb-0'>Dstrat" + putCopyColBtn(".dstrat") + "</th>",
+    "      <th class='pb-0'>Istrat" + putCopyColBtn(".istrat") + "</th>",
+    "      <th class='pb-0'>MAD" + putCopyColBtn(".mad") + "</th>",
+    "      <th class='pb-0'>Comment" + putCopyColBtn(".comment") + "</th>",
     "    </tr>",
     "  </thead>",
   ).join("\n");
@@ -139,23 +151,18 @@ function updateInterpretationTable() {
 
       // Full code of interpretation
 
-      var code = "dirPCA";
+      var code = interpretation.code;
 
       // Mad angle (if forced this is unreliable)
-      var mad = interpretation.MAD.toFixed(2);
-      if(interpretation.anchored) {
-        mad = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + mad + "</span>";
-        code = "dir0PCA";
-      }
+      var mad = interpretation.MAD.toFixed(1);
+      if (interpretation.anchored) mad = "<span class='text-primary' title='The MAD for anchored components is unreliable'>" + mad + "</span>";
 
       //code += tauToMark(interpretation.type);
       //code = "<span title='dirPCA'>" + code + "</span>";
 
       // Intensity (also unreliable when forced)
-      var intensity = interpretation.intensity.toFixed(2);
-      if(interpretation.anchored) {
-        intensity = "<span class='text-primary' title='The intensity for anchored components is unreliable'>" + intensity + "</span>";
-      }
+      var intensity = interpretation.intensity.toFixed(1);
+      if (interpretation.anchored) intensity = "<span class='text-primary' title='The intensity for anchored components is unreliable'>" + intensity + "</span>";
       // Number of steps
       var N = interpretation.steps.length;
 
@@ -163,18 +170,16 @@ function updateInterpretationTable() {
       [
         "  </tr>",
         "    <td><span title='Delete interpretation'><button onclick='deleteAllInterpretations(" + i + ',' + j + ")' class='btn btn-sm btn-link' style='padding: 0;'><i class='far fa-minus-square'></i></button></span></td>",
-        "    <td>" + specimen.name + "</td>",
-        "    <td>" + directionSpec.dec.toFixed(2) + "</td>",
-        "    <td>" + directionSpec.inc.toFixed(2) + "</td>",
-        "    <td>" + directionGeo.dec.toFixed(2) + "</td>",
-        "    <td>" + directionGeo.inc.toFixed(2) + "</td>",
-        "    <td>" + directionTect.dec.toFixed(2) + "</td>",
-        "    <td>" + directionTect.inc.toFixed(2) + "</td>",
-        "    <td>" + mad + "</td>",
-        "    <td>" + code + "</td>",
-        "    <td>" + interpretation.steps[0].step + '-' + interpretation.steps[N-1].step + "</td>",
-        "    <td>" + N + "</td>",
-        "    <td class='' contenteditable='true' style='cursor: pointer;' title='" + comment + "'>" + ((comment.length < COMMENT_LENGTH) ? comment : comment.slice(0, COMMENT_LENGTH) + "…") + "</td>",
+        "    <td class='id'>" + specimen.name + "</td>",
+        "    <td class='code'>" + code + "</td>",
+        "    <td class='steprange'>" + interpretation.steps[0].step + '-' + interpretation.steps[N-1].step + "</td>",
+        "    <td class='n'>" + N + "</td>",
+        "    <td class='dgeo'>" + directionGeo.dec.toFixed(1) + "</td>",
+        "    <td class='igeo'>" + directionGeo.inc.toFixed(1) + "</td>",
+        "    <td class='dstrat'>" + directionTect.dec.toFixed(1) + "</td>",
+        "    <td class='istrat'>" + directionTect.inc.toFixed(1) + "</td>",
+        "    <td class='mad'>" + mad + "</td>",
+        "    <td class='comment' contenteditable='true' style='cursor: pointer;' title='" + comment + "'>" + ((comment.length < COMMENT_LENGTH) ? comment : comment.slice(0, COMMENT_LENGTH) + "…") + "</td>",
         "  </tr>"
       ].join("\n"));
     });
@@ -211,17 +216,6 @@ function deleteAllInterpretations(specimenIndex, interpretationIndex) {
      specimens[specimenIndex].interpretations.splice(interpretationIndex, 1);
      selectedSpecimen = specimens[specimenIndex];
    }
-
-
-   //var specimen = selectedSpecimen; // getSelectedSpecimen();
-
-
-  // Reset
-  // if(index === undefined) {
-  //   specimen.interpretations = new Array();
-  // } else {
-  //   specimen.interpretations.splice(index, 1);
-  // }
 
   //redrawCharts();
   saveLocalStorage(specimens, selectedSpecimen);
@@ -293,7 +287,7 @@ function saveLocalStorage(specimens, selectedSpecimen) {
 }
 
 // Downloads all interpreted components to a CSV (export data)
-function downloadInterpretationsCSV() {
+function downloadInterpretationsCSV(andOpen) {
 
   /*
   * Function downloadInterpretationsCSV
@@ -304,11 +298,17 @@ function downloadInterpretationsCSV() {
 
   const FILENAME = "Interpretations";
 
-  const CSV_HEADER = new Array(
-    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
-  );
+  const CSV_UPHEADER = new Array(
+    "from:", "PCA", "PMTools beta v" + getVersion(),
+  ).join(ITEM_DELIMITER);
 
-  var rows = new Array(CSV_HEADER.join(","));
+  var rows = new Array(CSV_UPHEADER);
+
+  const CSV_HEADER = new Array(
+    "ID", "Code", "StepRange", "N", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+  ).join(ITEM_DELIMITER);
+
+  rows.push(CSV_HEADER);
 
   // Create CSV rows
   specimens.forEach(function(specimen) {
@@ -323,8 +323,7 @@ function downloadInterpretationsCSV() {
       var directionGeo = literalToCoordinates(componentGeo.coordinates).toVector(Direction);
       var directionTect = literalToCoordinates(componentTect.coordinates).toVector(Direction);
 
-      var code = "dirPCA";
-      if(interpretation.anchored) code = "dir0PCA";
+      var code = interpretation.code;
 
       var N = interpretation.steps.length;
 
@@ -335,13 +334,13 @@ function downloadInterpretationsCSV() {
         code,
         interpretation.steps[0].step + '-' + interpretation.steps[N-1].step,
         N,
-        directionSpec.dec.toFixed(2),
-        directionSpec.inc.toFixed(2),
-        directionGeo.dec.toFixed(2),
-        directionGeo.inc.toFixed(2),
-        directionTect.dec.toFixed(2),
-        directionTect.inc.toFixed(2),
-        interpretation.MAD.toFixed(2),
+        // directionSpec.dec.toFixed(1),
+        // directionSpec.inc.toFixed(1),
+        directionGeo.dec.toFixed(1),
+        directionGeo.inc.toFixed(1),
+        directionTect.dec.toFixed(1),
+        directionTect.inc.toFixed(1),
+        interpretation.MAD.toFixed(1),
         interpretation.comment,
         // interpretation.created
       ).join(ITEM_DELIMITER));
@@ -351,7 +350,7 @@ function downloadInterpretationsCSV() {
 
   outputInterpretations = rows.join(LINE_DELIMITER);
 
-  saveFile("Save interpretations data", FILENAME, outputInterpretations);
+  saveFile("Save interpretations data", FILENAME, outputInterpretations, 'csv', andOpen);
 
   // Old way to save
   //downloadAsCSV(FILENAME, rows.join(LINE_DELIMITER));
@@ -364,13 +363,19 @@ function downloadInterpretationsXLSX() {
 
   const FILENAME = "Interpretations";
 
-  const XLSX_HEADER = new Array(
-    "ID", "Code", "StepRange", "N", "Dspec", "Ispec", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+  const XLSX_UPHEADER = new Array(
+    "from:", "PCA", "PMTools beta v" + getVersion(),
   );
 
-  var rows = [XLSX_HEADER];
+  const XLSX_HEADER = new Array(
+    "ID", "Code", "StepRange", "N", "Dgeo", "Igeo", "Dstrat", "Istrat", "MAD", "Comment",// "Date",
+  );
 
-  // Create CSV rows
+  var rows = [XLSX_UPHEADER];
+
+  rows.push(XLSX_HEADER);
+
+  // Create XLSX rows
   specimens.forEach(function(specimen) {
     specimen.interpretations.forEach(function(interpretation) {
 
@@ -383,8 +388,7 @@ function downloadInterpretationsXLSX() {
       var directionGeo = literalToCoordinates(componentGeo.coordinates).toVector(Direction);
       var directionTect = literalToCoordinates(componentTect.coordinates).toVector(Direction);
 
-      var code = "dirPCA";
-      if(interpretation.anchored) code = "dir0PCA";
+      var code = interpretation.code;
 
       var N = interpretation.steps.length;
 
@@ -395,13 +399,11 @@ function downloadInterpretationsXLSX() {
         code,
         interpretation.steps[0].step + '-' + interpretation.steps[N-1].step,
         N,
-        directionSpec.dec.toFixed(2),
-        directionSpec.inc.toFixed(2),
-        directionGeo.dec.toFixed(2),
-        directionGeo.inc.toFixed(2),
-        directionTect.dec.toFixed(2),
-        directionTect.inc.toFixed(2),
-        interpretation.MAD.toFixed(2),
+        directionGeo.dec.toFixed(1),
+        directionGeo.inc.toFixed(1),
+        directionTect.dec.toFixed(1),
+        directionTect.inc.toFixed(1),
+        interpretation.MAD.toFixed(1),
         interpretation.comment,
       ]);
 

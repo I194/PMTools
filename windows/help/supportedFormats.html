@@ -47,67 +47,60 @@
               <a class="nav-link" id="dir-tab" data-toggle="pill" role="tab" aria-selected="false" href="#dir" aria-controls="dir">.DIR</a>
               <a class="nav-link" id="csv-tab" data-toggle="pill" role="tab" aria-selected="false" href="#csv" aria-controls="csv">.CSV</a>
             </div> -->
-              <ul class="navbar-nav mr-auto sidenav" id="navAccordion">
+              <ul class="nav nav-pills flex-column">
                 <li class="nav-item active">
-                  <a
-                    class="nav-link nav-link-collapse"
-                    href="#"
-                    id="hasSubItems"
-                    data-toggle="collapse"
-                    data-target="#collapseSubItemsPCA"
-                    aria-controls="collapseSubItemsPCA"
-                    aria-expanded="false"
-                  >Interpretations</a>
-                  <ul class="nav-second-level collapse" id="collapseSubItemsPCA" data-parent="#navAccordion">
-                    <li class="nav-item">
-                      <a class="nav-link" href="#pmd" id="pmd-tab" data-toggle="pill" role="tab" aria-selected="true" aria-controls="pmd">
-                        <span class="nav-link-text">
+                  <a class="nav-link collapsed" href="#subItemsPCA" data-toggle="collapse" data-target="#subItemsPCA">Interpretations</a>
+                  <div class="collapse" id="subItemsPCA">
+                    <ul class="flex-column nav">
+                      <li class="nav-item">
+                        <a class="nav-link" href="#pmd" id="pmd-tab" role="tab" data-toggle="pill" aria-controls="pmd">
                           .PMD
-                        </span>
-                      </a>
-                    </li>
-                    <li class="nav-item">
-                      <a class="nav-link" href="#rmg" id="rmg-tab" data-toggle="pill" role="tab" aria-selected="false" aria-controls="rmg">
-                        <span class="nav-link-text">
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" href="#rs3" id="rs3-tab" role="tab" data-toggle="pill" aria-controls="rs3">
+                          .RS3
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" href="#magic" id="magic-tab" role="tab" data-toggle="pill" aria-controls="magic">
+                          MagIC
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" href="#rmg" id="rmg-tab" role="tab" data-toggle="pill" aria-controls="rmg">
                           .RMG
-                        </span>
-                      </a>
-                    </li>
-                  </ul>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
                 </li>
                 <li class="nav-item">
-                  <a
-                    class="nav-link nav-link-collapse"
-                    href="#"
-                    id="hasSubItems"
-                    data-toggle="collapse"
-                    data-target="#collapseSubItemsStat"
-                    aria-controls="collapseSubItemsStat"
-                    aria-expanded="false"
-                  >Statistics</a>
-                  <ul class="nav-second-level collapse" id="collapseSubItemsStat" data-parent="#navAccordion">
-                    <li class="nav-item">
-                      <a class="nav-link" href="#pmm" id="pmm-tab" data-toggle="pill" role="tab" aria-selected="false" aria-controls="pmm">
-                        <span class="nav-link-text">
+                  <a class="nav-link collapsed" href="#subItemsStat" data-toggle="collapse" data-target="#subItemsStat">Directional Statistics</a>
+                  <div class="collapse" id="subItemsStat">
+                    <ul class="flex-column nav">
+                      <li class="nav-item">
+                        <a class="nav-link" href="#pmm" id="pmm-tab" role="tab" data-toggle="pill" aria-controls="pmm">
                           .PMM
-                        </span>
-                      </a>
-                    </li>
-                    <li class="nav-item">
-                      <a class="nav-link" href="#dir" id="dir-tab" data-toggle="pill" role="tab" aria-selected="false" aria-controls="dir">
-                        <span class="nav-link-text">
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" href="#dir" id="dir-tab" role="tab" data-toggle="pill" aria-controls="dir">
                           .DIR
-                        </span>
-                      </a>
-                    </li>
-                    <li class="nav-item">
-                    <a class="nav-link" href="#csv" id="csv-tab" data-toggle="pill" role="tab" aria-selected="false" aria-controls="csv">
-                        <span class="nav-link-text">
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" href="#csv" id="csv-tab" role="tab" data-toggle="pill" aria-controls="csv">
                           .CSV
-                        </span>
-                      </a>
-                    </li>
-                  </ul>
+                        </a>
+                      </li>
+                      <li class="nav-item">
+                        <a class="nav-link" href="#xlsx" id="xlsx-tab" role="tab" data-toggle="pill" aria-controls="xlsx">
+                          .XLSX
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
                 </li>
               </ul>
           </div>
@@ -117,48 +110,82 @@
         <div class="card">
           <div class="card-body bg-light" style="height: 96vh; padding-left: 2vw; overflow-y: auto;">
             <div class="tab-content" id="v-pills-tabContent">
+              <!-- PMD -->
               <div class="tab-pane fade show active text-center" id="pmd" role="tabpanel" aria-labelledby="pmd-tab">
                 <h6 class="mt-2">Example of .pmd file</h6>
-                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-pmd">
-                  <!-- onclick="copyFile('Download .PMD example', '../../img/formats/pmd_example.png', 'pmd')" -->
-                  Download
+                <button type="button" name="openExBtn" class="btn btn-secondary mb-2" id="open-ex-pmd">
+                  <!-- onclick="copyFile('Open .PMD example', '../../img/formats/pmd_example.png', 'pmd')" -->
+                  Open
                 </button>
                 <div id="pmd-example"><img src="../../img/formats/pmd_example.png" class="img-fluid"></img></div>
                 Files of this type using in PCA (Interpretations) page.
               </div>
+              <!-- RS3 -->
+              <div class="tab-pane fade show text-center" id="rs3" role="tabpanel" aria-labelledby="rs3-tab">
+                <h6 class="mt-2">Example of .RS3 file</h6>
+                <button type="button" name="openExBtn" class="btn btn-secondary mb-2" id="open-ex-rs3">
+                  <!-- onclick="copyFile('Open .PMD example', '../../img/formats/pmd_example.png', 'pmd')" -->
+                  Open
+                </button>
+                <div id="pmd-example"><img src="../../img/formats/rs3_example.png" class="img-fluid"></img></div>
+                Files of this type using in PCA (Interpretations) page.
+              </div>
+              <!-- MagIC -->
+              <div class="tab-pane fade show text-center" id="magic" role="tabpanel" aria-labelledby="magic-tab">
+                <h6 class="mt-2">Example of MagIC file</h6>
+                <button type="button" name="openExBtn" class="btn btn-secondary mb-2" id="open-ex-magic">
+                  <!-- onclick="copyFile('Open .PMD example', '../../img/formats/pmd_example.png', 'pmd')" -->
+                  Open
+                </button>
+                <div id="pmd-example"><img src="../../img/formats/magic_example.png" class="img-fluid"></img></div>
+                Files of this type using in PCA (Interpretations) page.
+              </div>
+              <!-- RMG -->
               <div class="tab-pane fade text-center" id="rmg" role="tabpanel" aria-labelledby="rmg-tab">
                 <h6 class="mt-2">Example of .rmg* file</h6>
-                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-rmg">
-                  Download
+                <button type="button" name="openExBtn" class="btn btn-secondary mb-2" id="open-ex-rmg">
+                  Open
                 </button>
                 <div id="rmg-example"><img src="../../img/formats/rmg_example.png" class="img-fluid"></img></div>
                 Files of this type are used on the PCA (interpretation) page.
                 <br>
                 *True RMG files are not supported by PMTools v1.0, and their support will be added in future versions.
               </div>
+              <!-- PMM -->
               <div class="tab-pane fade text-center" id="pmm" role="tabpanel" aria-labelledby="pmm-tab">
                 <h6 class="mt-2">Example of .pmm file</h6>
-                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-pmm">
-                  Download
+                <button type="button" name="openExBtn" class="btn btn-secondary mb-2" id="open-ex-pmm">
+                  Open
                 </button>
                 <div id="pmm-example"><img src="../../img/formats/pmm_example.png" class="img-fluid"></img></div>
-                Files of this type using in Statistics page.
+                Files of this type using in Directional Statistics page.
               </div>
+              <!-- DIR -->
               <div class="tab-pane fade text-center" id="dir" role="tabpanel" aria-labelledby="dir-tab">
                 <h6 class="mt-2">Example of .dir file</h6>
-                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-dir">
-                  Download
+                <button type="button" name="openExBtn" class="btn btn-secondary mb-2" id="open-ex-dir">
+                  Open
                 </button>
                 <div id="dir-example"><img src="../../img/formats/dir_example.png" class="img-fluid"></img></div>
-                Files of this type using in Statistics page.
+                Files of this type using in Directional Statistics page.
               </div>
+              <!-- CSV -->
               <div class="tab-pane fade text-center" id="csv" role="tabpanel" aria-labelledby="csv-tab">
                 <h6 class="mt-2">Example of .csv file</h6>
-                <button type="button" name="downloadExBtn" class="btn btn-secondary mb-2" id="download-ex-csv">
-                  Download
+                <button type="button" name="openExBtn" class="btn btn-secondary mb-2" id="open-ex-csv">
+                  Open
                 </button>
                 <div id="csv-example"><img src="../../img/formats/csv_example.png" class="img-fluid"></img></div>
-                Files of this type using in Statistics page.
+                Files of this type using in Directional Statistics page.
+              </div>
+              <!-- XLSX -->
+              <div class="tab-pane fade text-center" id="xlsx" role="tabpanel" aria-labelledby="xlsx-tab">
+                <h6 class="mt-2">Example of .xlsx file</h6>
+                <button type="button" name="openExBtn" class="btn btn-secondary mb-2" id="open-ex-xlsx">
+                  Open
+                </button>
+                <div id="xlsx-example"><img src="../../img/formats/xlsx_example.png" class="img-fluid"></img></div>
+                Files of this type using in Directional Statistics page.
               </div>
             </div>
           </div>
