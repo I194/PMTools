@@ -76,7 +76,7 @@ The source code for PMTools is licensed under MIT that can be found under the LI
 ---
 ## Development history and current state
 
-PMTools was originally created as a simple program for component analysis, therefore it was originally written in python3 (as part of my 2019-2020 coursework). However, in February 2020 (1.5 months before the release of PMTools alpha)  v2.0.0 was released. I was extremely impressed with this site - I really liked the graphic component and the idea itself. However, my colleagues for a number of reasons did not satisfied by paleomagnetism.org v2.0.0., and therefore I decided to go further in the development of PMTools and create a new program for the analysis of paleomagnetic data.
+PMTools was originally created as a simple program for component analysis, therefore it was originally written in python3 (as part of my 2019-2020 coursework). However, in February 2020 (1.5 months before the release of PMTools alpha) [paleomagnetism.org](https://paleomagnetism.org/) v2.0.0 was released. I was extremely impressed with this site - I really liked the graphic component and the idea itself. However, my colleagues for a number of reasons did not satisfied by paleomagnetism.org v2.0.0., and therefore I decided to go further in the development of PMTools and create a new program for the analysis of paleomagnetic data.
 
 Impressed by [paleomagnetism.org](https://paleomagnetism.org/), I decided to create a JS version of PMTools using ```highcharts.js```. However, an important requirement from my colleagues was the autonomy of the program, so I used the ```electron.js``` framework and created a desktop application.
 
