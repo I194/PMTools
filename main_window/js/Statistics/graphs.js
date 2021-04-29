@@ -366,8 +366,9 @@ function statPlotStereoDiagram(hover) {
     },
 
     boost: {
-      useGPUTranslations: true,
-      usePreallocated: true,
+      enabled: false,
+      // useGPUTranslations: true,
+      // usePreallocated: true,
     },
 
     tooltip: {

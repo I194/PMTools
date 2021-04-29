@@ -16,10 +16,12 @@ function importFiles(modal, add) {
       { name: 'PMM/DIR', extensions: ['pmm', 'dir'] },
       { name: 'JRA', extensions : ['jra'] },
       { name: 'RS3', extensions : ['rs3'] },
-      // { name: 'MagIC', extensions: ['txt']},
+      { name: 'MagIC', extensions: ['txt']},
+      { name: 'CIT', extensions: ['sam']},
+      // { name: 'SIO', extensions: ['dat']},
       // { name: 'JR5', extensions: ['JR5'] },
-      // { name: 'JR6', extensions: ['JR6'] },
-      { name: 'rmg non-format file', extensions: ['*'] },
+      { name: 'JR6', extensions: ['jr6'] },
+      { name: 'RMG extensionless file', extensions: ['*'] },
       { name: 'Custom', extensions: ['csv'] },
     ],
     defaultPath: lastOpenPath,
@@ -213,9 +215,8 @@ function addDegmagnetizationFiles(format, files) {
   var combineData;
 
   files.forEach((file, i) => {
-    if (format[i] == "PMD" || format[i] == "pmd") {
-      format[i] = "PALEOMAC";
-    }
+    if (format[i] == "PMD" || format[i] == "pmd") format[i] = "PALEOMAC";
+    if (format[i] == "SAM" || format[i] == "sam") format[i] = 'CALTECH';
     switch(format[i]) {
       case "dir":
       case "DIR":

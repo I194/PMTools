@@ -6,7 +6,7 @@
   "author": "i194",
   "license": "MIT",
   "scripts": {
-    "start": "npm run npm-run-all -p ng:serve electron:serve",
+    "start": "electron .",
     "dist": "electron-builder",
     "build:win32": "electron-builder --win",
     "build:darwin": "electron-builder --mac",

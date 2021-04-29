@@ -416,8 +416,9 @@ function polesPlotStereoDiagrams(hover) {
     },
 
     boost: {
-      useGPUTranslations: true,
-      usePreallocated: true,
+      enabled: false,
+      // useGPUTranslations: true,
+      // usePreallocated: true,
     },
 
     tooltip: {
@@ -633,8 +634,9 @@ function polesPlotStereoDiagrams(hover) {
     },
 
     boost: {
-      useGPUTranslations: true,
-      usePreallocated: true,
+      enabled: false,
+      // useGPUTranslations: true,
+      // usePreallocated: true,
     },
 
     tooltip: {
