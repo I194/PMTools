@@ -746,23 +746,23 @@ function createWindow() {
 
   // Initialize developer tools
   //
-  win.webContents.openDevTools();
-  openFilesWin.webContents.openDevTools();
-  formatsWin.webContents.openDevTools();
-  vgpDataWin.webContents.openDevTools();
-  settingsWin.webContents.openDevTools();
-  specDataWin.webContents.openDevTools();
-  collDataWin.webContents.openDevTools();
-  interpretDataWin.webContents.openDevTools();
-  meansDataWin.webContents.openDevTools();
-  shortcutsWin.webContents.openDevTools();
-  fileManagerWin.webContents.openDevTools();
-  polesMeansWin.webContents.openDevTools();
-  foldtestWin.webContents.openDevTools();
-  revtestWin.webContents.openDevTools();
-  commonMeanTestWin.webContents.openDevTools();
-  congtestWin.webContents.openDevTools();
-  magicExportWin.webContents.openDevTools();
+  // win.webContents.openDevTools();
+  // openFilesWin.webContents.openDevTools();
+  // formatsWin.webContents.openDevTools();
+  // vgpDataWin.webContents.openDevTools();
+  // settingsWin.webContents.openDevTools();
+  // specDataWin.webContents.openDevTools();
+  // collDataWin.webContents.openDevTools();
+  // interpretDataWin.webContents.openDevTools();
+  // meansDataWin.webContents.openDevTools();
+  // shortcutsWin.webContents.openDevTools();
+  // fileManagerWin.webContents.openDevTools();
+  // polesMeansWin.webContents.openDevTools();
+  // foldtestWin.webContents.openDevTools();
+  // revtestWin.webContents.openDevTools();
+  // commonMeanTestWin.webContents.openDevTools();
+  // congtestWin.webContents.openDevTools();
+  // magicExportWin.webContents.openDevTools();
   // Close main window = close main process and then very program
 
   win.on('close', () => {
