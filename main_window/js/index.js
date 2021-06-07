@@ -84,6 +84,73 @@ function addNotCollapsedStyle(clickedBtnId) {
 
 }
 
+function chartsContainersSelection(id) {
+  window.addEventListener('click', function(e){
+    if (document.getElementById(id).contains(e.target)){
+      document.getElementById(id).classList.add('selected');
+    } else {
+      document.getElementById(id).classList.remove('selected');
+    }
+  });
+}
+
+function copySelectedChart() {
+  chartContainersIDList.forEach((id, i) => {
+    if (document.getElementById(id).classList.contains("selected")) {
+      Highcharts.exportCharts(
+        [getChartByID(id)],
+        {
+          filename: "chart",
+          extnsn: 'pdf',
+        },
+        'copy',
+        // we can't use full svg code because it's contains not only chart
+        // and so we must use highcharts processing like chart.getSVG()
+        // even if it a little slower that custom processing
+        // document.getElementById(id).children[3].children[0],
+      );
+    }
+  });
+
+}
+
+function getChartByID(id) {
+
+  var classes = Array.from(document.getElementById(id).children[3].classList);
+  var selChartType = undefined;
+
+  classes.forEach((elem, i) => {
+    var elemParts = elem.split('-');
+    if (elemParts.length == 2) {
+      if (elemParts[1] === 'plot') selChartType = elemParts[0];
+    }
+  });
+
+  var selChart = undefined;
+  switch (selChartType) {
+    case 'zijd':
+      selChart = zijdPCA;//plotZijderveldDiagram();
+      break;
+    case 'stereo':
+      selChart = stereoPCA;//plotStereoDiagram();
+      break;
+    case 'intensity':
+      selChart = intensPCA;//plotIntensityDiagram();
+      break;
+    case 'stat':
+      selChart = stereoStat;//statPlotStereoDiagram();
+      break;
+    case 'sites':
+      selChart = stereoPoles.sites;//polesPlotStereoDiagrams().sites;
+      break;
+    case 'vgps':
+      selChart = stereoPoles.vgps;//polesPlotStereoDiagrams().vgps;
+      break;
+  }
+  // console.log(selChartType, selChart);
+  return selChart;
+}
+
 function registerEventHandlers() {
 
   // Simple listeners
@@ -97,15 +164,9 @@ function registerEventHandlers() {
   document.getElementById("sitesSet-select").addEventListener("change", (e) => resetFileHandler('sitesSet'));
   // document.getElementById("add-files").addEventListener('click', (e) => importFiles(false, true));
 
-  // poles containers context menu
-  document.getElementById("poles-container-left").addEventListener('click', (e) => {
-    document.getElementById("poles-container-left").classList.add('selected');
-    document.getElementById("poles-container-right").classList.remove('selected');
-  })
-  document.getElementById("poles-container-right").addEventListener('click', (e) => {
-    document.getElementById("poles-container-right").classList.add('selected');
-    document.getElementById("poles-container-left").classList.remove('selected');
-  })
+  chartContainersIDList.forEach((id, i) => {
+    chartsContainersSelection(id);
+  });
 
   // document.getElementById("site-lat").addEventListener("input", (e) => formatVGPTable());
   // document.getElementById("site-lon").addEventListener("input", (e) => formatVGPTable());
@@ -116,14 +177,19 @@ function registerEventHandlers() {
     ipcRenderer.send('reload-fileManager');
   })
 
+  var pageID = getSelectedPage();
+  var pageType = pageID.split('-')[1];
+
   // charts exporting
   document.getElementById('export-charts-pdf').addEventListener('click', (e) => {
     redrawCharts();
     Highcharts.exportCharts(
       chartsToExport,
       {
-        type: 'application/pdf',
+        filename: "charts_" + pageType,
+        extnsn: 'pdf',
       },
+      'save'
     );
   })
   document.getElementById('export-charts-jpeg').addEventListener('click', (e) => {
@@ -131,8 +197,10 @@ function registerEventHandlers() {
     Highcharts.exportCharts(
       chartsToExport,
       {
-        type: 'image/jpeg',
+        filename: "charts_" + pageType,
+        extnsn: 'jpg',
       },
+      'save'
     );
   })
 
@@ -219,7 +287,9 @@ function keyboardHandler(event) {
     "I_KEY": 73,
     "S_KEY": 83,
     "A_KEY": 65,
-    // "C_KEY": 67,
+    "C_KEY": 67,
+    "lCTRL_KEY": 162,
+    "rCTRL_KEY": 163,
     "X_KEY": 88,
     "Y_KEY": 89,
     "Z_KEY": 90,
@@ -399,6 +469,9 @@ function keyboardHandler(event) {
     case CODES.ARROW_DOWN:
     case CODES.NUM_ARROW_DOWN:
       return zoomContainer.pan(currPanPos.x, currPanPos.y - 10)
+    case CODES.C_KEY:
+      if (event.ctrlKey) return copySelectedChart();
+      else return;
     case CODES.S_KEY:
       if (event.ctrlKey) return saveProject();
       else return;
@@ -1449,6 +1522,10 @@ function redrawCharts(hover, context) {
 
   saveLocalStorage();
 
+  document.querySelectorAll('.highcharts-a11y-dummy-point').forEach(function(a) {
+    a.remove();
+  })
+
   time6 = performance.now() - time;
   console.log('Время выполнения (redraw charts (all)) = ', time6);
 }
@@ -1805,6 +1882,18 @@ const mainContainerStat = document.getElementById('stat-container-center');
 const leftContainerPoles = document.getElementById('poles-container-left');
 const rightContainerPoles = document.getElementById('poles-container-right');
 
+var chartContainersIDList = [
+  // pca containers selection
+  "container-left",
+  "container-right",
+  "container-center",
+  // stat container selection
+  "stat-container-center",
+  // poles containers selection
+  "poles-container-left",
+  "poles-container-right",
+]
+
 var panzoomSettings = {
   contain: 'outside',
   minScale: 1,
@@ -1851,7 +1940,11 @@ function panzoom_mousewheel() {
     }
     else zoomContainer = zoomContainer[0];
   }
-
+  // DON'T DELETE ME!!!
+  // if you will update modules and then it accidently stops working
+  // probably problem with minScale in node_modules/@panzoom/panzoom/dist/panzoom.js function constrainScale(toScale, zoomOptions)
+  // if it is then you must change code in this function like this:
+  // result.scale = Math.min(Math.max(toScale, (opts.minScale) ? opts.minScale : 1), opts.maxScale);
   var scale = zoomContainer.getScale();
   if (zoomOut) {
     scale -= 0.1;

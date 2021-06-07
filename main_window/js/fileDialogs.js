@@ -290,17 +290,33 @@ function addDegmagnetizationFiles(format, files) {
 }
 
 // FILE EXPORTING
-function saveFile(windowTitle, fileName, data, extension, andOpen) {
+function saveFile(windowTitle, fileName, data, extension, andOpen, path) {
 
   // Options of saveFileDialog
-  if ((!extension) || (extension === 'csv')) {
-    extension = 'csv';
-    filterName = 'CSV UTF-8 (разделитель - запятая)'
+  if (!extension) extension = 'csv';
+  var filterName = '';
+
+  switch (extension) {
+    case 'csv':
+      filterName = 'CSV UTF-8 (comma delimiter)';
+      break;
+    case 'xlsx':
+      filterName = 'Excel book';
+      break;
+    case 'svg':
+      filterName = 'Scalable Vector Graphics';
+      break;
+    case 'pdf':
+      filterName = 'Portable Document Format';
+      break;
+    case 'png':
+      filterName = 'Portable Network Graphics';
+      break;
+    case 'jpeg':
+      filterName = 'JPEG raster image';
+      break;
   }
 
-  if (extension === 'xlsx') {
-    filterName = 'Книга Excel';
-  }
   var options = {
     title: windowTitle,
     filters: [
@@ -309,7 +325,8 @@ function saveFile(windowTitle, fileName, data, extension, andOpen) {
     defaultPath: lastSavePath + '/' + fileName + '.' + extension,
   }
 
-  var savePath = dialog.showSaveDialogSync(options);
+  var savePath = path + '/' + fileName + '.' + extension;
+  if (!path) savePath = dialog.showSaveDialogSync(options);
 
   if (savePath) {
     // Check for extension

@@ -310,7 +310,7 @@ function polesPlotStereoDiagrams(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "VlineS",
+      symbol: "EVlineS",
       lineColor: "black",
     }
   }
@@ -324,7 +324,7 @@ function polesPlotStereoDiagrams(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "HlineSTop",
+      symbol: "EHlineSTop",
       lineColor: "black",
     }
   }
@@ -338,7 +338,7 @@ function polesPlotStereoDiagrams(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "HlineSBot",
+      symbol: "EHlineSBot",
       lineColor: "black",
     }
   }
@@ -485,23 +485,66 @@ function polesPlotStereoDiagrams(hover) {
           symbol: 'download',
           // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
           menuItems: [
-            'downloadPNG',
-            'downloadJPEG',
+            // 'downloadPNG',
+            // 'downloadJPEG',
+            // save
             {
             	text: 'Save as PDF',
             	onclick: function () {
                 Highcharts.exportCharts(
                   [this],
                   {
-                    type: 'application/pdf',
+                    type: 'stereo',
                     filename: "sites_stereo_chart",
+                    extnsn: 'pdf',
                   },
-                  undefined,
-                  'stereo'
+                  'save'
                 );
             	}
             },
-            'downloadSVG',
+            {
+            	text: 'Save as SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "sites_stereo_chart",
+                    extnsn: 'svg',
+                  },
+                  'save'
+                );
+            	}
+            },
+            // copy
+            {
+            	text: 'Copy PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "sites_stereo_chart",
+                    extnsn: 'pdf',
+                  },
+                  'copy'
+                );
+            	}
+            },
+            {
+            	text: 'Copy SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "sites_stereo_chart",
+                    extnsn: 'svg',
+                  },
+                  'copy'
+                );
+            	}
+            },
           ],
         },
       },
@@ -703,23 +746,66 @@ function polesPlotStereoDiagrams(hover) {
           symbol: 'download',
           // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
           menuItems: [
-            'downloadPNG',
-            'downloadJPEG',
+            // 'downloadPNG',
+            // 'downloadJPEG',
+            // save
             {
             	text: 'Save as PDF',
             	onclick: function () {
                 Highcharts.exportCharts(
                   [this],
                   {
-                    type: 'application/pdf',
+                    type: 'stereo',
                     filename: "vgps_stereo_chart",
+                    extnsn: 'pdf',
                   },
-                  undefined,
-                  'stereo'
+                  'save'
                 );
             	}
             },
-            'downloadSVG',
+            {
+            	text: 'Save as SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "vgps_stereo_chart",
+                    extnsn: 'svg',
+                  },
+                  'save'
+                );
+            	}
+            },
+            // copy
+            {
+            	text: 'Copy PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "vgps_stereo_chart",
+                    extnsn: 'pdf',
+                  },
+                  'save'
+                );
+            	}
+            },
+            {
+            	text: 'Copy SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "vgps_stereo_chart",
+                    extnsn: 'svg',
+                  },
+                  'copy'
+                );
+            	}
+            },
           ],
         },
       },

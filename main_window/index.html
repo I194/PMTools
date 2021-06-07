@@ -6,7 +6,25 @@
   <head>
     <!-- Highcharts -->
     <script type="text/javascript">
+      // local charts export
       const { jsPDF } = require("jspdf");
+      // const Canvg = require('canvg');
+      // var canvas = require('canvas');
+      // var Canvg, { presets } = require('canvg');
+      //
+      // const preset = presets.node({
+      //   DOMParser,
+      //   canvas,
+      //   fetch
+      // });
+      // const { svg2png } = require("svg-png-converter")
+      const sharp = require("sharp");
+      var svg2png = require("save-svg-as-png");
+      require("svg2pdf.js");
+      var edge = require('electron-edge-js');
+      var FileSaver = require('file-saver');
+
+      // Highcharts
       var Highcharts = require('highcharts');
 
       require('highcharts/highcharts-more')(Highcharts);
@@ -175,7 +193,7 @@
           <button class="btn btn-light  text-primary" id="export-charts-pdf" title="export all charts from page as one PDF file">
             Export all PDF
           </button>
-          <button class="btn btn-light  text-primary" id="export-charts-jpeg" title="export all charts from page as one JPEG file">
+          <button class="btn btn-light  text-primary" id="export-charts-jpeg" title="export all charts from page as one JPEG file" disabled>
             Export all JPEG
           </button>
         </div>

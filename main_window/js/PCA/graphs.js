@@ -1,4 +1,4 @@
-async function plotZijderveldDiagram(hover) {
+function plotZijderveldDiagram(hover) {
 
   var proj_type = 'upwest';
 
@@ -127,7 +127,7 @@ async function plotZijderveldDiagram(hover) {
     showInLegend: false,
     marker: {
       lineWidth: 1,
-      symbol: "VlineZ",
+      symbol: "EVlineZ",
       lineColor: "black",
     }
   }];
@@ -139,7 +139,7 @@ async function plotZijderveldDiagram(hover) {
     showInLegend: false,
     marker: {
       lineWidth: 1,
-      symbol: "HlineZ",
+      symbol: "EHlineZ",
       lineColor: "black",
     }
   }];
@@ -253,6 +253,23 @@ async function plotZijderveldDiagram(hover) {
       // events: {
       //   load: resetMarkerSize
       // }
+      // events: {
+      //   load: function () {
+      //     // update tick series
+      //     // vertical
+      //     this.series[4].update({
+      //         marker: {
+      //           symbol: 'EVlineZ',
+      //         }
+      //     });
+      //     // horizontal
+      //     this.series[5].update({
+      //         marker: {
+      //           symbol: 'EHlineZ',
+      //         }
+      //     });
+      //   }
+      // },
     },
 
     boost: {
@@ -281,27 +298,13 @@ async function plotZijderveldDiagram(hover) {
       formatter: generateZijderveldTooltip
     },
 
+
+
     exporting: {
       filename: "zijderveld-diagram",
       sourceWidth: 500,
       sourceHeight: 500,
       resources: JSON.stringify({"css": ".highcharts-xaxis .highcharts-tick {transform: translateY(-1.05%); stroke: black;}"}),
-      menuItemDefinitions: {
-        // Custom definition
-        downloadJPEG: {
-          text: 'Save as JPEG'
-        },
-        downloadPNG: {
-          text: 'Save as PNG'
-        },
-        downloadSVG: {
-          text: 'Save as SVG'
-        },
-        // separator: {
-        //   style: {"margin-top": 0.5rem;
-        //   "margin-bottom": 0.5rem;}
-        // }
-      },
       buttons: {
         contextButton: {
           symbolStroke: "#119DFF",
@@ -309,23 +312,64 @@ async function plotZijderveldDiagram(hover) {
           symbol: 'download',
           // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
           menuItems: [
-            'downloadPNG',
-            'downloadJPEG',
+            // save
             {
             	text: 'Save as PDF',
             	onclick: function () {
                 Highcharts.exportCharts(
                   [this],
                   {
-                    type: 'application/pdf',
+                    type: 'zijd',
                     filename: "zijderveld-diagram",
+                    extnsn: 'pdf',
                   },
-                  undefined,
-                  'zijd'
+                  'save'
                 );
             	}
             },
-            'downloadSVG',
+            {
+            	text: 'Save as SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'zijd',
+                    filename: "zijderveld-diagram",
+                    extnsn: 'svg',
+                  },
+                  'save'
+                );
+            	}
+          },
+            // copy
+            {
+            	text: 'Copy PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'zijd',
+                    filename: "zijderveld-diagram",
+                    extnsn: 'pdf',
+                  },
+                  'copy'
+                );
+            	}
+            },
+            {
+            	text: 'Copy SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'zijd',
+                    filename: "zijderveld-diagram",
+                    extnsn: 'svg',
+                  },
+                  'copy'
+                );
+            	}
+            },
           ],
         },
       },
@@ -518,7 +562,7 @@ function generateZijderveldTooltip() {
 
 }
 
-async function plotStereoDiagram(hover) {
+function plotStereoDiagram(hover) {
 
   var time = performance.now();
 
@@ -731,7 +775,7 @@ async function plotStereoDiagram(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "VlineS",
+      symbol: "EVlineS",
       lineColor: COLORS.mainColorText[currentTheme],//"black",
     }
   };
@@ -745,7 +789,7 @@ async function plotStereoDiagram(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "HlineSTop",
+      symbol: "EHlineSTop",
       lineColor: COLORS.mainColorText[currentTheme],//"black",
     }
   };
@@ -759,7 +803,7 @@ async function plotStereoDiagram(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "HlineSBot",
+      symbol: "EHlineSBot",
       lineColor: COLORS.mainColorText[currentTheme],//"black",
     }
   };
@@ -947,23 +991,65 @@ async function plotStereoDiagram(hover) {
           symbol: 'download',
           // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
           menuItems: [
-            'downloadPNG',
-            'downloadJPEG',
+            // 'downloadPNG',
+            // save
             {
             	text: 'Save as PDF',
             	onclick: function () {
                 Highcharts.exportCharts(
                   [this],
                   {
-                    type: 'application/pdf',
+                    type: 'stereo-pca',
                     filename: "stereo_chart",
+                    extnsn: 'pdf',
                   },
-                  undefined,
-                  'stereo-pca'
+                  'save',
                 );
             	}
             },
-            'downloadSVG',
+            {
+            	text: 'Save as SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo-pca',
+                    filename: "stereo_chart",
+                    extnsn: 'svg',
+                  },
+                  'save',
+                );
+            	}
+            },
+            // copy
+            {
+            	text: 'Copy PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo-pca',
+                    filename: "stereo_chart",
+                    extnsn: 'pdf',
+                  },
+                  'copy',
+                );
+            	}
+            },
+            {
+            	text: 'Copy SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo-pca',
+                    filename: "stereo_chart",
+                    extnsn: 'svg',
+                  },
+                  'copy',
+                );
+            	}
+            },
           ],
         },
       },
@@ -1120,7 +1206,7 @@ function generateStereoTooltipPCA() {
 
 }
 
-async function plotIntensityDiagram(hover) {
+function plotIntensityDiagram(hover) {
 
   var specimen = getSelectedFile('specimen');
 
@@ -1322,23 +1408,64 @@ async function plotIntensityDiagram(hover) {
           symbol: 'download',
           // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
           menuItems: [
-            'downloadPNG',
-            'downloadJPEG',
+            // save
             {
             	text: 'Save as PDF',
             	onclick: function () {
                 Highcharts.exportCharts(
                   [this],
                   {
-                    type: 'application/pdf',
+                    type: 'intensity',
                     filename: "intensity_chart",
+                    extnsn: 'pdf',
                   },
-                  undefined,
-                  'intensity'
+                  'save',
                 );
             	}
             },
-            'downloadSVG',
+            {
+            	text: 'Save as SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'intensity',
+                    filename: "intensity_chart",
+                    extnsn: 'svg',
+                  },
+                  'save',
+                );
+            	}
+            },
+            // copy
+            {
+            	text: 'Copy PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'intensity',
+                    filename: "intensity_chart",
+                    extnsn: 'pdf',
+                  },
+                  'copy',
+                );
+            	}
+            },
+            {
+            	text: 'Copy SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'intensity',
+                    filename: "intensity_chart",
+                    extnsn: 'svg',
+                  },
+                  'copy',
+                );
+            	}
+            },
           ],
         },
       },

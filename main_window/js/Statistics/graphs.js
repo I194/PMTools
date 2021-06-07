@@ -313,7 +313,7 @@ function statPlotStereoDiagram(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "VlineS",
+      symbol: "EVlineS",
       lineColor: "black",
     }
   }
@@ -327,7 +327,7 @@ function statPlotStereoDiagram(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "HlineSTop",
+      symbol: "EHlineSTop",
       lineColor: "black",
     }
   }
@@ -341,7 +341,7 @@ function statPlotStereoDiagram(hover) {
     marker: {
       radius: 2,
       lineWidth: 1,
-      symbol: "HlineSBot",
+      symbol: "EHlineSBot",
       lineColor: "black",
     }
   }
@@ -434,23 +434,66 @@ function statPlotStereoDiagram(hover) {
           symbol: 'download',
           // menuItems: ["downloadJPEG", "downloadPDF", "downloadSVG"],
           menuItems: [
-            'downloadPNG',
-            'downloadJPEG',
+            // 'downloadPNG',
+            // 'downloadJPEG',
+            // save
             {
             	text: 'Save as PDF',
             	onclick: function () {
                 Highcharts.exportCharts(
                   [this],
                   {
-                    type: 'application/pdf',
+                    type: 'stereo',
                     filename: "stereo_chart",
+                    extnsn: 'pdf',
                   },
-                  undefined,
-                  'stereo'
+                  'save'
                 );
             	}
             },
-            'downloadSVG',
+            {
+            	text: 'Save as SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "stereo_chart",
+                    extnsn: 'svg',
+                  },
+                  'save'
+                );
+            	}
+            },
+            // copy
+            {
+            	text: 'Copy PDF',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "stereo_chart",
+                    extnsn: 'pdf',
+                  },
+                  'copy'
+                );
+            	}
+            },
+            {
+            	text: 'Copy SVG',
+            	onclick: function () {
+                Highcharts.exportCharts(
+                  [this],
+                  {
+                    type: 'stereo',
+                    filename: "stereo_chart",
+                    extnsn: 'svg',
+                  },
+                  'copy'
+                );
+            	}
+            },
           ],
         },
       },

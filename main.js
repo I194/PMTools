@@ -784,6 +784,8 @@ app.on('window-all-closed', () => {
   app.quit();
 })
 
+app.allowRendererProcessReuse = false;
+
 function handleSquirrelEvent(application) {
     if (process.argv.length === 1) {
         return false;

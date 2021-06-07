@@ -17,7 +17,7 @@
 
   });
 
-  H.getSVG = function(charts, chartsOpt, type) {
+  H.getSVG = function(charts, type) {
     if (!type) type = 'multiple';
 
     var svgArr = [],
@@ -147,8 +147,7 @@
 
     charts.forEach((chart, i) => {
 
-
-      var svg = chart.getSVG(chartsOpt);
+      var svg = chart.getSVG();
       svg = svg.replace(
         '<svg',
         '<g transform="translate(' + left + ',' + 0 + ')" ',
@@ -163,6 +162,8 @@
         width = Math.max(width, left, chart.chartWidth);
       }
 
+      svg = svg.replace('NaN', '0');
+
       svgArr.push(svg);
     });
 
@@ -171,46 +172,113 @@
       svgArr.join('') + '</svg>';
   };
 
-  H.exportCharts = function(charts, options, chartsOpt, type) {
+  H.exportCharts = async function(charts, options, exType, svgElement) {
 
-    // Merge the options
     var initialOpts = H.getOptions();
-
     options = H.merge(H.getOptions().exporting, options);
+    // get raw svg data
+    var svgData = H.getSVG(charts, options.type);
+
+    if (!svgElement) {
+      // tmp container for svg data for next conversion
+      var tmpDivSVG = document.createElement("div");
+      tmpDivSVG.style.display = 'none';
+      tmpDivSVG.innerHTML = svgData;
+
+      // chart bounds params
+      svgElement = tmpDivSVG.firstElementChild;
+    }
+
+    svgElement.getBoundingClientRect();
+    const width = svgElement.width.baseVal.value;
+    const height = svgElement.height.baseVal.value;
+
+    svgElement.querySelectorAll('.highcharts-a11y-dummy-point').forEach(function(a) {
+      a.remove();
+    })
+
+    // get raw pdf data
+    const pdf = new jsPDF(width > height ? 'l' : 'p', 'pt', [width, height]);
+    await pdf.svg(svgElement, {width, height});
+    var pdfData = pdf.output();
+    // console.log(pdfData);
+
+    // get raw png data
+    // inexplicable encoding problem, idk how to solve it
+
+    // Chart exporting
+    var path = undefined; // user can specify file destination
+
+    if (exType == 'copy') {
+      path = './tmp_charts';
+      options.filename = 'pmtools_chart'//new Date().getTime();
+    }
+
+    var chartData = svgData;
+    switch (options.extnsn) {
+      case 'pdf':
+        chartData = pdfData;
+        break;
+      case 'png':
+        chartData = pngData;
+        break;
+      case 'jpeg':
+        chartData = jpegData;
+        break;
+    }
+    if (exType == 'copy' && options.extnsn == 'pdf') pdf.output("save", "./tmp_charts/pmtools_chart.pdf");
+    else saveFile('Export chart', options.filename, chartData, options.extnsn, false, path);
+
+    if (exType == 'copy') {
+      var copyFileCS = edge.func(function () {/*
+      #r "System.Windows.Forms.dll"
+
+      using System;
+      using System.IO;
+      using System.Net;
+      using System.Text;
+      using System.Threading;
+      using System.Collections;
+      using System.Collections.Specialized;
+      using System.Windows.Forms;
+
+      async (input) => {
+          string path = @"tmp_charts\" + input.ToString();
+
+          StringCollection paths = new StringCollection();
+          paths.Add(Path.GetFullPath(path));
+
+          Thread thread = new Thread(() => Clipboard.SetFileDropList(paths));
+          thread.SetApartmentState(ApartmentState.STA);
+          thread.Start();
+          thread.Join();
+
+          return ".NET Welcomes " + Path.GetFullPath(path);
+      }
+      */});
+
+      function copy() {
+        copyFileCS(options.filename + '.' + options.extnsn, function (error, result) {
+            if (error) throw error;
+            console.log(result);
+        });
+      }
+      copy()
+      // setTimeout(copy, 500);
+    }
 
     // Post to export server
-    H.post(options.url, {
-      filename: options.filename || 'chart',
-      type: options.type,
-      width: options.width,
-      svg: H.getSVG(charts, chartsOpt, type)
-    });
-  };
+    // H.post(
+    //   options.url,
+    //   {
+    //     filename: options.filename || 'chart',
+    //     type: options.type,
+    //     width: options.width,
+    //     svg: data,
+    //     // noDownload: false,
+    //   }
+    // );
 
-  // // Add data download button
-  // H.Chart.prototype.generateCSV = function() {
-  //
-  //   switch(this.renderTo.id) {
-  //     case "zijderveld-container":
-  //       return downloadAsCSV("zijderveld.csv", getZijderveldCSV(this.series));
-  //     case "intensity-container":
-  //       return downloadAsCSV("intensity.csv", getIntensityCSV(this.series));
-  //     case "hemisphere-container":
-  //       return downloadAsCSV("hemisphere.csv", getHemisphereCSV(this.series));
-  //     case "fitting-container":
-  //       return downloadAsCSV("components.csv", getFittedCSV(this.series));
-  //     default:
-  //       notify("danger", new Exception("Data export for this chart has not been implemented."));
-  //   }
-  //
-  // }
-  //
-  // // Add the button to the exporting menu
-  // H.getOptions().exporting.buttons.contextButton.menuItems.push({
-  //   "text": EXPORT_BUTTON_TEXT,
-  //   "onclick": function() {
-  //     this.generateCSV()
-  //   }
-  // });
+  };
 
 }(Highcharts));

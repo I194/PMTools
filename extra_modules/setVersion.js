@@ -1,4 +1,4 @@
-var VERSION = "0.9.141";
+var VERSION = "0.9.2";
 
 function setVersion() {
   var versionLines = document.getElementsByClassName("pmtools-version");
