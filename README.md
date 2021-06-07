@@ -88,7 +88,8 @@ Now the main goal is to implement export and full import of the MagIC database f
 
 ## Appreciation 
 
-I would like to express my gratitude to Roman Veselovsky for supervising the creation of PMTools; Alexander Pasenko, Ivan Lebedev and Vladimir Vodovozov for testing PMTools; Nicholas Jarbo for help with the integration with the MagIC database.
+I would like to express my gratitude to Roman Veselovsky for supervising the creation of PMTools; Alexander Pasenko, Ivan Lebedev and Vladimir Vodovozov for testing PMTools; 
+Nicholas Jarboe for help with the integration with the MagIC database.
 
 I also want to thank the teams of [paleomagnetism.org](https://paleomagnetism.org/) and [PmagPY](https://github.com/PmagPy/PmagPy) for their open source policy, without access to which PMTools development would be much slower.
 
