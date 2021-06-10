@@ -444,7 +444,7 @@ function statPlotStereoDiagram(hover) {
                   [this],
                   {
                     type: 'stereo',
-                    filename: "stereo_chart",
+                    filename: collection.name + "-stat-stereo",
                     extnsn: 'pdf',
                   },
                   'save'
@@ -458,7 +458,7 @@ function statPlotStereoDiagram(hover) {
                   [this],
                   {
                     type: 'stereo',
-                    filename: "stereo_chart",
+                    filename: collection.name + "-stat-stereo",
                     extnsn: 'svg',
                   },
                   'save'

@@ -495,7 +495,7 @@ function polesPlotStereoDiagrams(hover) {
                   [this],
                   {
                     type: 'stereo',
-                    filename: "sites_stereo_chart",
+                    filename: sitesSet.name + "-sites-stereo",
                     extnsn: 'pdf',
                   },
                   'save'
@@ -509,7 +509,7 @@ function polesPlotStereoDiagrams(hover) {
                   [this],
                   {
                     type: 'stereo',
-                    filename: "sites_stereo_chart",
+                    filename: sitesSet.name + "-sites-stereo",
                     extnsn: 'svg',
                   },
                   'save'
@@ -756,7 +756,7 @@ function polesPlotStereoDiagrams(hover) {
                   [this],
                   {
                     type: 'stereo',
-                    filename: "vgps_stereo_chart",
+                    filename: sitesSet.name + "-vgps-stereo",
                     extnsn: 'pdf',
                   },
                   'save'
@@ -770,7 +770,7 @@ function polesPlotStereoDiagrams(hover) {
                   [this],
                   {
                     type: 'stereo',
-                    filename: "vgps_stereo_chart",
+                    filename: sitesSet.name + "-vgps-stereo",
                     extnsn: 'svg',
                   },
                   'save'

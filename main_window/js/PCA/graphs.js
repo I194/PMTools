@@ -182,6 +182,7 @@ function plotZijderveldDiagram(hover) {
         style: {
           fontSize: "10px",
           textOutline: (addTextOutline) ? "1px contrast" : "0px",
+          shadow: false,
         },
         onArea: false,
         formatter: function() {
@@ -320,7 +321,7 @@ function plotZijderveldDiagram(hover) {
                   [this],
                   {
                     type: 'zijd',
-                    filename: "zijderveld-diagram",
+                    filename: specimen.name + "-zijd",
                     extnsn: 'pdf',
                   },
                   'save'
@@ -334,7 +335,7 @@ function plotZijderveldDiagram(hover) {
                   [this],
                   {
                     type: 'zijd',
-                    filename: "zijderveld-diagram",
+                    filename: specimen.name + "-diagram",
                     extnsn: 'svg',
                   },
                   'save'
@@ -1000,7 +1001,7 @@ function plotStereoDiagram(hover) {
                   [this],
                   {
                     type: 'stereo-pca',
-                    filename: "stereo_chart",
+                    filename: specimen.name + "-stereo",
                     extnsn: 'pdf',
                   },
                   'save',
@@ -1014,7 +1015,7 @@ function plotStereoDiagram(hover) {
                   [this],
                   {
                     type: 'stereo-pca',
-                    filename: "stereo_chart",
+                    filename: specimen.name + "-stereo",
                     extnsn: 'svg',
                   },
                   'save',
@@ -1416,7 +1417,7 @@ function plotIntensityDiagram(hover) {
                   [this],
                   {
                     type: 'intensity',
-                    filename: "intensity_chart",
+                    filename: specimen.name + "-intensity",
                     extnsn: 'pdf',
                   },
                   'save',
@@ -1430,7 +1431,7 @@ function plotIntensityDiagram(hover) {
                   [this],
                   {
                     type: 'intensity',
-                    filename: "intensity_chart",
+                    filename: specimen.name + "-intensity",
                     extnsn: 'svg',
                   },
                   'save',

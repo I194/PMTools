@@ -210,7 +210,7 @@
     var path = undefined; // user can specify file destination
 
     if (exType == 'copy') {
-      path = './tmp_charts';
+      path = '.';
       options.filename = 'pmtools_chart'//new Date().getTime();
     }
 
@@ -226,7 +226,7 @@
         chartData = jpegData;
         break;
     }
-    if (exType == 'copy' && options.extnsn == 'pdf') pdf.output("save", "./tmp_charts/pmtools_chart.pdf");
+    if (exType == 'copy' && options.extnsn == 'pdf') pdf.output("save", "./pmtools_chart.pdf");
     else saveFile('Export chart', options.filename, chartData, options.extnsn, false, path);
 
     if (exType == 'copy') {
@@ -243,7 +243,7 @@
       using System.Windows.Forms;
 
       async (input) => {
-          string path = @"tmp_charts\" + input.ToString();
+          string path = @"./" + input.ToString();
 
           StringCollection paths = new StringCollection();
           paths.Add(Path.GetFullPath(path));
