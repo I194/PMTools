@@ -207,15 +207,18 @@ function registerEventHandlers() {
   // pages navigation
   document.getElementById("nav-pca-tab").addEventListener("click", (e) => {
     localStorage.setItem("currPage", 'nav-pca-tab');
-    chartsToExport = [zijdPCA, stereoPCA, intensPCA]
+    chartsToExport = [zijdPCA.chartObj, stereoPCA.chartObj, intensPCA.chartObj]
+    // redrawCharts();
   });
   document.getElementById("nav-stat-tab").addEventListener("click", (e) => {
     localStorage.setItem("currPage", 'nav-stat-tab');
     chartsToExport = [stereoStat];
+    // redrawCharts();
   });
   document.getElementById("nav-poles-tab").addEventListener("click", (e) => {
     localStorage.setItem("currPage", 'nav-poles-tab');
     chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
+    // redrawCharts();
   });
 
   var collEraseCheckboxes = document.getElementsByClassName("chkbox1");
@@ -591,7 +594,11 @@ function swapChartsContainers(from_btn, checkZijd, checkStereo, checkIntensity, 
     }
   }
 
-  redrawCharts(false);
+  Highcharts.chart(ChartContainersPCA[0], stereoPCA.options);
+  Highcharts.chart(ChartContainersPCA[1], zijdPCA.options);
+  Highcharts.chart(ChartContainersPCA[2], intensPCA.options);
+
+  // redrawCharts(false);
 
 }
 
@@ -696,7 +703,7 @@ function formatCollectionTable() {
 }
 
 function formatSpecimenTable() {
-
+  console.log('hello there');
   var specimen = getSelectedFile('specimen');
 
   if (!specimen) return document.getElementById('specimen-table-container').innerHTML = '';
@@ -1438,19 +1445,61 @@ function redrawCharts(hover, context) {
   * Redraws all the charts for the active specimen
   */
   if (!INITIALIZED) return;
-  // Save the current scroll position for later, otherwise the scroll position will
-  // jump to the top when a Highcharts chart is drawn
-  // var tempScrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop || 0
-  var zijdOnMain = document.getElementById('zijd-on-main').checked
-  var stereoOnMain = document.getElementById('stereo-on-main').checked
 
-  formatSpecimenTable();
-  formatCollectionTable();
-  formatSitesTable();
+  var currentPage = getSelectedPage();
 
-  time1 = performance.now() - time;
-  console.log('Время выполнения (redraw charts (format tables)) = ', time1);
+  if (INITIALIZE) {
+    // Charts creating
+    // pca
+    zijdPCA = plotZijderveldDiagram(hover);
+    stereoPCA = plotStereoDiagram(hover);
+    intensPCA = plotIntensityDiagram(hover);
+    // stat
+    stereoStat = statPlotStereoDiagram();
+    // poles
+    stereoPoles = polesPlotStereoDiagrams();
+    // Tables creating
+    // pca
+    formatSpecimenTable();
+    updateInterpretationTable('pca');
+    ipcRenderer.send('redraw-specDataWin');
+    ipcRenderer.send('redraw-interpretDataWin');
+    // stat
+    formatCollectionTable();
+    updateInterpretationTable('stat');
+    ipcRenderer.send('redraw-collDataWin');
+    ipcRenderer.send('redraw-meansDataWin');
+    // poles
+    formatSitesTable();
+    updateInterpretationTable('poles');
+    ipcRenderer.send('redraw-vgpDataWin');
+    // save data
+    switch (currentPage) {
+      case 'nav-pca-tab':
+        chartsToExport = [zijdPCA.chartObj, stereoPCA.chartObj, intensPCA.chartObj];
+        break;
+      case 'nav-stat-tab':
+        chartsToExport = [stereoStat];
+        break;
+      case 'nav-poles-tab':
+        chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
+        break;
+    }
 
+    saveLocalStorage();
+
+    // additional highcharts charts data processing - deleting of unwanted points
+    document.querySelectorAll('.highcharts-a11y-dummy-point').forEach(function(a) {
+      a.remove();
+    })
+
+    INITIALIZE = false;
+
+    return;
+  }
+
+
+  // actual redraw
   if (context) {
 
     var chartContainers = [
@@ -1469,41 +1518,51 @@ function redrawCharts(hover, context) {
         }
       }
     });
-    if (chart == 'zijd-plot') plotZijderveldDiagram(hover, zijdOnMain);
-    else if (chart == 'stereo-plot') plotStereoDiagram(hover, stereoOnMain);
+    if (chart == 'zijd-plot') plotZijderveldDiagram(hover);
+    else if (chart == 'stereo-plot') plotStereoDiagram(hover);
     else if (chart == 'intensity-plot') plotIntensityDiagram();
     else if (chart == 'stat-plot') statPlotStereoDiagram();
   }
   else {
-    zijdPCA = plotZijderveldDiagram(hover);
-    timeZ = performance.now() - time;
-    console.log('Время выполнения (redraw charts (zijd chart)) = ', timeZ);
-    stereoPCA = plotStereoDiagram(hover);
-    timeS = performance.now() - time;
-    console.log('Время выполнения (redraw charts (stereo chart)) = ', timeS);
-    intensPCA = plotIntensityDiagram(hover);
-    timeI = performance.now() - time;
-    console.log('Время выполнения (redraw charts (intensity chart)) = ', timeI);
-
-    time2 = performance.now() - time;
-    console.log('Время выполнения (redraw charts (pca charts)) = ', time2);
-    updateInterpretationTable('pca');
-    stereoStat = statPlotStereoDiagram();
-    updateInterpretationTable('stat');
-    stereoPoles = polesPlotStereoDiagrams();
-    updateInterpretationTable('poles');
+    switch (currentPage) {
+      case 'nav-pca-tab':
+        zijdPCA = plotZijderveldDiagram(hover);
+        stereoPCA = plotStereoDiagram(hover);
+        intensPCA = plotIntensityDiagram(hover);
+        break;
+      case 'nav-stat-tab':
+        stereoStat = statPlotStereoDiagram();
+        break;
+      case 'nav-poles-tab':
+        stereoPoles = polesPlotStereoDiagrams();
+        break;
+    }
   }
-  time3 = performance.now() - time;
-  console.log('Время выполнения (redraw charts (charts and visible tables)) = ', time3);
 
-  ipcRenderer.send('redraw-collDataWin');
-  ipcRenderer.send('redraw-specDataWin');
-  ipcRenderer.send('redraw-meansDataWin');
-  ipcRenderer.send('redraw-interpretDataWin');
-  ipcRenderer.send('redraw-vgpDataWin');
-
-  time4 = performance.now() - time;
-  console.log('Время выполнения (redraw charts (hidden tables)) = ', time4);
+  // tables redraw and data saving
+  var chartsToExport = [];
+  switch (currentPage) {
+    case 'nav-pca-tab':
+      formatSpecimenTable();
+      updateInterpretationTable('pca');
+      ipcRenderer.send('redraw-specDataWin');
+      ipcRenderer.send('redraw-interpretDataWin');
+      chartsToExport = [zijdPCA.chartObj, stereoPCA.chartObj, intensPCA.chartObj];
+      break;
+    case 'nav-stat-tab':
+      formatCollectionTable();
+      updateInterpretationTable('stat');
+      ipcRenderer.send('redraw-collDataWin');
+      ipcRenderer.send('redraw-meansDataWin');
+      chartsToExport = [stereoStat];
+      break;
+    case 'nav-poles-tab':
+      formatSitesTable();
+      updateInterpretationTable('poles');
+      ipcRenderer.send('redraw-vgpDataWin');
+      chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
+      break;
+  }
 
   if (TO_CENTER) {
     var collection = getSelectedFile('collection');
@@ -1513,21 +1572,13 @@ function redrawCharts(hover, context) {
     document.getElementById('calculate-f').innerHTML = '';
   }
 
-  var pageID = getSelectedPage();
-  var pageType = pageID.split('-')[1];
-
-  if (pageType == 'pca') chartsToExport = [zijdPCA, stereoPCA, intensPCA];
-  if (pageType == 'stat') chartsToExport = [stereoStat];
-  if (pageType == 'poles') chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
-
   saveLocalStorage();
 
+  // additional highcharts charts data processing - deleting of unwanted points
   document.querySelectorAll('.highcharts-a11y-dummy-point').forEach(function(a) {
     a.remove();
   })
 
-  time6 = performance.now() - time;
-  console.log('Время выполнения (redraw charts (all)) = ', time6);
 }
 
 function makeChartContextMenu(chart) {
@@ -1760,6 +1811,7 @@ function __init__() {
 
   // allow to redraw charts
   INITIALIZED = true;
+  INITIALIZE = true;
 
   // Load specimens from local storage
   specimens = JSON.parse(localStorage.getItem("specimens"));
@@ -1873,6 +1925,7 @@ var lastSavePath = app.getPath('documents');
 var project_json;
 
 var stereoPCA, zijdPCA, intensPCA, stereoStat, stereoPoles;
+var stereoOptsPCA, zijdOptsPCA, intensOptsPCA;
 var chartsToExport = [];
 
 var dotSelector = new DotSelector();

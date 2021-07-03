@@ -519,7 +519,7 @@ function plotZijderveldDiagram(hover) {
 
   setZijderveldRatio(chart);
 
-  return chart;
+  return {chartObj: chart, options: options};
 
 }
 
@@ -1174,11 +1174,10 @@ function plotStereoDiagram(hover) {
 
   var chart = Highcharts.chart(chartContainer, options)
 
-
   time7 = performance.now() - time;
   console.log('Время выполнения (stereo chart draw) = ', time7);
 
-  return chart;
+  return {chartObj: chart, options: options};
 
 }
 
@@ -1597,7 +1596,7 @@ function plotIntensityDiagram(hover) {
 
   var chart = Highcharts.chart(ChartContainersPCA[2], options);
 
-  return chart;
+  return {chartObj: chart, options: options};
 
 }
 

@@ -273,7 +273,7 @@ function getGCPath(data, split) {
 
     var start = turf.point([start_dec, start_inc - 0.001]);
     var end = turf.point([end_dec, end_inc]);
-    var bc_path_tmp = turf.greatCircle(start, end, options={npoints: 150});
+    var bc_path_tmp = turf.greatCircle(start, end, options={npoints: 2});
     bc_path_tmp = bc_path_tmp.geometry.coordinates;
     var posneg_tmp = {pos: [], neg: []};
 
@@ -1082,8 +1082,6 @@ function formatInterpretationSeriesArea(interpretations) {
     else sliceCoef = 5;
   }
 
-  time = performance.now() - time;
-  console.log('Время выполнения (format interpretations) = ', time);
   if (series.length > sliceCoef) {
     return series.slice(series.length - sliceCoef);
   }

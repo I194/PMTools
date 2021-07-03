@@ -369,35 +369,6 @@ DotSelector.prototype.render = function(redraw, hover) {
   // Add each steps
   var listSteps = document.createElement("tbody");
 
-  // specimen.steps.forEach( function(step, i) {
-  //   // if (i % 5 == 0) listSteps.appendCh(document.createElement("tr"))
-  //   var listStep = document.createElement("tr");
-  //
-  //   listStep.value = i;
-  //
-  //   // Attach some extra classes
-  //   if (step.selected) listStep.className += "selected";
-  //
-  //   // Highlight the current step
-  //   if (this._selectedStep === i) listStep.className += " current";
-  //
-  //   // Format step name
-  //   var stepname = step.step;
-  //   var demagType = specimen.demagnetizationType;
-  //   if (demagType == "thermal") stepname = stepname.substr(1) + "℃";
-  //   else if (demagType == "alternating") stepname = stepname.substr(1) + "nT"
-  //
-  //   // Steps may be hidden
-  //   if(step.visible) listStep.appendChild(document.createTextNode(stepname));
-  //   else {
-  //     listStep.appendChild(document.createTextNode(HIDDEN_STEP_SYMBOL));
-  //     listStep.className += " text-muted";
-  //   }
-  //
-  //   listSteps.appendChild(listStep);
-  //
-  // }, this);
-
   // Update the charts
   if (redraw) redrawCharts(hover);
 
