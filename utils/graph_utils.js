@@ -273,7 +273,7 @@ function getGCPath(data, split) {
 
     var start = turf.point([start_dec, start_inc - 0.001]);
     var end = turf.point([end_dec, end_inc]);
-    var bc_path_tmp = turf.greatCircle(start, end, options={npoints: 2});
+    var bc_path_tmp = turf.greatCircle(start, end, options={npoints: 10});
     bc_path_tmp = bc_path_tmp.geometry.coordinates;
     var posneg_tmp = {pos: [], neg: []};
 

@@ -6,8 +6,31 @@ const fs = require("fs");
 const WIDTH_RATIO = 0.8;
 const ASPECT_RATIO = 10 / 16;
 
-// require('update-electron-app')();
+// Paths for child windows
+const settingsPath = path.join('file://', __dirname, 'windows/settings.html');
+const aboutPath = path.join('file://', __dirname, 'windows/about.html');
+const helpPath = path.join('file://', __dirname, 'windows/help');
+const specDataPath = path.join('file://', __dirname, 'windows/specimenData.html');
+const collDataPath = path.join('file://', __dirname, 'windows/collectionData.html');
+const interpretDataPath = path.join('file://', __dirname, 'windows/interpretationData.html');
+const meansDataPath = path.join('file://', __dirname, 'windows/meanData.html');
+const polesMeansPath = path.join('file://', __dirname, 'windows/polesMean.html');
+const vgpDataPath = path.join('file://', __dirname, 'windows/vgpData.html');
+const openFilesPath = path.join(__dirname, 'main_window/openFilesModal.html');
+const formatsPath = path.join(__dirname, 'windows/help/supportedFormats.html');
+const fileManagerPath = path.join(__dirname, 'windows/fileManager.html');
+const pcaPath = path.join('file://', __dirname, 'windows/pca.html');
+const fisherPath = path.join('file://', __dirname, 'windows/fisher.html');
+const foldtestPath = path.join('file://', __dirname, 'windows/foldtest.html');
+const revtestPath = path.join('file://', __dirname, 'windows/revtest.html');
+const commonMeanTestPath = path.join('file://', __dirname, 'windows/commonMeanTest.html');
+const congtestPath = path.join('file://', __dirname, 'windows/congtest.html');
+const magicExportPath = path.join('file://', __dirname, 'windows/magicExport.html');
+const shortcutsPath = path.join(helpPath + '/shortcuts.html');
 
+var paths = []
+
+// require('update-electron-app')();
 
 // this should be placed at top of main.js to handle setup events quickly
 if (handleSquirrelEvent(app)) {
@@ -15,93 +38,20 @@ if (handleSquirrelEvent(app)) {
     return;
 }
 
-function createWindow() {
+function createChildWindows(win) {
 
   const screenWidth = screen.getPrimaryDisplay().workAreaSize.width;
   const screenHeight = screen.getPrimaryDisplay().workAreaSize.height;
 
-  // Paths for child windows
-  const settingsPath = path.join('file://', __dirname, 'windows/settings.html');
-  const aboutPath = path.join('file://', __dirname, 'windows/about.html');
-  const helpPath = path.join('file://', __dirname, 'windows/help');
-  const specDataPath = path.join('file://', __dirname, 'windows/specimenData.html');
-  const collDataPath = path.join('file://', __dirname, 'windows/collectionData.html');
-  const interpretDataPath = path.join('file://', __dirname, 'windows/interpretationData.html');
-  const meansDataPath = path.join('file://', __dirname, 'windows/meanData.html');
-  const polesMeansPath = path.join('file://', __dirname, 'windows/polesMean.html');
-  const vgpDataPath = path.join('file://', __dirname, 'windows/vgpData.html');
-  const openFilesPath = path.join(__dirname, 'main_window/openFilesModal.html');
-  const formatsPath = path.join(__dirname, 'windows/help/supportedFormats.html');
-  const fileManagerPath = path.join(__dirname, 'windows/fileManager.html');
-  const pcaPath = path.join('file://', __dirname, 'windows/pca.html');
-  const fisherPath = path.join('file://', __dirname, 'windows/fisher.html');
-  const foldtestPath = path.join('file://', __dirname, 'windows/foldtest.html');
-  const revtestPath = path.join('file://', __dirname, 'windows/revtest.html');
-  const commonMeanTestPath = path.join('file://', __dirname, 'windows/commonMeanTest.html');
-  const congtestPath = path.join('file://', __dirname, 'windows/congtest.html');
-  const magicExportPath = path.join('file://', __dirname, 'windows/magicExport.html');
-
-
-  // Initialize main window
-  let win = new BrowserWindow({
-    width: screenWidth, //* WIDTH_RATIO,
-    height: screenWidth, // * WIDTH_RATIO * ASPECT_RATIO,
-    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
-    // Remove the window frame from windows applications
-    frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
-    // Hide loading
-    show: false,
-    //resizable: false,
-    maximizable: true,
-    //minimizable: false,
-
-    webPreferences: {
-        nodeIntegration: true
-    }
-  });
-
-  // win.once('ready-to-show', () => {
-  //   win.show();
-  // })
-  //
-  // win.maximize();
-
-  win.loadURL(url.format({
-    pathname: path.join(__dirname, 'main_window/index.html'),
-    protocol: 'file',
-    slashes: true,
-  }));
-
-  ipcMain.on('reload-mainWin', () => {
-    win.reload()
-  });
-
-  ipcMain.on('redraw-charts', (event) => {
-    win.webContents.send('redraw');
-  })
-
-  ipcMain.on('reload-mainWin-appendFiles', () => {
-    win.webContents.send('reload-appendFiles')
-  })
-
-  ipcMain.on('open-in-next-tab', (event, savePath) => {
-    win.webContents.send('open-in-next-tab', savePath);
-  })
-
-  // Initialize openFiles data window
+  // Initialize OpenFiles window
 
   let openFilesWin = new BrowserWindow({
     width: screenWidth / 2,
     height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
-    // parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     resizable: false,
     webPreferences: {
       nodeIntegration: true
@@ -115,11 +65,7 @@ function createWindow() {
     else openFilesWin.show();
   })
 
-  ipcMain.on('open-openFilesModal', (event, disableOpenPrev) => {
-    // win.hide();
-    openFilesWin.show();
-    // if (disableOpenPrev) openFilesWin.webContents.send('disable-openPrev');
-  })
+  ipcMain.on('open-openFilesModal', (event, disableOpenPrev) => { openFilesWin.show(); })
   ipcMain.on('hide-openFilesModal', () => { openFilesWin.hide(); win.show(); win.maximize(); })
   ipcMain.on('close-openFilesModal', () => { win.close(); })
 
@@ -127,28 +73,24 @@ function createWindow() {
 
   ipcMain.on('reload-openFilesModal', () => { openFilesWin.reload() });
 
-  // Initialize settings window
+  // Initialize Settings window
+
   let settingsWin = new BrowserWindow({
-    // width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   });
 
   settingsWin.loadURL(settingsPath);
 
   settingsWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     settingsWin.hide();
-    // settingsWin = null
   });
 
   ipcMain.on('toggle-settings', ()  => {
@@ -160,31 +102,26 @@ function createWindow() {
 
   ipcMain.on('reload-settWin', () => {
     settingsWin.webContents.send('reload-win');
-    // settingsWin.reload()
   });
 
-  // Initialize about window
+  // Initialize About window
+
   let aboutWin = new BrowserWindow({
-    width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   });
 
   aboutWin.loadURL(aboutPath);
 
   aboutWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     aboutWin.hide();
-    // aboutWin = null
   });
 
   ipcMain.on('toggle-about', ()  => {
@@ -194,26 +131,23 @@ function createWindow() {
     }
   })
 
-  // Initialize help window
+  // Initialize Help window
+
   let shortcutsWin = new BrowserWindow({
-    // width: screenWidth / 2,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
         nodeIntegration: true
     }
   });
 
-  shortcutsWin.loadURL(path.join(helpPath + '/shortcuts.html'));
+  shortcutsWin.loadURL(shortcutsPath);
 
   ipcMain.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     shortcutsWin.hide();
   });
 
@@ -224,29 +158,24 @@ function createWindow() {
     }
   })
 
-  // Initialize specimen data window
+  // Initialize SpecimenData window
 
   let specDataWin = new BrowserWindow({
-    // width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   });
 
   specDataWin.loadURL(specDataPath);
 
   specDataWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     specDataWin.hide();
-    // settingsWin = null
   });
 
   ipcMain.on('toggle-specData', ()  => {
@@ -260,29 +189,24 @@ function createWindow() {
     specDataWin.webContents.send('redraw-table');
   })
 
-  // Initialize specimen data window
+  // Initialize CollectionData window
 
   let collDataWin = new BrowserWindow({
-    // width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   });
 
   collDataWin.loadURL(collDataPath);
 
   collDataWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     collDataWin.hide();
-    // settingsWin = null
   });
 
   ipcMain.on('toggle-collData', ()  => {
@@ -296,27 +220,23 @@ function createWindow() {
     collDataWin.webContents.send('redraw-table');
   })
 
-  // Initialize interpretations data window
+  // Initialize InterpretationsData window
 
   let interpretDataWin = new BrowserWindow({
-    // width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   })
 
   interpretDataWin.loadURL(interpretDataPath);
 
   interpretDataWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     interpretDataWin.hide();
   });
 
@@ -335,27 +255,23 @@ function createWindow() {
     interpretDataWin.webContents.send('redraw-table');
   })
 
-  // Initialize means data window
+  // Initialize MeansData window
 
   let meansDataWin = new BrowserWindow({
-    // width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   })
 
   meansDataWin.loadURL(meansDataPath);
 
   meansDataWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     meansDataWin.hide();
   });
 
@@ -374,27 +290,23 @@ function createWindow() {
     meansDataWin.webContents.send('redraw-table');
   })
 
-  // Initialize means data window
+  // Initialize VGPData window
 
   let vgpDataWin = new BrowserWindow({
-    // width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   })
 
   vgpDataWin.loadURL(vgpDataPath);
 
   vgpDataWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     vgpDataWin.hide();
   });
 
@@ -409,18 +321,14 @@ function createWindow() {
     vgpDataWin.webContents.send('redraw-table');
   })
 
-  // Initialize poles means data window
+  // Initialize PolesMeansData window
 
   let polesMeansWin = new BrowserWindow({
-    // width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
       nodeIntegration: true
     }
@@ -429,7 +337,7 @@ function createWindow() {
   polesMeansWin.loadURL(polesMeansPath);
 
   polesMeansWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     polesMeansWin.hide();
   });
 
@@ -444,18 +352,14 @@ function createWindow() {
     polesMeansWin.webContents.send('redraw-table');
   })
 
-  // Initialize foldtest window
+  // Initialize FoldTest window
 
   let foldtestWin = new BrowserWindow({
-    // width: screenWidth / 3,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
         nodeIntegration: true
     }
@@ -464,7 +368,7 @@ function createWindow() {
   foldtestWin.loadURL(foldtestPath);
 
   foldtestWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     foldtestWin.hide();
   });
 
@@ -475,7 +379,7 @@ function createWindow() {
 
   ipcMain.on('reload-foldtest', () => { foldtestWin.reload() });
 
-  // Initialize revtest window
+  // Initialize RevTest window
 
   let revtestWin = new BrowserWindow({
     width: 1000,
@@ -483,19 +387,17 @@ function createWindow() {
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   });
 
   revtestWin.loadURL(revtestPath);
 
   revtestWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     revtestWin.hide();
   });
 
@@ -506,7 +408,7 @@ function createWindow() {
 
   ipcMain.on('reload-revtest', () => { revtestWin.reload() });
 
-  // Initialize revtest window
+  // Initialize CommonMeanTest window
 
   let commonMeanTestWin = new BrowserWindow({
     width: 1000,
@@ -514,19 +416,17 @@ function createWindow() {
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   });
 
   commonMeanTestWin.loadURL(commonMeanTestPath);
 
   commonMeanTestWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     commonMeanTestWin.hide();
   });
 
@@ -537,27 +437,24 @@ function createWindow() {
 
   ipcMain.on('reload-commonMeanTest', () => { commonMeanTestWin.reload() });
 
-  // Initialize revtest window
+  // Initialize CongTest window
 
   let congtestWin = new BrowserWindow({
-    // width: screenWidth / 3,
     height: 300,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
     parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     webPreferences: {
-        nodeIntegration: true
+      nodeIntegration: true
     }
   });
 
   congtestWin.loadURL(congtestPath);
 
   congtestWin.on('close', (event) => {
-    event.preventDefault();    // This will cancel the close
+    event.preventDefault();
     congtestWin.hide();
   });
 
@@ -568,18 +465,13 @@ function createWindow() {
 
   ipcMain.on('reload-congtest', () => { congtestWin.reload() });
 
-  // Initialize formats window
+  // Initialize Formats window
 
   let formatsWin = new BrowserWindow({
-    // width: screenWidth / 2,
-    // height: screenHeight / 2,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
-    // parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     resizable: true,
     webPreferences: {
       nodeIntegration: true
@@ -593,18 +485,15 @@ function createWindow() {
     else formatsWin.show();
   })
 
-  // Initialize formats window
+  // Initialize FileManager window
 
   let fileManagerWin = new BrowserWindow({
     width: screenWidth / 3,
     height: screenHeight / 3,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
-    // parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     resizable: true,
     webPreferences: {
       nodeIntegration: true
@@ -622,18 +511,15 @@ function createWindow() {
     fileManagerWin.webContents.send('reload-win');
   })
 
-  // Initialize formats window
+  // Initialize MagicExport window
 
   let magicExportWin = new BrowserWindow({
     width: screenWidth / 3,
     height: 720,
     icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
-    // parent: win,
     show: false,
-    // Remove the window frame from windows applications
     frame: false,
-    // Hide the titlebar from MacOS applications while keeping the stop lights
-    titleBarStyle: 'hidden', // or 'customButtonsOnHover',
+    titleBarStyle: 'hidden',
     resizable: true,
     webPreferences: {
       nodeIntegration: true
@@ -656,6 +542,7 @@ function createWindow() {
   })
 
   // Export interpretations
+
   ipcMain.on('export-interpretations-xlsx', () => {
     interpretDataWin.webContents.send('export-interpretation-xlsx');
   })
@@ -665,6 +552,7 @@ function createWindow() {
   })
 
   // Export means
+
   ipcMain.on('export-means-xlsx', () => {
     meansDataWin.webContents.send('export-means-xlsx');
   })
@@ -674,6 +562,7 @@ function createWindow() {
   })
 
   // Export poles
+
   ipcMain.on('export-poles-xlsx', () => {
     vgpDataWin.webContents.send('export-poles-xlsx');
   })
@@ -683,6 +572,7 @@ function createWindow() {
   })
 
   // Importing
+
   ipcMain.on('import-files', () => {
     win.webContents.send('import-files');
   })
@@ -729,23 +619,11 @@ function createWindow() {
 	})
 
   electronLocalshortcut.register('f1', function() {
-    // if (shortcutsWin.isVisible()) shortcutsWin.hide();
-    // else shortcutsWin.show();
     shortcutsWin.show();
   })
 
-	// electronLocalshortcut.register('CommandOrControl+R', function() {
-	// 	win.reload()
-  //   settingsWin.reload();
-  //   shortcutsWin.reload();
-  //   aboutWin.reload();
-  //   specDataWin.reload();
-  //   interpretDataWin.reload();
-	// })
-
-
   // Initialize developer tools
-  //
+
   // win.webContents.openDevTools();
   // openFilesWin.webContents.openDevTools();
   // formatsWin.webContents.openDevTools();
@@ -763,6 +641,7 @@ function createWindow() {
   // commonMeanTestWin.webContents.openDevTools();
   // congtestWin.webContents.openDevTools();
   // magicExportWin.webContents.openDevTools();
+
   // Close main window = close main process and then very program
 
   win.on('close', () => {
@@ -772,13 +651,177 @@ function createWindow() {
   win.on('closed', () => {
     win = null;
   })
+
 }
 
-app.on('ready', createWindow);
+// function createWindow(winOpts) {
+//
+//   let win = new BrowserWindow({
+//     width: winOpts.scale.width,
+//     height: winOpts.scale.height,
+//     icon: winOpts.iconPath,
+//     frame: winOpts.frame,
+//     titleBarStyle: winOpts.titleBarStyle,
+//     show: winOpts.showLoad,
+//     resizable: winOpts.scale.resize,
+//     maximizable: winOpts.scale.maximize,
+//     minimizable: winOpts.scale.minimize,
+//     webPreferences: {
+//       nodeIntegration: winOpts.nodeInteg,
+//     },
+//     parent: winOpts.parentWin,
+//   })
+//
+//   win.loadURL(winOpts.winPath);
+//
+//   if (winOpts.isDefault) {
+//     win.on('close', (event) => {
+//       event.preventDefault();
+//       win.hide();
+//     }
+//   }
+//
+//   return win;
+//
+// }
 
-// app.on('before-quit', () => {
-//   win.webContents.send('clear-storage');
-// })
+function createMainWin() {
+
+  const screenWidth = screen.getPrimaryDisplay().workAreaSize.width;
+  const screenHeight = screen.getPrimaryDisplay().workAreaSize.height;
+
+  // Initialize Main window
+
+  // var mainWinPath = path.join(__dirname, 'mainWin.html');
+  // var iconPath = __dirname + "/img/pm-tools-app-icon-dark.ico";
+  // var scaleOpts = {
+  //   width: screenWidth,
+  //   height: screenHeight,
+  //   resize: true,
+  //   maximize: true,
+  //   minimize: true,
+  // };
+  //
+  // var winOpts = {winPath: mainWinPath, iconPath: iconPath, frame: false, titleBarStyle: 'hidden', show: false, }
+  //
+  // var mainWin = createWindow(mainWinPath, iconPath, false, 'hidden', false, scaleOpts, true, false);
+
+  let win = new BrowserWindow({
+    width: screenWidth,
+    height: screenWidth,
+    icon: __dirname + "/img/pm-tools-app-icon-dark.ico",
+    frame: false,
+    titleBarStyle: 'hidden',
+    show: false,
+    maximizable: true,
+
+    webPreferences: {
+      nodeIntegration: true
+    }
+  });
+
+  // win.once('ready-to-show', () => {
+  //   win.show();
+  // })
+  //
+  // win.maximize();
+
+  win.loadURL(url.format({
+    pathname: path.join(__dirname, 'main_window/index.html'),
+    protocol: 'file',
+    slashes: true,
+  }));
+
+  ipcMain.on('reload-mainWin', () => {
+    win.reload()
+  });
+
+  ipcMain.on('redraw-charts', (event) => {
+    win.webContents.send('redraw');
+  })
+
+  ipcMain.on('reload-mainWin-appendFiles', () => {
+    win.webContents.send('reload-appendFiles')
+  })
+
+  ipcMain.on('open-in-next-tab', (event, savePath) => {
+    win.webContents.send('open-in-next-tab', savePath);
+  })
+
+  return win;
+
+}
+
+function createModule(winOpts, ipcOpts) {
+
+  var win = createWindow(winOpts);
+
+  ipcOpts.forEach((options, i) => {
+    switch (options.type) {
+      case 'toggle':
+        ipcMain.on(options.name, (event) => {
+          if (win.isVisible()) win.hide();
+          else win.show();
+        });
+        break;
+      case 'reload':
+        ipcMain.on(options.name, (event) => {
+          win.reload();
+        });
+        break;
+      case 'hide':
+        ipcMain.on(options.name, () => {
+          win.hide();
+        })
+      case 'message': // name 'redraw-specDataWin' and 'redraw-table' for example
+        ipcMain.on(options.name, (event) => {
+          win.webContents.send(options.message);
+        });
+        break;
+    }
+  });
+
+  return win;
+}
+
+function __init__() {
+
+  var mainWin = createMainWin();
+  createChildWindows(mainWin);
+  // var childWindows = [];
+
+  // var scaleOpts = {
+  //   width: screenWidth,
+  //   height: screenHeight,
+  //   resize: true,
+  //   maximize: true,
+  //   minimize: true,
+  // };
+  //
+  // var winOptsStandard = {
+  //   winPath: path,
+  //   iconPath: iconPath,
+  //   scale: scaleOpts,
+  //   frame: false,
+  //   titleBarStyle: 'hidden',
+  //   show: false,
+  //   webPreferences: {
+  //     nodeIntegration: true,
+  //   },
+  //   parent: mainWin,
+  // }
+
+  ipcMain.on('create-module', (event, winOpts, ipcOpts) => {
+    if (!winOpts.parentWin) winOpts.parentWin = mainWin;
+    win = createModule(winOpts, ipcOpts);
+    childWindows.push(win);
+  })
+
+}
+
+const iconPath = __dirname + "/img/pm-tools-app-icon-dark.ico";
+
+app.on('ready', __init__);
 
 app.on('window-all-closed', () => {
   app.quit();
