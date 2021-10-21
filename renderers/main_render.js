@@ -266,7 +266,7 @@ cancelPCA0.addEventListener('click', (event) => {
 confirmPCA0.addEventListener('click', (event) => {
   if (settings.pca.pcaToolsText) {
     dotSelector.readDots('pca-pca0-text-input', 'specimen');
-  if (document.getElementById('pca-pca0-text-input', 'specimen').classList.contains('error-input')) return;
+    if (document.getElementById('pca-pca0-text-input', 'specimen').classList.contains('error-input')) return;
   }
   else dotSelector.selectSteps('pca-pca0-first-step', 'pca-pca0-last-step');
   makeInterpretation("TAU1", true, undefined, "PCA0");
@@ -281,7 +281,7 @@ cancelPCAGC.addEventListener('click', (event) => {
 confirmPCAGC.addEventListener('click', (event) => {
   if (settings.pca.pcaToolsText) {
     dotSelector.readDots('pca-gc-text-input', 'specimen');
-  if (document.getElementById('pca-gc-text-input').classList.contains('error-input')) return;
+    if (document.getElementById('pca-gc-text-input').classList.contains('error-input')) return;
   }
   else dotSelector.selectSteps('pca-gc-first-step', 'pca-gc-last-step');
   makeInterpretation("TAU3", true, false, "GC PCA");
@@ -296,7 +296,7 @@ cancelPCAGCn.addEventListener('click', (event) => {
 confirmPCAGCn.addEventListener('click', (event) => {
   if (settings.pca.pcaToolsText) {
     dotSelector.readDots('pca-gcn-text-input', 'specimen');
-  if (document.getElementById('pca-gcn-text-input').classList.contains('error-input')) return;
+    if (document.getElementById('pca-gcn-text-input').classList.contains('error-input')) return;
   }
   else dotSelector.selectSteps('pca-gcn-first-step', 'pca-gcn-last-step');
   makeInterpretation("TAU3", true, true, "GCn PCA");
@@ -354,6 +354,7 @@ confirmStatGC.addEventListener('click', (event) => {
     if (document.getElementById('stat-gc-text-input').classList.contains('error-input')) return;
   }
   else dotSelector.selectSteps('stat-gc-first-step', 'stat-gc-last-step');
+  console.log('chto blin')
   makeStatGC(false, 'collection');
   document.getElementById('stat-gc-btn').click();
 })

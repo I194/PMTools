@@ -1008,7 +1008,13 @@ function importPaleoMac(file) {
   var beddingStrike = (header[3].includes('=')) ? Number(header[3].split('=')[1]) : Number(header[3]);//Number(header.slice(32, 37));
   var beddingDip = (header[4].includes('=')) ? Number(header[4].split('=')[1]) : Number(header[4]);//Number(header.slice(42, 47));
 
-  var sampleVolume = (header[5].includes('E')) ? Number(header[5].split('E')[0]) : Number(header[5]); //Number(header.slice(52, 59));
+  var sampleVolume = (header[5].includes('m')) ? Number(header[5].split('m')[0]) : Number(header[5]); //Number(header.slice(52, 59));
+  console.log(header[5], Number(header[5]));
+  // var coreAzimuth = Number(header.slice(12, 17));
+  // var coreDip = 90 - Number(header.slice(22, 27));
+  // var beddingStrike = Number(header.slice(32, 37));
+  // var beddingDip = Number(header.slice(42, 47));
+  // var sampleVolume = Number(header.slice(52, 59));
 
   var demagnetizationType;
 
@@ -1039,6 +1045,8 @@ function importPaleoMac(file) {
     // var x = Number(line.slice(5, 14));
     // var y = Number(line.slice(15, 25));
     // var z = Number(line.slice(25, 34));
+
+    console.log(x, y, z, sampleVolume)
     var a95 = Number(line.slice(69, 73));
     var comment = line.slice(73, (line.length + 1)).trim();
     var coordinates = new Coordinates(x, y, z);
@@ -1046,6 +1054,7 @@ function importPaleoMac(file) {
 
   });
   // Add the data to the application
+
   specimens.push({
     "demagnetizationType": demagnetizationType,
     "coordinates": "specimen",

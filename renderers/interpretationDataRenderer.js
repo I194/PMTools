@@ -4,7 +4,7 @@ const path = require('path');
 const customTitlebar = require('custom-electron-titlebar');
 const dns = require("dns");
 const fs = require("fs");
-const dialog = require('electron').remote.dialog
+const dialog = require('electron').remote.dialog;
 
 // Describe custom title bar functionality
 
@@ -143,11 +143,8 @@ function updateInterpretationTable() {
       var directionTect = literalToCoordinates(componentTect.coordinates).toVector(Direction);
 
       // Handle comments on interpretations
-      if(interpretation.comment === null) {
-        comment = ChRM_COMMENT;
-      } else {
-        comment = interpretation.comment;
-      }
+      if ((interpretation.comment === null) || !interpretation.comment) comment = ChRM_COMMENT;
+      else comment = interpretation.comment;
 
       // Full code of interpretation
 
@@ -255,8 +252,8 @@ function interpretationTableClickHandler(event) {
       break;
     }
   }
-
-  if (columnIndex === 12) {
+  console.log(columnIndex, event.target)
+  if (columnIndex === 10) {
     selectedSpecimen.interpretations[currSpecRowIndex].comment = event.target.innerHTML;
   }
 

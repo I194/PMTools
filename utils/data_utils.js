@@ -1110,6 +1110,20 @@ function makeStatGC(normalized, type) {
     selectedDots.forEach((dot, i) => {
       var position = 'normal';
       if (dot.reversed) position = 'reversed';
+      if (!dot.vgp) {
+        const options = {
+          type: 'warning',
+          buttons: ['Ok'],
+          defaultId: 0,
+          title: 'Warning!',
+          message: 'Add site lon and lat first!',
+          detail: `Statistics can not be calculated without VGP. VGP can not be calculated without site latitude and longitude. So firstly you need to enter Site Lat and Site Lon in the table below.`,
+        };
+
+        dialog.showMessageBox(null, options, (response) => {
+          return;
+        });
+      }
 
       data.sites.geo.push({'x': dot.geographic.dec[position], 'y': dot.geographic.inc[position]});
       data.sites.strat.push({'x': dot.tectonic.dec[position], 'y': dot.tectonic.inc[position]});
@@ -1128,35 +1142,53 @@ function makeStatGC(normalized, type) {
     var vgpGeoMean = gcMean(vectorsVGPGeo);
     var vgpStratMean = gcMean(vectorsVGPStrat);
 
-    file.means.push({
-      "dots": selectedDots,
-      "created": new Date().toISOString(),
-      "code": code + 'S',
-      // "a95": {geographic: sitesGeoMean.a95, tectonic: sitesStratMean.a95},
-      // "k": {geographic: sitesGeoMean.k, tectonic: sitesStratMean.k},
-      "specimen": specMean,
-      "geographic": sitesGeoMean,
-      "tectonic": sitesStratMean,
-      "version": __VERSION__,
-    });
+    var comment = ''
 
-    file.means.push({
-      "dots": selectedDots,
-      "created": new Date().toISOString(),
-      "code": code + 'P',
-      // "a95": {geographic: sitesGeoMean.a95, tectonic: sitesStratMean.a95},
-      // "k": {geographic: sitesGeoMean.k, tectonic: sitesStratMean.k},
-      "specimen": specMean,
-      "geographic": vgpGeoMean,
-      "tectonic": vgpStratMean,
-      "version": __VERSION__,
-    });
+    prompt({
+      title: 'Comment',
+      label: 'Enter a comment',
+      value: '',
+      type: 'input'
+    })
+    .then((res) => {
+        if(res === null) {
+          console.log('user cancelled');
+        } else {
+          comment = res;
+        }
+        file.means.push({
+          "dots": selectedDots,
+          "created": new Date().toISOString(),
+          "code": code + 'S',
+          // "a95": {geographic: sitesGeoMean.a95, tectonic: sitesStratMean.a95},
+          // "k": {geographic: sitesGeoMean.k, tectonic: sitesStratMean.k},
+          "specimen": specMean,
+          "geographic": sitesGeoMean,
+          "tectonic": sitesStratMean,
+          "comment": comment,
+          "version": __VERSION__,
+        });
 
-    saveLocalStorage();
+        file.means.push({
+          "dots": selectedDots,
+          "created": new Date().toISOString(),
+          "code": code + 'P',
+          // "a95": {geographic: sitesGeoMean.a95, tectonic: sitesStratMean.a95},
+          // "k": {geographic: sitesGeoMean.k, tectonic: sitesStratMean.k},
+          "specimen": specMean,
+          "geographic": vgpGeoMean,
+          "tectonic": vgpStratMean,
+          "comment": comment,
+          "version": __VERSION__,
+        });
 
-    redrawCharts(false);
+        saveLocalStorage();
+        redrawCharts(false);
+        return;
+    })
+    .catch(console.error);
 
-    return;
+
   }
 
   selectedDots.forEach((dot, i) => {
@@ -1178,22 +1210,37 @@ function makeStatGC(normalized, type) {
 
   var comment = null;
 
-  file.means.push({
-    "dots": selectedDots,
-    "created": new Date().toISOString(),
-    "code": code,
-    // "a95": {geographic: geoMean.a95, tectonic: stratMean.a95},
-    // "k": {geographic: geoMean.k, tectonic: stratMean.k},
-    "comment": comment,
-    // "specimen": specMean,
-    "geographic": geoMean,
-    "tectonic": stratMean,
-    "version": __VERSION__,
-  });
+  prompt({
+    title: 'Comment',
+    label: 'Enter a comment',
+    value: '',
+    type: 'input'
+  })
+  .then((res) => {
+      if(res === null) {
+        console.log('user cancelled');
+      } else {
+        comment = res;
+      }
+      file.means.push({
+        "dots": selectedDots,
+        "created": new Date().toISOString(),
+        "code": code,
+        // "a95": {geographic: geoMean.a95, tectonic: stratMean.a95},
+        // "k": {geographic: geoMean.k, tectonic: stratMean.k},
+        "comment": comment,
+        "geographic": geoMean,
+        "tectonic": stratMean,
+        "comment": comment,
+        "version": __VERSION__,
+      });
 
-  saveLocalStorage();
+      saveLocalStorage();
+      redrawCharts(false);
+  })
+  .catch(console.error);
 
-  redrawCharts(false);
+
 
 }
 
@@ -1405,6 +1452,20 @@ function makeFisherMean(type, McFadden) {
     selectedDots.forEach((dot, i) => {
       var position = 'normal';
       if (dot.reversed) position = 'reversed';
+      if (!dot.vgp) {
+        const options = {
+          type: 'warning',
+          buttons: ['Ok'],
+          defaultId: 0,
+          title: 'Warning!',
+          message: 'Add site lon and lat first!',
+          detail: `Statistics can not be calculated without VGP. VGP can not be calculated without site latitude and longitude. So firstly you need to enter Site Lat and Site Lon in the table below.`,
+        };
+
+        dialog.showMessageBox(null, options, (response) => {
+          return;
+        });
+      }
 
       data.sites.geo.push({'x': dot.geographic.dec[position], 'y': dot.geographic.inc[position]});
       data.sites.strat.push({'x': dot.tectonic.dec[position], 'y': dot.tectonic.inc[position]});
@@ -1419,49 +1480,64 @@ function makeFisherMean(type, McFadden) {
     vgpStratMean = (McFadden) ? mcFaddenCombineMean(data.vgp.strat) : fisherMean(data.vgp.strat);
   }
 
-  if (type == 'sitesSet') {
+  var comment = null;
 
-    var comment = null;
+  prompt({
+    title: 'Comment',
+    label: 'Enter a comment',
+    value: '',
+    type: 'input'
+  })
+  .then((res) => {
+      if(res === null) {
+        console.log('user cancelled');
+      } else {
+        comment = res;
+      }
+      if (type == 'sitesSet') {
 
-    file.means.push({
-      "dots": selectedDots,
-      "created": new Date().toISOString(),
-      "code": (McFadden) ? 'McFaddenS' : 'FisherS',
-      "specimen": specMean,
-      "geographic": sitesGeoMean,
-      "tectonic": sitesStratMean,
-      "version": __VERSION__,
-    });
+        file.means.push({
+          "dots": selectedDots,
+          "created": new Date().toISOString(),
+          "code": (McFadden) ? 'McFaddenS' : 'FisherS',
+          "specimen": specMean,
+          "geographic": sitesGeoMean,
+          "tectonic": sitesStratMean,
+          "comment": comment,
+          "version": __VERSION__,
+        });
 
-    file.means.push({
-      "dots": selectedDots,
-      "created": new Date().toISOString(),
-      "code": (McFadden) ? 'McFaddenP' : 'FisherP',
-      "specimen": specMean,
-      "geographic": vgpGeoMean,
-      "tectonic": vgpStratMean,
-      "version": __VERSION__,
-    });
-  }
-  else {
-    var geoEvidEllipse = getSmallCircle(geoMean.dec, geoMean.inc, geoMean.a95, true);
-    var stratEvidEllipse = getSmallCircle(stratMean.dec, stratMean.inc, stratMean.a95, true);
+        file.means.push({
+          "dots": selectedDots,
+          "created": new Date().toISOString(),
+          "code": (McFadden) ? 'McFaddenP' : 'FisherP',
+          "specimen": specMean,
+          "geographic": vgpGeoMean,
+          "tectonic": vgpStratMean,
+          "comment": comment,
+          "version": __VERSION__,
+        });
+      }
+      else {
+        var geoEvidEllipse = getSmallCircle(geoMean.dec, geoMean.inc, geoMean.a95, true);
+        var stratEvidEllipse = getSmallCircle(stratMean.dec, stratMean.inc, stratMean.a95, true);
 
-    var comment = null;
+        file.means.push({
+          "dots": selectedDots,
+          "created": new Date().toISOString(),
+          "code": (McFadden) ? 'McFadden' : 'Fisher',
+          "specimen": specMean,
+          "geographic": geoMean,
+          "tectonic": stratMean,
+          "comment": comment,
+          "version": __VERSION__,
+        });
+      }
 
-    file.means.push({
-      "dots": selectedDots,
-      "created": new Date().toISOString(),
-      "code": (McFadden) ? 'McFadden' : 'Fisher',
-      "specimen": specMean,
-      "geographic": geoMean,
-      "tectonic": stratMean,
-      "version": __VERSION__,
-    });
-  }
-
-  redrawCharts();
-  saveLocalStorage();
+      saveLocalStorage();
+      redrawCharts();
+  })
+  .catch(console.error);
 
 }
 
@@ -1825,7 +1901,6 @@ function makeInterpretations(type, anchored, normalized, selectedSteps, referenc
 // Does a PCA on the selected specimen (and its selected steps)
 function makeInterpretation(type, anchored, normalized, code, specimen) {
 
-  var time = performance.now();
   /*
    * Function makeInterpretation
    * Does a PCA on the selected specimen
@@ -1844,8 +1919,6 @@ function makeInterpretation(type, anchored, normalized, code, specimen) {
 
   // Get the prinicple component
   var PCA = makeInterpretations(type, anchored, normalized, selectedSteps, "specimen");
-  time2 = performance.now() - time;
-  console.log('Время выполнения (interpretation calculation) = ', time2);
 
   // Rotate component to geographic coordinates
   var geoCoordinates = inReferenceCoordinates("geographic", specimen, PCA.component.coordinates);
@@ -1855,38 +1928,41 @@ function makeInterpretation(type, anchored, normalized, code, specimen) {
   var tectCoordinates = inReferenceCoordinates("tectonic", specimen, PCA.component.coordinates);
   var tectMass = inReferenceCoordinates("tectonic", specimen, PCA.component.centerMass);
 
-  var comment = "";
+  var comment = '';
 
-  // Attach the interpretation to the specimen \
+  prompt({
+    title: 'Comment',
+    label: 'Enter a comment',
+    value: '',
+    type: 'input'
+  })
+  .then((res) => {
+      if(res === null) {
+        console.log('user cancelled');
+      } else {
+        comment = res;
+      }
+      specimen.interpretations.push({
+        "steps": selectedSteps,
+        "anchored": anchored,
+        "type": type,
+        "code": code,
+        "created": new Date().toISOString(),
+        "group": GROUP,
+        "MAD": PCA.MAD,
+        "intensity": PCA.intensity,
+        "comment": comment,
+        "fitted": false,
+        "specimen": PCA.component,
+        "geographic": {"coordinates": geoCoordinates, "centerMass": geoMass},
+        "tectonic": {"coordinates": tectCoordinates, "centerMass": tectMass},
+        "version": __VERSION__,
+      });
 
-  specimen.interpretations.push({
-  // specimen.interpretations = [{
-    "steps": selectedSteps,
-    "anchored": anchored,
-    "type": type,
-    "code": code,
-    "created": new Date().toISOString(),
-    "group": GROUP,
-    "MAD": PCA.MAD,
-    "intensity": PCA.intensity,
-    "comment": comment,
-    "fitted": false,
-    "specimen": PCA.component,
-    "geographic": {"coordinates": geoCoordinates, "centerMass": geoMass},
-    "tectonic": {"coordinates": tectCoordinates, "centerMass": tectMass},
-    "version": __VERSION__,
-  });
-
-
-  saveLocalStorage();
-
-  time1 = performance.now() - time;
-  console.log('Время выполнения (interpretation save) = ', time1);
-
-  redrawCharts(false);
-
-  time3 = performance.now() - time;
-  console.log('Время выполнения (interpretation draw) = ', time3);
+      saveLocalStorage();
+      redrawCharts(false);
+  })
+  .catch(console.error);
 }
 
 function getConfidenceEllipseDouble(dDx, dIx, N) {
@@ -1953,9 +2029,9 @@ function coordsFromSteps(steps) {
 
     // Calculate the correction direction for this step
     var coordinates = inReferenceCoordinates(COORDINATES['pca'], specimen, new Coordinates(step.x, step.y, step.z));
-    coordinates.x = Math.round(coordinates.x);
-    coordinates.y = Math.round(coordinates.y);
-    coordinates.z = Math.round(coordinates.z);
+    // coordinates.x = Math.round(coordinates.x);
+    // coordinates.y = Math.round(coordinates.y);
+    // coordinates.z = Math.round(coordinates.z);
 
     var direction = coordinates.toVector(Direction);
     var title = titleToSpec(COORDINATES['pca'], PROJECTION);

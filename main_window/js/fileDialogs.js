@@ -297,6 +297,9 @@ function saveFile(windowTitle, fileName, data, extension, andOpen, path) {
   var filterName = '';
 
   switch (extension) {
+    case 'txt':
+      filterName = 'Text documents (*.txt)';
+      break;
     case 'csv':
       filterName = 'CSV UTF-8 (comma delimiter)';
       break;

@@ -5,6 +5,7 @@ const {app, BrowserWindow, Menu, screen, globalShortcut, ipcMain, dialog} = requ
 const fs = require("fs");
 const WIDTH_RATIO = 0.8;
 const ASPECT_RATIO = 10 / 16;
+app.allowRendererProcessReuse = false
 
 // Paths for child windows
 const settingsPath = path.join('file://', __dirname, 'windows/settings.html');

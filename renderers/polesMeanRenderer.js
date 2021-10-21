@@ -266,8 +266,8 @@ function meanTableClickHandler(event) {
       break;
     }
   }
-
-  if(columnIndex === 11) {
+  console.log(columnIndex)
+  if(columnIndex === 13) {
     selectedSitesSet.means[currSpecRowIndex].comment = event.target.innerHTML;
   }
 

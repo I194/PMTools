@@ -19,7 +19,7 @@ function plotZijderveldDiagram(hover) {
   var addTextOutline = settings.pca.pcaAddTextOutline;
 
   var steps = specimen.steps;
-
+  console.log(steps)
   // if (hover) {
   //   var hoverIndex;
   //

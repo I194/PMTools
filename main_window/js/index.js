@@ -192,17 +192,17 @@ function registerEventHandlers() {
       'save'
     );
   })
-  document.getElementById('export-charts-jpeg').addEventListener('click', (e) => {
-    redrawCharts();
-    Highcharts.exportCharts(
-      chartsToExport,
-      {
-        filename: "charts_" + pageType,
-        extnsn: 'jpg',
-      },
-      'save'
-    );
-  })
+  // document.getElementById('export-charts-jpeg').addEventListener('click', (e) => {
+  //   redrawCharts();
+  //   Highcharts.exportCharts(
+  //     chartsToExport,
+  //     {
+  //       filename: "charts_" + pageType,
+  //       extnsn: 'jpg',
+  //     },
+  //     'save'
+  //   );
+  // })
 
   // pages navigation
   document.getElementById("nav-pca-tab").addEventListener("click", (e) => {
@@ -747,7 +747,7 @@ function formatSpecimenTable() {
     var volume = (specimen.volume) ? specimen.volume : 1;
 
     var direction = inReferenceCoordinates(COORDINATES.pca, specimen, new Coordinates(step.x, step.y, step.z)).toVector(Direction);
-    var intensity = (direction.length / volume).toFixed(0);
+    var intensity = (direction.length / volume).toExponential(2);
     var dec = direction.dec.toFixed(ROUND_NUM);
     var inc = direction.inc.toFixed(ROUND_NUM);
     if (inc < 0) inc = "<span class='text-danger'>" + inc + "</span>";
@@ -1448,58 +1448,57 @@ function redrawCharts(hover, context) {
 
   var currentPage = getSelectedPage();
 
-  if (INITIALIZE) {
-    // Charts creating
-    // pca
-    zijdPCA = plotZijderveldDiagram(hover);
-    stereoPCA = plotStereoDiagram(hover);
-    intensPCA = plotIntensityDiagram(hover);
-    // stat
-    stereoStat = statPlotStereoDiagram();
-    // poles
-    stereoPoles = polesPlotStereoDiagrams();
-    // Tables creating
-    // pca
-    formatSpecimenTable();
-    updateInterpretationTable('pca');
-    ipcRenderer.send('redraw-specDataWin');
-    ipcRenderer.send('redraw-interpretDataWin');
-    // stat
-    formatCollectionTable();
-    updateInterpretationTable('stat');
-    ipcRenderer.send('redraw-collDataWin');
-    ipcRenderer.send('redraw-meansDataWin');
-    // poles
-    formatSitesTable();
-    updateInterpretationTable('poles');
-    ipcRenderer.send('redraw-vgpDataWin');
-    // save data
-    switch (currentPage) {
-      case 'nav-pca-tab':
-        chartsToExport = [zijdPCA.chartObj, stereoPCA.chartObj, intensPCA.chartObj];
-        break;
-      case 'nav-stat-tab':
-        chartsToExport = [stereoStat];
-        break;
-      case 'nav-poles-tab':
-        chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
-        break;
-    }
-
-    saveLocalStorage();
-
-    // additional highcharts charts data processing - deleting of unwanted points
-    document.querySelectorAll('.highcharts-a11y-dummy-point').forEach(function(a) {
-      a.remove();
-    })
-
-    INITIALIZE = false;
-
-    return;
-  }
-
-
-  // actual redraw
+  // if (INITIALIZE) {
+  //   // Charts creating
+  //   // pca
+  //   zijdPCA = plotZijderveldDiagram(hover);
+  //   stereoPCA = plotStereoDiagram(hover);
+  //   intensPCA = plotIntensityDiagram(hover);
+  //   // stat
+  //   stereoStat = statPlotStereoDiagram();
+  //   // poles
+  //   stereoPoles = polesPlotStereoDiagrams();
+  //   // Tables creating
+  //   // pca
+  //   formatSpecimenTable();
+  //   updateInterpretationTable('pca');
+  //   ipcRenderer.send('redraw-specDataWin');
+  //   ipcRenderer.send('redraw-interpretDataWin');
+  //   // stat
+  //   formatCollectionTable();
+  //   updateInterpretationTable('stat');
+  //   ipcRenderer.send('redraw-collDataWin');
+  //   ipcRenderer.send('redraw-meansDataWin');
+  //   // poles
+  //   formatSitesTable();
+  //   updateInterpretationTable('poles');
+  //   ipcRenderer.send('redraw-vgpDataWin');
+  //   // save data
+  //   switch (currentPage) {
+  //     case 'nav-pca-tab':
+  //       chartsToExport = [zijdPCA.chartObj, stereoPCA.chartObj, intensPCA.chartObj];
+  //       break;
+  //     case 'nav-stat-tab':
+  //       chartsToExport = [stereoStat];
+  //       break;
+  //     case 'nav-poles-tab':
+  //       chartsToExport = [stereoPoles.sites, stereoPoles.vgps];
+  //       break;
+  //   }
+  //
+  //   saveLocalStorage();
+  //
+  //   // additional highcharts charts data processing - deleting of unwanted points
+  //   document.querySelectorAll('.highcharts-a11y-dummy-point').forEach(function(a) {
+  //     a.remove();
+  //   })
+  //
+  //   INITIALIZE = false;
+  //
+  //   return;
+  // }
+  //
+  // // actual redraw
   if (context) {
 
     var chartContainers = [
@@ -1781,7 +1780,7 @@ function __init__() {
    * Function __init__
    * Initializes the PMTools
    */
-
+   console.log('ПРивет...')
   // load current page from localStorage
   var selectedPageID = (localStorage.getItem("currPage")) ? localStorage.getItem("currPage") : 'nav-pca-tab';
   document.getElementById(selectedPageID).click();

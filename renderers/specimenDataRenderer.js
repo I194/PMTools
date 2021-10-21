@@ -1,6 +1,8 @@
 const {BrowserWindow} = require('electron').remote;
 const { remote, ipcRenderer } = require('electron');
 const path = require('path');
+const fs = require("fs");
+const dialog = require('electron').remote.dialog;
 
 const allWindows = BrowserWindow.getAllWindows();
 
@@ -140,7 +142,7 @@ function formatStepTable() {
     // }
     // else {
     var volume = (specimen.volume) ? specimen.volume : 1;
-    var intensity = (directionGeo.length / volume).toFixed(0);
+    var intensity = (directionGeo.length / volume);
     // }
 
     var rowClass = '';
@@ -156,17 +158,17 @@ function formatStepTable() {
       rowTitle = 'Step erased';
     }
 
-    console.log(step.index, num);
+    console.log(step);
 
     return [
       "    <tr class='" + rowClass + "' title='" + rowTitle + "'>",
       "      <td>" + stepVisibleTitle + "<button onclick='eraseStep(" + i + ")' class='btn btn-sm btn-link' style='padding: 0;'>" + stepVisibleIcon + "</button></span></td>",
       "      <td class='num'>" + num + "</td>",
       "      <td class='step'>" + step.step + "</td>",
-      "      <td class='xspec'>" + step.x.toFixed(0) + "</td>",
-      "      <td class='yspec'>" + step.y.toFixed(0) + "</td>",
-      "      <td class='zspec'>" + step.z.toFixed(0) + "</td>",
-      "      <td class='intens'>" + intensity + "</td>",
+      "      <td class='xspec'>" + step.x.toExponential(2).toUpperCase() + "</td>",
+      "      <td class='yspec'>" + step.y.toExponential(2).toUpperCase() + "</td>",
+      "      <td class='zspec'>" + step.z.toExponential(2).toUpperCase() + "</td>",
+      "      <td class='intens'>" + intensity.toExponential(2).toUpperCase() + "</td>",
       "      <td class='dgeo'>" + directionGeo.dec.toFixed(1) + "</td>",
       "      <td class='igeo'>" + directionGeo.inc.toFixed(1) + "</td>",
       "      <td class='dstrat'>" + directionTect.dec.toFixed(1) + "</td>",
@@ -236,6 +238,87 @@ function saveLocalStorage(specimens, selectedSpecimen) {
   // }
 
 }
+
+function saveFilePMD() {
+
+  /*
+  * Function downloadInterpretationsCSV
+  * Downloads all interpreted components to a CSV
+  */
+
+  specimen = JSON.parse(localStorage.getItem("selectedSpecimen"));
+
+  const addZeroToExp = number => {
+  	let parts = number.split('E');
+    let leftPart = parts[0];
+    let rightPart = parts[1];
+    rightPart = Math.abs(Number(rightPart)) < 10 ? rightPart[0] + '0' + rightPart[1] : rightPart;
+    return leftPart + 'E' + rightPart;
+  }
+
+  const FILENAME = specimen.name;
+
+  console.log(specimen.volume, specimen.volume.toExponential(1).toUpperCase().length)
+
+  const headData = (
+    '\n'
+    + FILENAME + ' '.repeat(10 - FILENAME.length)
+    + 'a=' + ' '.repeat(5 - specimen.coreAzimuth.toFixed(1).toString().length) + specimen.coreAzimuth.toFixed(1) + ' '.repeat(3)
+    + 'b=' + ' '.repeat(5 - specimen.coreDip.toFixed(1).toString().length) + specimen.coreDip.toFixed(1) + ' '.repeat(3)
+    + 's=' + ' '.repeat(5 - specimen.beddingStrike.toFixed(1).toString().length) + specimen.beddingStrike.toFixed(1) + ' '.repeat(3)
+    + 'd=' + ' '.repeat(5 - specimen.beddingDip.toFixed(1).toString().length) + specimen.beddingDip.toFixed(1) + ' '.repeat(3)
+    + 'v=' + ' '.repeat(7 - specimen.volume.toExponential(1).toUpperCase().length) + specimen.volume.toExponential(1).toUpperCase() + 'm3'
+    + '\n'
+  );
+
+  const tableHeader = (
+    'PAL' + ' '.repeat(3)
+    + 'Xc (Am2)' + ' '.repeat(2)
+    + 'Yc (Am2)' + ' '.repeat(2)
+    + 'Zc (Am2)' + ' '.repeat(2)
+    + 'MAG(A/m)' + ' '
+    + '  Dg ' + ' '
+    + '  Ig ' + ' '
+    + '  Ds ' + ' '
+    + '  Is ' + ' '
+    + ' a95'
+    + '\n'
+  );
+
+  const stepsData = specimen.steps.map((step, iter) => {
+
+    const directionGeo = inReferenceCoordinates("geographic", specimen, new Coordinates(step.x, step.y, step.z)).toVector(Direction);
+    const directionTect = inReferenceCoordinates("tectonic", specimen, new Coordinates(step.x, step.y, step.z)).toVector(Direction);
+
+    const volume = (specimen.volume) ? specimen.volume : 1;
+    const x = addZeroToExp(step.x.toExponential(2).toUpperCase());
+    const y = addZeroToExp(step.y.toExponential(2).toUpperCase());
+    const z = addZeroToExp(step.z.toExponential(2).toUpperCase());
+    const intensity = addZeroToExp((directionGeo.length / volume).toExponential(2).toUpperCase());
+
+    return (
+      step.step + ' '.repeat(4 - step.step.length) + ' '
+      + ' '.repeat(9 - x.length) + x + ' '
+      + ' '.repeat(9 - y.length) + y + ' '
+      + ' '.repeat(9 - z.length) + z + ' '
+      + ' '.repeat(9 - intensity.length) + intensity + ' '
+      + ' '.repeat(5 - directionGeo.dec.toFixed(1).toString().length) + directionGeo.dec.toFixed(1) + ' '
+      + ' '.repeat(5 - directionGeo.inc.toFixed(1).toString().length) + directionGeo.inc.toFixed(1) + ' '
+      + ' '.repeat(5 - directionTect.dec.toFixed(1).toString().length) + directionGeo.dec.toFixed(1) + ' '
+      + ' '.repeat(5 - directionTect.inc.toFixed(1).toString().length) + directionGeo.inc.toFixed(1) + ' '
+      + ' '.repeat(4 - step.error.toFixed(1).length) + step.error.toFixed(1)
+      + '\n'
+    )
+  }).join('');
+
+  outData = headData + tableHeader + stepsData;
+
+  console.log(outData)
+
+  saveFile("Save interpretations data", FILENAME, outData, 'txt');
+
+}
+
 
 formatStepTable();
 resizeTable();

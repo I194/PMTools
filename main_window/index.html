@@ -19,6 +19,9 @@
       // });
       // const { svg2png } = require("svg-png-converter")
       const sharp = require("sharp");
+      // const smalltalk = require('smalltalk');
+      // var Dialogs = require('dialogs')
+      const prompt = require('electron-prompt');
       // var svg2png = require("save-svg-as-png");
       require("svg2pdf.js");
       var edge = require('electron-edge-js');
@@ -193,9 +196,9 @@
           <button class="btn btn-light  text-primary" id="export-charts-pdf" title="export all charts from page as one PDF file">
             Export all PDF
           </button>
-          <button class="btn btn-light  text-primary" id="export-charts-jpeg" title="export all charts from page as one JPEG file" disabled>
+          <!-- <button class="btn btn-light  text-primary" id="export-charts-jpeg" title="export all charts from page as one JPEG file" disabled>
             Export all JPEG
-          </button>
+          </button> -->
         </div>
       </div>
       <!-- Modules -->

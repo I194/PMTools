@@ -32,7 +32,16 @@
         <div class="row no-gutters justify-content-center container-fluid">
           <div class="title-bar">
             <div class="menu-button-container">
-              <button type="button" class="icon-button custom-btn no-hover" id="icon-button"><img src="../img/pm-tools-app-icon-dark.svg" height="16" width="auto" alt=""></button></div>
+              <button type="button" class="icon-button custom-btn no-hover" id="icon-button">
+                <img src="../img/pm-tools-app-icon-dark.svg" height="16" width="auto" alt="">
+              </button>
+              <button class="menu-item-button custom-btn" type="button" id="menu-save-button" style="outline: 0px !important;">
+                Save
+              </button>
+              <button class="menu-item-button custom-btn" type="button" id="menu-save-button" style="outline: 0px !important;" onclick="saveFilePMD();">
+                Save as...
+              </button>
+            </div>
             <div class="app-name-container">
               Specimen data
             </div>
@@ -73,6 +82,9 @@
 
   <script type="text/javascript" src="../utils/data_utils.js"></script>
   <script type="text/javascript" src="../utils/graph_utils.js"></script>
+
+  <script type="text/javascript" src="../main_window/js/fileDialogs.js"></script>
+  <script type="text/javascript" src="../main_window/js/fileHandler.js"></script>
   <!-- render process -->
   <script type="text/javascript" src="../renderers/specimenDataRenderer.js"></script>
 
