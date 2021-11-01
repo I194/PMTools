@@ -11,10 +11,10 @@ How to start
 ---
 You can download `PMTools-beta-setup-v*.exe` file from [releases page](https://github.com/I194/PMTools/releases) and simply install it.
 
+:exclamation: Latest versions may be unstable and have unknown issues.
+
 Source code and Build
 ---
-PMTools is the open source program, licensed by MIT. 
-
 You can clone this repo and start the project with `npm start`.
 
 :exclamation: **Source code of PMTools is overly complex** and it is my fault. I was able to figure it out only after 0.5 year of development. To solve this problem is one of my nearest and hardest future plans. 
@@ -75,13 +75,6 @@ Paleomagnetic statistical tests (fold test, conglomerate test, reversal test and
 ## Documentation
 
 You can find the documentation for PMTools in this repository in the [Manual folder](https://github.com/I194/PMTools/tree/main/Manual). Unfortunately, I have not yet managed to write a full-fledged documentation in English. As a brief overview of PMTools you can use my poster about PMTools for MagIC workshop 2021. I apologize for the inconvenience.
-
---- 
-## PMTools install
-
-You can find latest installers of PMTools beta in the [releases page](https://github.com/I194/PMTools/releases).
-
-Mac and Linux versions will be added soon. 
 
 ---
 ## Licensing
