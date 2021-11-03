@@ -1,5 +1,7 @@
 # PMTools beta  
 
+![image](https://user-images.githubusercontent.com/49840874/140029548-2db9bc4a-d16a-4b08-a336-fd1c06f22d50.png)
+
 PMTools is a paleomagnetic data analysis program, performing a full-cycle of paleomagnetic operations: 
 1. **PCA page**: component analysis
 2. **DirStat page**: direction statistics
