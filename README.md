@@ -5,7 +5,7 @@
 PMTools is a paleomagnetic data analysis program, performing a full-cycle of paleomagnetic operations: 
 1. **PCA page**: component analysis
 2. **DirStat page**: direction statistics
-3. **Poles page**: poles computation
+3. **Poles page**: poles calculation
  
 :exclamation: It is a beta version, may be various issues. If you find any issue, please report this ([create an issue](https://github.com/I194/PMTools/issues)).
 
